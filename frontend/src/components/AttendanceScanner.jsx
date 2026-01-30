@@ -164,8 +164,12 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       setMessageType(result.success ? 'success' : 'info');
       setMessage(result.message);
 
-      if (result.success && onCheckinSuccess) {
-        onCheckinSuccess(result.attendance);
+      // Close camera on successful check-in OR if already checked in
+      if (result.success || result.message?.includes('already checked in')) {
+        setCameraActive(false);
+        if (result.success && onCheckinSuccess) {
+          onCheckinSuccess(result.attendance);
+        }
       }
     } catch (error) {
       console.error('Check-in error:', error);
