@@ -1,0 +1,5 @@
+Django==6.0.1
+djangorestframework==3.14.0
+python-dotenv==1.0.0
+qrcode[pil]==7.4.2
+django-cors-headers==4.3.1
