@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        video, canvas {
+            max-width: 100%;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        #output {
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Scanner Test</h1>
+        <p>This page tests if jsQR can detect QR codes from your camera</p>
+        
+        <button id="startBtn" onclick="startCamera()">Start Camera</button>
+        <button id="stopBtn" onclick="stopCamera()" disabled>Stop Camera</button>
+        
+        <video id="video" width="400" height="300" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        
+        <div id="status" class="status" style="display:none;"></div>
+        
+        <div id="result" class="result" style="display:none;">
+            <strong>QR Code Detected:</strong>
+            <div id="output"></div>
+        </div>
+
+        <div class="debug">
+            <h3>Debug Log:</h3>
+            <div id="debug" style="font-size: 11px; color: #666;"></div>
+        </div>
+    </div>
+
+    <script>
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let startBtn = document.getElementById('startBtn');
+        let stopBtn = document.getElementById('stopBtn');
+        let statusDiv = document.getElementById('status');
+        let resultDiv = document.getElementById('result');
+        let outputDiv = document.getElementById('output');
+        let debugDiv = document.getElementById('debug');
+        let scanningInterval = null;
+        let lastScanned = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            console.log(logEntry);
+            debugDiv.innerHTML += logEntry + '<br>';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+
+        async function startCamera() {
+            try {
+                log('📹 Starting camera...');
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                video.srcObject = stream;
+                log('✓ Camera stream acquired');
+                
+                video.onloadedmetadata = () => {
+                    log(`✓ Video ready: ${video.videoWidth}x${video.videoHeight}`);
+                    log('🔍 Starting QR detection...');
+                    
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'status active';
+                    statusDiv.textContent = '✓ Camera active - scanning for QR codes';
+                    
+                    startScanning();
+                };
+            } catch (error) {
+                log(`❌ Camera error: ${error.message}`);
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        function stopCamera() {
+            log('⏹️ Stopping camera...');
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            if (scanningInterval) {
+                clearInterval(scanningInterval);
+            }
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status';
+            statusDiv.textContent = 'Camera stopped';
+            log('✓ Camera stopped');
+        }
+
+        function startScanning() {
+            let frameCount = 0;
+            scanningInterval = setInterval(() => {
+                frameCount++;
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    try {
+                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+                        
+                        if (frameCount % 10 === 0) {
+                            log(`Frame ${frameCount}: Scanning... ${code ? '📍 QR found' : ''}`);
+                        }
+                        
+                        if (code) {
+                            const now = Date.now();
+                            if (!lastScanned || code.data !== lastScanned.value || (now - lastScanned.time) > 2000) {
+                                log(`🎉 QR CODE DETECTED: ${code.data}`);
+                                lastScanned = { value: code.data, time: now };
+                                
+                                resultDiv.style.display = 'block';
+                                outputDiv.textContent = code.data;
+                                outputDiv.title = code.data;
+                            }
+                        }
+                    } catch (e) {
+                        log(`❌ Error: ${e.message}`);
+                    }
+                }
+            }, 100); // Check every 100ms
+        }
+    </script>
+</body>
+</html>

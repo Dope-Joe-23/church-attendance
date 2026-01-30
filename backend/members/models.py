@@ -4,6 +4,8 @@ from io import BytesIO
 from django.core.files import File
 from PIL import Image
 import uuid
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Member(models.Model):
@@ -57,3 +59,17 @@ class Member(models.Model):
             )
         
         super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Member)
+def send_qr_code_on_creation(sender, instance, created, **kwargs):
+    """Send QR code email when a new member is created"""
+    if created and instance.email:
+        from .email_service import send_qr_code_email
+        import logging
+        logger = logging.getLogger(__name__)
+        try:
+            result = send_qr_code_email(instance)
+            logger.info(f"QR code email sent to {instance.email}: {result}")
+        except Exception as e:
+            logger.error(f"Failed to send QR code email to {instance.email}: {str(e)}")

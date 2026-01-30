@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Member
 from .serializers import MemberSerializer, MemberDetailSerializer
+from .email_service import send_qr_code_email
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -61,3 +62,32 @@ class MemberViewSet(viewsets.ModelViewSet):
             {'error': 'QR code not available'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+    @action(detail=True, methods=['post'])
+    def send_qr_email(self, request, pk=None):
+        """Send QR code email to member"""
+        member = self.get_object()
+        
+        if not member.email:
+            return Response({
+                'success': False,
+                'message': f'Member {member.full_name} does not have an email address'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            success = send_qr_code_email(member)
+            if success:
+                return Response({
+                    'success': True,
+                    'message': f'QR code email sent to {member.email}'
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'Failed to send email. Check your email settings.'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error sending email: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
