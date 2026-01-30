@@ -33,6 +33,10 @@ const Members = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.full_name.trim()) {
+      alert('Full name is required');
+      return;
+    }
     try {
       if (editingId) {
         await memberApi.updateMember(editingId, formData);
@@ -43,6 +47,7 @@ const Members = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
+      alert(`Error: ${error.response?.data?.full_name?.[0] || error.response?.data?.detail || 'Failed to save member'}`);
     }
   };
 

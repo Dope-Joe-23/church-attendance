@@ -26,6 +26,10 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }
+    // Log error details for debugging
+    if (error.response?.status === 400) {
+      console.error('400 Bad Request:', error.response.data);
+    }
     return Promise.reject(error);
   }
 );
