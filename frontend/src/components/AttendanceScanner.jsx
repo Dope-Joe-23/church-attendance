@@ -25,6 +25,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       startCamera();
     }
     return () => {
+      // Cleanup when component unmounts or camera is closed
       stopCamera();
     };
   }, [cameraActive]);
@@ -35,8 +36,10 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       clearTimeout(inactivityTimeoutRef.current);
     }
     inactivityTimeoutRef.current = setTimeout(() => {
-      setMessage('Camera closed due to inactivity (5 minutes)');
+      console.log('⏱️ Inactivity timeout - closing camera');
+      setMessage('Camera closed due to inactivity (30 seconds)');
       setMessageType('info');
+      stopCamera(); // Call stopCamera directly
       setCameraActive(false);
     }, INACTIVITY_TIMEOUT_MS);
   };
@@ -130,19 +133,32 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   };
 
   const stopCamera = () => {
+    console.log('⏹️ Stopping camera...');
+    
     // Stop scanning interval
     if (scanningIntervalRef.current) {
       clearInterval(scanningIntervalRef.current);
+      scanningIntervalRef.current = null;
     }
+    
     // Clear inactivity timeout
     if (inactivityTimeoutRef.current) {
       clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = null;
     }
-    // Stop video stream
+    
+    // Stop video stream - this is critical to turn off the light
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach((track) => track.stop());
+      console.log(`Stopping ${tracks.length} tracks...`);
+      tracks.forEach((track) => {
+        track.stop();
+        console.log(`✓ Stopped ${track.kind} track`);
+      });
+      videoRef.current.srcObject = null; // Clear the stream
     }
+    
+    console.log('✓ Camera fully stopped');
   };
 
   const handleQRCodeDetected = async (memberID) => {
@@ -166,6 +182,8 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
 
       // Close camera on successful check-in OR if already checked in
       if (result.success || result.message?.includes('already checked in')) {
+        console.log('🎉 Check-in complete - stopping camera immediately');
+        stopCamera(); // Stop immediately, don't wait for state update
         setCameraActive(false);
         if (result.success && onCheckinSuccess) {
           onCheckinSuccess(result.attendance);
