@@ -45,6 +45,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             member = Member.objects.get(member_id=member_id)
             service = Service.objects.get(id=service_id)
             
+            # Check if member is a visitor - visitors cannot check in for attendance
+            if member.is_visitor:
+                return Response({
+                    'success': False,
+                    'message': f'{member.full_name} is listed as a visitor and is not tracked in attendance.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Check if already checked in
             attendance, created = Attendance.objects.get_or_create(
                 member=member,

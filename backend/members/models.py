@@ -11,12 +11,30 @@ from django.dispatch import receiver
 class Member(models.Model):
     """Model to store church member information"""
     
+    # Department choices
+    DEPARTMENT_CHOICES = [
+        ('worship', 'Worship'),
+        ('outreach', 'Outreach'),
+        ('youth', 'Youth'),
+        ('administration', 'Administration'),
+    ]
+    
+    # Group choices
+    GROUP_CHOICES = [
+        ('group_a', 'Group A'),
+        ('group_b', 'Group B'),
+        ('group_c', 'Group C'),
+        ('group_d', 'Group D'),
+    ]
+    
     id = models.AutoField(primary_key=True)
     member_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
-    department = models.CharField(max_length=100, blank=True, null=True)
+    department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES, blank=True, null=True)
+    group = models.CharField(max_length=100, choices=GROUP_CHOICES, blank=True, null=True)
+    is_visitor = models.BooleanField(default=False)
     qr_code_image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

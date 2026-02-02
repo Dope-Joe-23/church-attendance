@@ -20,10 +20,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'service_details',
             'check_in_time',
             'status',
+            'is_auto_marked',
             'notes',
             'created_at',
         ]
-        read_only_fields = ['id', 'check_in_time', 'created_at']
+        read_only_fields = ['id', 'check_in_time', 'created_at', 'is_auto_marked']
 
 
 class AttendanceCheckInSerializer(serializers.Serializer):

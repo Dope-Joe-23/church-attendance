@@ -87,6 +87,15 @@ h3 {
   background-color: #059669;
 }
 
+.btn-info {
+  background-color: #0891b2;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #0e7490;
+}
+
 .btn-danger {
   background-color: var(--danger-color);
   color: white;
@@ -128,10 +137,36 @@ textarea:focus {
   margin-bottom: 1rem;
 }
 
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.checkbox-group label {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 400;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+}
+
+.form-hint {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 400;
 }
 
 .form-row {
@@ -313,4 +348,28 @@ textarea:focus {
   .services-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Checkbox styling */
+.checkbox-field {
+  width: auto;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.form-group label:has(.checkbox-field) {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+/* Visitor badge */
+.visitor-badge {
+  background-color: #fbbf24;
+  color: #78350f;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
 }

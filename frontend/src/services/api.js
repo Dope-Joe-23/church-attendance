@@ -64,6 +64,21 @@ export const serviceApi = {
   deleteService: async (id) => {
     await apiClient.delete(`/services/${id}/`);
   },
+
+  closeService: async (id) => {
+    const response = await apiClient.post(`/services/${id}/close/`);
+    return response.data;
+  },
+
+  generateInstances: async (id, months = 3) => {
+    const response = await apiClient.post(`/services/${id}/generate-instances/`, { months });
+    return response.data;
+  },
+
+  addServiceInstance: async (id, dateString) => {
+    const response = await apiClient.post(`/services/${id}/add-instance/`, { date: dateString });
+    return response.data;
+  },
 };
 
 // Attendance API calls

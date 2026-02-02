@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { memberApi } from '../services/api';
 import { useMemberStore } from '../context/store';
-import { MemberCard } from '../components';
+import { MembersTable, MemberFormModal } from '../components';
 import '../styles/pages.css';
 
 const Members = () => {
-  const [showForm, setShowForm] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
     email: '',
     department: '',
+    group: '',
+    is_visitor: false,
   });
   const { members, setMembers, isLoading, setIsLoading } = useMemberStore();
 
@@ -34,7 +37,7 @@ const Members = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.full_name.trim()) {
-      alert('Full name is required');
+      setFormError('Full name is required');
       return;
     }
     try {
@@ -47,7 +50,8 @@ const Members = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
-      alert(`Error: ${error.response?.data?.full_name?.[0] || error.response?.data?.detail || 'Failed to save member'}`);
+      const errorMsg = error.response?.data?.full_name?.[0] || error.response?.data?.detail || 'Failed to save member';
+      setFormError(errorMsg);
     }
   };
 
@@ -57,9 +61,12 @@ const Members = () => {
       phone: member.phone || '',
       email: member.email || '',
       department: member.department || '',
+      group: member.group || '',
+      is_visitor: member.is_visitor || false,
     });
     setEditingId(member.id);
-    setShowForm(true);
+    setFormError(null);
+    setShowFormModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -79,91 +86,56 @@ const Members = () => {
       phone: '',
       email: '',
       department: '',
+      group: '',
+      is_visitor: false,
     });
     setEditingId(null);
-    setShowForm(false);
+    setFormError(null);
+    setShowFormModal(false);
   };
 
   return (
     <div className="members-page">
       <div className="page-header">
         <h1>Church Members</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : 'Add New Member'}
+        <button 
+          className="btn btn-primary" 
+          onClick={() => {
+            setEditingId(null);
+            setFormError(null);
+            setFormData({
+              full_name: '',
+              phone: '',
+              email: '',
+              department: '',
+              group: '',
+              is_visitor: false,
+            });
+            setShowFormModal(true);
+          }}
+        >
+          + Add New Member
         </button>
       </div>
 
-      {showForm && (
-        <form className="member-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input
-              type="text"
-              value={formData.full_name}
-              onChange={(e) =>
-                setFormData({ ...formData, full_name: e.target.value })
-              }
-              required
-              className="input-field"
-            />
-          </div>
-          <div className="form-group">
-            <label>Phone</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              className="input-field"
-            />
-          </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              className="input-field"
-            />
-          </div>
-          <div className="form-group">
-            <label>Department</label>
-            <input
-              type="text"
-              value={formData.department}
-              onChange={(e) =>
-                setFormData({ ...formData, department: e.target.value })
-              }
-              className="input-field"
-            />
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-success">
-              {editingId ? 'Update' : 'Create'} Member
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={resetForm}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      <MemberFormModal
+        isOpen={showFormModal}
+        isEditing={!!editingId}
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleSubmit}
+        onClose={resetForm}
+        error={formError}
+      />
 
       {isLoading ? (
         <p>Loading members...</p>
       ) : (
-        <div className="members-grid">
-          {members.map((member) => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <MembersTable
+          members={members}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

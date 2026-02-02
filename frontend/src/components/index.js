@@ -1,5 +1,10 @@
 export { default as MemberCard } from './MemberCard';
+export { default as MembersTable } from './MembersTable';
+export { default as MemberFormModal } from './MemberFormModal';
 export { default as ServiceCard } from './ServiceCard';
-export { default as AttendanceScanner } from './AttendanceScanner';
+export { default as ServicesTable } from './ServicesTable';
+export { default as ServiceFormModal } from './ServiceFormModal';
+export { default as AddServiceDateModal } from './AddServiceDateModal';export { default as AttendanceScanner } from './AttendanceScanner';
 export { default as AttendanceReport } from './AttendanceReport';
 export { default as Navigation } from './Navigation';
+export { default as QRCodeModal } from './QRCodeModal';

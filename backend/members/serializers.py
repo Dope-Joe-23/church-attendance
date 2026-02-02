@@ -12,6 +12,8 @@ class MemberSerializer(serializers.ModelSerializer):
             'phone',
             'email',
             'department',
+            'group',
+            'is_visitor',
             'qr_code_image',
             'created_at',
             'updated_at',

@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServiceCard } from '../components';
+import { ServicesTable, ServiceFormModal, AddServiceDateModal } from '../components';
 import '../styles/pages.css';
 
 const Services = () => {
-  const [showForm, setShowForm] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showAddDateModal, setShowAddDateModal] = useState(false);
+  const [selectedServiceForDate, setSelectedServiceForDate] = useState(null);
+  const [addDateError, setAddDateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     date: '',
     start_time: '',
+    end_time: '',
     location: '',
     description: '',
+    is_recurring: false,
+    recurrence_pattern: '',
   });
   const { services, setServices, isLoading, setIsLoading } = useServiceStore();
 
@@ -44,6 +51,8 @@ const Services = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving service:', error);
+      const errorMsg = error.response?.data?.name?.[0] || error.response?.data?.detail || 'Failed to save service';
+      setFormError(errorMsg);
     }
   };
 
@@ -52,11 +61,15 @@ const Services = () => {
       name: service.name,
       date: service.date,
       start_time: service.start_time,
+      end_time: service.end_time || '',
       location: service.location || '',
       description: service.description || '',
+      is_recurring: service.is_recurring || false,
+      recurrence_pattern: service.recurrence_pattern || '',
     });
     setEditingId(service.id);
-    setShowForm(true);
+    setFormError(null);
+    setShowFormModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -70,112 +83,100 @@ const Services = () => {
     }
   };
 
+  const handleAddDate = (service) => {
+    setSelectedServiceForDate(service);
+    setAddDateError(null);
+    setShowAddDateModal(true);
+  };
+
+  const handleAddDateSubmit = async (serviceId, dateString) => {
+    try {
+      setAddDateError(null);
+      await serviceApi.addServiceInstance(serviceId, dateString);
+      fetchServices();
+      setShowAddDateModal(false);
+      setSelectedServiceForDate(null);
+    } catch (error) {
+      console.error('Error adding service date:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to add date';
+      setAddDateError(errorMsg);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
       date: '',
       start_time: '',
+      end_time: '',
       location: '',
       description: '',
+      is_recurring: false,
+      recurrence_pattern: '',
     });
     setEditingId(null);
-    setShowForm(false);
+    setFormError(null);
+    setShowFormModal(false);
   };
 
   return (
     <div className="services-page">
       <div className="page-header">
         <h1>Church Services</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : 'Add New Service'}
+        <button 
+          className="btn btn-primary" 
+          onClick={() => {
+            setEditingId(null);
+            setFormError(null);
+            setFormData({
+              name: '',
+              date: '',
+              start_time: '',
+              end_time: '',
+              location: '',
+              description: '',
+              is_recurring: false,
+              recurrence_pattern: '',
+            });
+            setShowFormModal(true);
+          }}
+        >
+          + Add New Service
         </button>
       </div>
 
-      {showForm && (
-        <form className="service-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Service Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="input-field"
-            />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Date</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
-                className="input-field"
-              />
-            </div>
-            <div className="form-group">
-              <label>Start Time</label>
-              <input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) =>
-                  setFormData({ ...formData, start_time: e.target.value })
-                }
-                required
-                className="input-field"
-              />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
-              className="input-field"
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows="3"
-              className="input-field"
-            />
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-success">
-              {editingId ? 'Update' : 'Create'} Service
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={resetForm}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      <ServiceFormModal
+        isOpen={showFormModal}
+        isEditing={!!editingId}
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleSubmit}
+        onClose={resetForm}
+        error={formError}
+        onAddDate={handleAddDate}
+      />
+
+      <AddServiceDateModal
+        isOpen={showAddDateModal}
+        service={selectedServiceForDate}
+        onSubmit={handleAddDateSubmit}
+        onClose={() => setShowAddDateModal(false)}
+        error={addDateError}
+      />
 
       {isLoading ? (
         <p>Loading services...</p>
       ) : (
-        <div className="services-grid">
-          {services.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <ServicesTable
+          services={services}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onSelect={handleEdit}
+        />
       )}
     </div>
   );
 };
 
 export default Services;
+

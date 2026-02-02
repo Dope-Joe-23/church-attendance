@@ -14,7 +14,16 @@ def send_qr_code_email(member):
     
     Args:
         member: Member instance
+    
+    Returns:
+        False if member is a visitor (no email sent)
+        False if member has no email
+        True if email sent successfully
     """
+    # Don't send QR code to visitors
+    if member.is_visitor:
+        return False
+    
     if not member.email:
         return False
     

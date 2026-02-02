@@ -10,8 +10,12 @@ class ServiceSerializer(serializers.ModelSerializer):
             'name',
             'date',
             'start_time',
+            'end_time',
             'description',
             'location',
+            'is_recurring',
+            'recurrence_pattern',
+            'parent_service',
             'created_at',
             'updated_at',
         ]
