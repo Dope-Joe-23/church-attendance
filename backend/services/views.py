@@ -93,7 +93,8 @@ class ServiceViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
-            )    
+            )
+
     @action(detail=True, methods=['post'])
     def add_instance(self, request, pk=None):
         """
@@ -101,7 +102,10 @@ class ServiceViewSet(viewsets.ModelViewSet):
         
         Request body:
         {
-            "date": "2026-02-15"
+            "date": "2026-02-15",
+            "start_time": "09:00:00",
+            "end_time": "11:00:00",
+            "location": "Optional location override"
         }
         """
         service = self.get_object()
@@ -119,9 +123,20 @@ class ServiceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Optional parameters
+        location = request.data.get('location', '')
+        start_time = request.data.get('start_time')
+        end_time = request.data.get('end_time')
+        
         try:
             instance_date = date.fromisoformat(instance_date_str)
-            instance = create_service_instance(service, instance_date)
+            instance = create_service_instance(
+                service, 
+                instance_date, 
+                location=location if location else None,
+                start_time=start_time,
+                end_time=end_time
+            )
             
             return Response(
                 {

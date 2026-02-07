@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServicesTable, ServiceFormModal, AddServiceDateModal } from '../components';
+import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner } from '../components';
 import '../styles/pages.css';
 
 const Services = () => {
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showAddDateModal, setShowAddDateModal] = useState(false);
-  const [selectedServiceForDate, setSelectedServiceForDate] = useState(null);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [showAttendanceScanner, setShowAttendanceScanner] = useState(false);
+  const [selectedServiceForSessions, setSelectedServiceForSessions] = useState(null);
+  const [selectedSessionForAttendance, setSelectedSessionForAttendance] = useState(null);
+  const [sessionsList, setSessionsList] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [addDateError, setAddDateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
@@ -42,16 +46,35 @@ const Services = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await serviceApi.updateService(editingId, formData);
+      // Prepare data based on recurring status
+      const submitData = { ...formData };
+      
+      if (submitData.is_recurring) {
+        // For recurring services, set recurrence_pattern and clear date
+        if (!submitData.recurrence_pattern) {
+          setFormError('Recurrence Pattern is required for recurring services');
+          return;
+        }
+        submitData.date = null; // Recurring services don't have a specific date
       } else {
-        await serviceApi.createService(formData);
+        // For non-recurring services, ensure date and time are set
+        if (!submitData.date || !submitData.start_time) {
+          setFormError('Date and Start Time are required for one-time services');
+          return;
+        }
+        submitData.recurrence_pattern = 'none'; // Set to default for non-recurring
+      }
+      
+      if (editingId) {
+        await serviceApi.updateService(editingId, submitData);
+      } else {
+        await serviceApi.createService(submitData);
       }
       fetchServices();
       resetForm();
     } catch (error) {
       console.error('Error saving service:', error);
-      const errorMsg = error.response?.data?.name?.[0] || error.response?.data?.detail || 'Failed to save service';
+      const errorMsg = error.response?.data?.name?.[0] || error.response?.data?.detail || error.response?.data || 'Failed to save service';
       setFormError(errorMsg);
     }
   };
@@ -83,24 +106,57 @@ const Services = () => {
     }
   };
 
-  const handleAddDate = (service) => {
-    setSelectedServiceForDate(service);
-    setAddDateError(null);
-    setShowAddDateModal(true);
+  const handleViewSessions = async (service) => {
+    // For recurring parent services, fetch all instances and show sessions modal
+    if (service.is_recurring && !service.parent_service) {
+      setSelectedServiceForSessions(service);
+      setSessionsLoading(true);
+      try {
+        // Filter instances from the services list where parent_service matches this service
+        const instances = services.filter(
+          (s) => s.parent_service === service.id
+        );
+        setSessionsList(instances);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+      setShowSessionsModal(true);
+    } else {
+      // For one-off services, directly open attendance scanner
+      setSelectedSessionForAttendance(service);
+      setShowAttendanceScanner(true);
+    }
   };
 
-  const handleAddDateSubmit = async (serviceId, dateString) => {
+  const handleSelectSession = (session) => {
+    // Close SessionsModal and set up AttendanceScanner for the selected session
+    setShowSessionsModal(false);
+    setSelectedSessionForAttendance(session);
+    setShowAttendanceScanner(true);
+  };
+
+  const handleAddDateSubmit = async (serviceId, dateString, location = '', startTime = '', endTime = '') => {
     try {
       setAddDateError(null);
-      await serviceApi.addServiceInstance(serviceId, dateString);
-      fetchServices();
-      setShowAddDateModal(false);
-      setSelectedServiceForDate(null);
+      const response = await serviceApi.addServiceInstance(serviceId, dateString, location, startTime, endTime);
+      
+      // Get the newly created instance from the response
+      if (response && response.instance) {
+        // Add the new instance directly to the state
+        setSessionsList((prevSessions) => [...prevSessions, response.instance]);
+      }
     } catch (error) {
       console.error('Error adding service date:', error);
       const errorMsg = error.response?.data?.error || error.message || 'Failed to add date';
       setAddDateError(errorMsg);
     }
+  };
+
+  const handleSessionAdded = async (serviceId) => {
+    // Refresh services to update parent service counts
+    await fetchServices();
   };
 
   const resetForm = () => {
@@ -153,16 +209,29 @@ const Services = () => {
         onSubmit={handleSubmit}
         onClose={resetForm}
         error={formError}
-        onAddDate={handleAddDate}
       />
 
-      <AddServiceDateModal
-        isOpen={showAddDateModal}
-        service={selectedServiceForDate}
-        onSubmit={handleAddDateSubmit}
-        onClose={() => setShowAddDateModal(false)}
-        error={addDateError}
+      <SessionsModal
+        isOpen={showSessionsModal}
+        service={selectedServiceForSessions}
+        sessions={sessionsList}
+        onSelectSession={handleSelectSession}
+        onClose={() => setShowSessionsModal(false)}
+        isLoading={sessionsLoading}
+        onAddDate={handleAddDateSubmit}
+        addDateError={addDateError}
+        onSessionAdded={handleSessionAdded}
       />
+
+      {showAttendanceScanner && selectedSessionForAttendance && (
+        <AttendanceScanner
+          service={selectedSessionForAttendance}
+          onCheckinSuccess={() => {
+            setShowAttendanceScanner(false);
+            setSelectedSessionForAttendance(null);
+          }}
+        />
+      )}
 
       {isLoading ? (
         <p>Loading services...</p>
@@ -171,7 +240,7 @@ const Services = () => {
           services={services}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onSelect={handleEdit}
+          onSelect={handleViewSessions}
         />
       )}
     </div>

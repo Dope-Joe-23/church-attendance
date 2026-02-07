@@ -67,13 +67,16 @@ def generate_recurring_service_instances(parent_service, start_date=None, end_da
     return instances
 
 
-def create_service_instance(parent_service, instance_date):
+def create_service_instance(parent_service, instance_date, location=None, start_time=None, end_time=None):
     """
     Create a single instance of a recurring service for a specific date.
     
     Args:
         parent_service: Service object with is_recurring=True
         instance_date: Date for the new instance
+        location: Optional location for the instance (defaults to parent service location)
+        start_time: Optional start time for the instance (defaults to parent service start_time)
+        end_time: Optional end time for the instance (defaults to parent service end_time)
     
     Returns:
         Created Service instance or existing one if already exists
@@ -93,13 +96,20 @@ def create_service_instance(parent_service, instance_date):
     if existing:
         return existing
     
+    # Use provided location or default to parent service location
+    instance_location = location if location is not None else parent_service.location
+    
+    # Use provided times or default to parent service times
+    instance_start_time = start_time if start_time is not None else parent_service.start_time
+    instance_end_time = end_time if end_time is not None else parent_service.end_time
+    
     # Create new instance
     instance = Service.objects.create(
         name=parent_service.name,
         date=instance_date,
-        start_time=parent_service.start_time,
-        end_time=parent_service.end_time,
-        location=parent_service.location,
+        start_time=instance_start_time,
+        end_time=instance_end_time,
+        location=instance_location,
         description=parent_service.description,
         parent_service=parent_service,
     )

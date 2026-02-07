@@ -2,16 +2,58 @@ import React, { useState, useEffect } from 'react';
 import { attendanceApi } from '../services/api';
 import '../styles/components.css';
 
+// Mapping for group display names
+const GROUP_LABELS = {
+  'group_a': 'Group A',
+  'group_b': 'Group B',
+  'group_c': 'Group C',
+  'group_d': 'Group D',
+};
+
 const AttendanceReport = ({ service }) => {
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [markingAbsent, setMarkingAbsent] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (service) {
       fetchAttendance();
+      
+      // Check if service has ended and auto-mark absent if needed
+      checkAndMarkAbsentIfServiceEnded();
     }
   }, [service]);
+
+  const checkAndMarkAbsentIfServiceEnded = () => {
+    if (!service || !service.end_time) return;
+    
+    // Use the service's end time (session-specific if it's a recurring instance, or service-specific if one-off)
+    const now = new Date();
+    const serviceDate = new Date(service.date);
+    const [endHours, endMinutes] = service.end_time.split(':');
+    const serviceEndTime = new Date(serviceDate.getFullYear(), serviceDate.getMonth(), serviceDate.getDate(), parseInt(endHours), parseInt(endMinutes));
+    
+    // If service has ended more than 1 minute ago and we haven't marked absent yet
+    if (now > serviceEndTime && serviceEndTime.getTime() > (now.getTime() - 60000)) {
+      // Auto-mark absent (silently, without confirmation)
+      autoMarkAbsent();
+    }
+  };
+
+  const autoMarkAbsent = async () => {
+    try {
+      await attendanceApi.markAbsent(service.id);
+      // Refresh attendance data quietly
+      setTimeout(() => {
+        fetchAttendance();
+      }, 1000);
+    } catch (err) {
+      // Silently fail - don't disrupt user experience
+      console.log('Auto-mark absent completed or service already marked');
+    }
+  };
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -23,6 +65,32 @@ const AttendanceReport = ({ service }) => {
       setError('Failed to load attendance data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkAbsent = async () => {
+    if (
+      !window.confirm(
+        'Are you sure? This will mark all members who haven\'t checked in as absent.'
+      )
+    ) {
+      return;
+    }
+
+    setMarkingAbsent(true);
+    setSuccessMessage('');
+    try {
+      const result = await attendanceApi.markAbsent(service.id);
+      setSuccessMessage(result.message);
+      // Refresh attendance data
+      setTimeout(() => {
+        fetchAttendance();
+        setSuccessMessage('');
+      }, 2000);
+    } catch (err) {
+      setSuccessMessage('Error: Failed to mark members as absent');
+    } finally {
+      setMarkingAbsent(false);
     }
   };
 
@@ -75,12 +143,26 @@ const AttendanceReport = ({ service }) => {
             </div>
           </div>
 
+          {successMessage && (
+            <div className="success-message">{successMessage}</div>
+          )}
+
+          <button
+            onClick={handleMarkAbsent}
+            disabled={markingAbsent}
+            className="btn btn-warning"
+            style={{ marginBottom: '1.5rem' }}
+          >
+            {markingAbsent ? 'Marking...' : 'Mark Remaining as Absent'}
+          </button>
+
           <div className="attendance-table">
             <table>
               <thead>
                 <tr>
                   <th>Member Name</th>
                   <th>Member ID</th>
+                  <th>Group</th>
                   <th>Status</th>
                   <th>Check-in Time</th>
                 </tr>
@@ -90,6 +172,7 @@ const AttendanceReport = ({ service }) => {
                   <tr key={record.id}>
                     <td>{record.member_details.full_name}</td>
                     <td>{record.member_details.member_id}</td>
+                    <td>{GROUP_LABELS[record.member_details.group] || record.member_details.group || '—'}</td>
                     <td>
                       <span className={`status-badge status-${record.status}`}>
                         {record.status.charAt(0).toUpperCase() +

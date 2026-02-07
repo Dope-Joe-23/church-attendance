@@ -71,12 +71,17 @@ export const serviceApi = {
   },
 
   generateInstances: async (id, months = 3) => {
-    const response = await apiClient.post(`/services/${id}/generate-instances/`, { months });
+    const response = await apiClient.post(`/services/${id}/generate_instances/`, { months });
     return response.data;
   },
 
-  addServiceInstance: async (id, dateString) => {
-    const response = await apiClient.post(`/services/${id}/add-instance/`, { date: dateString });
+  addServiceInstance: async (id, dateString, location = '', startTime = '', endTime = '') => {
+    const response = await apiClient.post(`/services/${id}/add_instance/`, { 
+      date: dateString,
+      location: location,
+      start_time: startTime,
+      end_time: endTime
+    });
     return response.data;
   },
 };
@@ -120,5 +125,12 @@ export const attendanceApi = {
 
   deleteAttendance: async (id) => {
     await apiClient.delete(`/attendance/${id}/`);
+  },
+
+  markAbsent: async (serviceId) => {
+    const response = await apiClient.post('/attendance/mark_absent/', {
+      service_id: serviceId,
+    });
+    return response.data;
   },
 };

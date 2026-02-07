@@ -114,6 +114,24 @@ h3 {
   background-color: #4b5563;
 }
 
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #d97706;
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #d97706;
+}
+
 /* Forms */
 .input-field,
 textarea {

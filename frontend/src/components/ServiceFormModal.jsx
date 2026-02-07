@@ -9,12 +9,8 @@ const ServiceFormModal = ({
   onSubmit,
   onClose,
   error,
-  onAddDate,
 }) => {
   if (!isOpen) return null;
-
-  // Check if this is a recurring parent service (editing mode only)
-  const isRecurringParent = isEditing && formData.is_recurring && !formData.parent_service;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -39,45 +35,6 @@ const ServiceFormModal = ({
                 required
                 className="input-field"
                 placeholder="Enter service name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Date *</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  onFormChange({ ...formData, date: e.target.value })
-                }
-                required
-                className="input-field"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Start Time *</label>
-              <input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) =>
-                  onFormChange({ ...formData, start_time: e.target.value })
-                }
-                required
-                className="input-field"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>End Time *</label>
-              <input
-                type="time"
-                value={formData.end_time || ''}
-                onChange={(e) =>
-                  onFormChange({ ...formData, end_time: e.target.value })
-                }
-                required
-                className="input-field"
               />
             </div>
 
@@ -115,6 +72,49 @@ const ServiceFormModal = ({
               </div>
             )}
 
+            {!formData.is_recurring && (
+              <>
+                <div className="form-group">
+                  <label>Date *</label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) =>
+                      onFormChange({ ...formData, date: e.target.value })
+                    }
+                    required={!formData.is_recurring}
+                    className="input-field"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Start Time *</label>
+                  <input
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) =>
+                      onFormChange({ ...formData, start_time: e.target.value })
+                    }
+                    required={!formData.is_recurring}
+                    className="input-field"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>End Time *</label>
+                  <input
+                    type="time"
+                    value={formData.end_time || ''}
+                    onChange={(e) =>
+                      onFormChange({ ...formData, end_time: e.target.value })
+                    }
+                    required={!formData.is_recurring}
+                    className="input-field"
+                  />
+                </div>
+              </>
+            )}
+
             <div className="form-group">
               <label>Location</label>
               <input
@@ -143,15 +143,6 @@ const ServiceFormModal = ({
           </div>
 
           <div className="modal-footer form-footer">
-            {isRecurringParent && onAddDate && (
-              <button
-                type="button"
-                className="btn btn-info"
-                onClick={() => onAddDate(formData)}
-              >
-                ➕ Add New Date
-              </button>
-            )}
             <button
               type="button"
               className="btn btn-secondary"

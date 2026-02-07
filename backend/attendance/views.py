@@ -115,3 +115,51 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Service with ID {service_id} not found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def mark_absent(self, request):
+        """
+        Mark all members who haven't checked in as absent for a service.
+        This is typically called at the end of a service/session.
+        
+        Request body:
+        {
+            "service_id": 1
+        }
+        """
+        service_id = request.data.get('service_id')
+        if not service_id:
+            return Response({
+                'error': 'service_id is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            service = Service.objects.get(id=service_id)
+            
+            # Get all members who are NOT visitors
+            all_members = Member.objects.filter(is_visitor=False)
+            
+            # Find members who haven't checked in
+            absent_count = 0
+            marked_members = []
+            
+            for member in all_members:
+                attendance, created = Attendance.objects.get_or_create(
+                    member=member,
+                    service=service,
+                    defaults={'status': 'absent'}
+                )
+                if created:
+                    absent_count += 1
+                    marked_members.append(member.full_name)
+            
+            return Response({
+                'success': True,
+                'message': f'Marked {absent_count} members as absent',
+                'marked_members': marked_members
+            }, status=status.HTTP_200_OK)
+        
+        except Service.DoesNotExist:
+            return Response({
+                'error': f'Service with ID {service_id} not found'
+            }, status=status.HTTP_404_NOT_FOUND)

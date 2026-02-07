@@ -12,7 +12,7 @@ class Service(models.Model):
     
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    date = models.DateField()
+    date = models.DateField(null=True, blank=True)  # Nullable for recurring services
     start_time = models.TimeField()
     end_time = models.TimeField(null=True, blank=True)
     description = models.TextField(blank=True, null=True)

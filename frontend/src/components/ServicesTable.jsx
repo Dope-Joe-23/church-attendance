@@ -5,6 +5,9 @@ import '../styles/components.css';
 const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }) => {
   const [closingServiceId, setClosingServiceId] = useState(null);
   
+  // Filter to only show parent services (not session instances)
+  const parentServices = services.filter(s => !s.parent_service);
+  
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -56,7 +59,7 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }
             </tr>
           </thead>
           <tbody>
-            {services.map((service) => (
+            {parentServices.map((service) => (
               <tr key={service.id} className="service-row">
                 <td className="service-name-col" data-label="Service Name">
                   <span className="badge-name">{service.name}</span>
@@ -133,7 +136,7 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }
         </table>
       </div>
 
-      {services.length === 0 && (
+      {parentServices.length === 0 && (
         <div className="no-services-message">
           <p>No services found. Add a new service to get started.</p>
         </div>
