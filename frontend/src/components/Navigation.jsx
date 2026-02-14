@@ -13,7 +13,10 @@ const Navigation = ({ user, onLogout }) => {
     <nav className="navbar">
       <div className="navbar-container">
         <div className="navbar-logo">
-          <h1>⛪ Church-In</h1>
+          <div className="logo-wrapper">
+            <span className="logo-icon">⛪</span>
+            <h1 className="logo-text">Church-In</h1>
+          </div>
         </div>
         <ul className="nav-menu">
           <li className="nav-item">

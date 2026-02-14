@@ -8,6 +8,7 @@ const Reports = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedParentService, setExpandedParentService] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchServices();
@@ -58,6 +59,14 @@ const Reports = () => {
     }
   };
 
+  const filteredGroupedServices = React.useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return groupedServices.filter((group) => 
+      group.parent.name.toLowerCase().includes(query) ||
+      (group.parent.location && group.parent.location.toLowerCase().includes(query))
+    );
+  }, [groupedServices, searchQuery]);
+
   return (
     <div className="reports-page">
       <div className="page-header">
@@ -70,61 +79,74 @@ const Reports = () => {
         <div className="reports-layout">
           <div className="services-sidebar">
             <h3>Select a Service</h3>
+            <div className="search-box" style={{ marginBottom: '1rem' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search services..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
             <div className="service-list">
-              {groupedServices.map((group) => (
-                <div key={group.parent.id} className="service-group">
-                  <button
-                    className={`service-parent-button ${
-                      expandedParentService === group.parent.id ? 'expanded' : ''
-                    } ${
-                      selectedService?.id === group.parent.id ? 'active' : ''
-                    } ${group.sessions.length === 0 ? 'no-sessions' : ''}`}
-                    onClick={() => handleParentServiceClick(group.parent.id, group.parent)}
-                  >
-                    <div className="service-parent-content">
-                      <span className="service-name">{group.parent.name}</span>
-                      <span className="session-count">
-                        {group.sessions.length > 0
-                          ? `${group.sessions.length} sessions`
-                          : 'One-time service'}
-                      </span>
-                    </div>
-                    {group.sessions.length > 0 && (
-                      <span className="expand-icon">
-                        {expandedParentService === group.parent.id ? '\u25bc' : '\u25b6'}
-                      </span>
-                    )}
-                  </button>
-
-                  {expandedParentService === group.parent.id && group.sessions.length > 0 && (
-                    <div className="sessions-dropdown">
-                      {group.sessions.length > 0 ? (
-                        group.sessions.map((session) => (
-                          <button
-                            key={session.id}
-                            className={`session-button ${
-                              selectedService?.id === session.id ? 'active' : ''
-                            }`}
-                            onClick={() => setSelectedService(session)}
-                          >
-                            <div className="session-info">
-                              <strong>{new Date(session.date).toLocaleDateString()}</strong>
-                              <span className="session-time">
-                                {session.start_time} - {session.end_time}
-                              </span>
-                              {session.location && (
-                                <span className="session-location">📍 {session.location}</span>
-                              )}
-                            </div>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="no-sessions">No sessions scheduled</p>
+              {filteredGroupedServices.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#9ca3af' }}>No services found</p>
+              ) : (
+                filteredGroupedServices.map((group) => (
+                  <div key={group.parent.id} className="service-group">
+                    <button
+                      className={`service-parent-button ${
+                        expandedParentService === group.parent.id ? 'expanded' : ''
+                      } ${
+                        selectedService?.id === group.parent.id ? 'active' : ''
+                      } ${group.sessions.length === 0 ? 'no-sessions' : ''}`}
+                      onClick={() => handleParentServiceClick(group.parent.id, group.parent)}
+                    >
+                      <div className="service-parent-content">
+                        <span className="service-name">{group.parent.name}</span>
+                        <span className="session-count">
+                          {group.sessions.length > 0
+                            ? `${group.sessions.length} sessions`
+                            : 'One-time service'}
+                        </span>
+                      </div>
+                      {group.sessions.length > 0 && (
+                        <span className="expand-icon">
+                          {expandedParentService === group.parent.id ? '\u25bc' : '\u25b6'}
+                        </span>
                       )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    </button>
+
+                    {expandedParentService === group.parent.id && group.sessions.length > 0 && (
+                      <div className="sessions-dropdown">
+                        {group.sessions.length > 0 ? (
+                          group.sessions.map((session) => (
+                            <button
+                              key={session.id}
+                              className={`session-button ${
+                                selectedService?.id === session.id ? 'active' : ''
+                              }`}
+                              onClick={() => setSelectedService(session)}
+                            >
+                              <div className="session-info">
+                                <strong>{new Date(session.date).toLocaleDateString()}</strong>
+                                <span className="session-time">
+                                  {session.start_time} - {session.end_time}
+                                </span>
+                                {session.location && (
+                                  <span className="session-location">📍 {session.location}</span>
+                                )}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <p className="no-sessions">No sessions scheduled</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

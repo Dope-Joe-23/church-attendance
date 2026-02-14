@@ -15,6 +15,7 @@ const Services = () => {
   const [addDateError, setAddDateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -175,10 +176,30 @@ const Services = () => {
     setShowFormModal(false);
   };
 
+  const filteredServices = services.filter((service) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      service.name.toLowerCase().includes(query) ||
+      (service.location && service.location.toLowerCase().includes(query)) ||
+      (service.description && service.description.toLowerCase().includes(query))
+    );
+  });
+
   return (
     <div className="services-page">
       <div className="page-header">
-        <h1>Church Services</h1>
+        <div className="header-content">
+          <h1>Church Services</h1>
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="🔍 Search services by name, location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+        </div>
         <button 
           className="btn btn-primary" 
           onClick={() => {
@@ -236,12 +257,19 @@ const Services = () => {
       {isLoading ? (
         <p>Loading services...</p>
       ) : (
-        <ServicesTable
-          services={services}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onSelect={handleViewSessions}
-        />
+        <>
+          {filteredServices.length === 0 && searchQuery && (
+            <div className="no-results">
+              <p>No services found matching "{searchQuery}"</p>
+            </div>
+          )}
+          <ServicesTable
+            services={filteredServices}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onSelect={handleViewSessions}
+          />
+        </>
       )}
     </div>
   );

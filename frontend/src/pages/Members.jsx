@@ -8,6 +8,7 @@ const Members = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -94,10 +95,31 @@ const Members = () => {
     setShowFormModal(false);
   };
 
+  const filteredMembers = members.filter((member) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      member.full_name.toLowerCase().includes(query) ||
+      member.email.toLowerCase().includes(query) ||
+      member.phone.toLowerCase().includes(query) ||
+      member.department.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="members-page">
       <div className="page-header">
-        <h1>Church Members</h1>
+        <div className="header-content">
+          <h1>Church Members</h1>
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="🔍 Search members by name, email, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+        </div>
         <button 
           className="btn btn-primary" 
           onClick={() => {
@@ -131,11 +153,18 @@ const Members = () => {
       {isLoading ? (
         <p>Loading members...</p>
       ) : (
-        <MembersTable
-          members={members}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <>
+          {filteredMembers.length === 0 && searchQuery && (
+            <div className="no-results">
+              <p>No members found matching "{searchQuery}"</p>
+            </div>
+          )}
+          <MembersTable
+            members={filteredMembers}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </>
       )}
     </div>
   );
