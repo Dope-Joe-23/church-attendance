@@ -161,7 +161,7 @@ const AttendanceReport = ({ service }) => {
               <thead>
                 <tr>
                   <th>Member Name</th>
-                  <th>Member ID</th>
+                  <th>Contact Information</th>
                   <th>Group</th>
                   <th>Status</th>
                   <th>Check-in Time</th>
@@ -171,7 +171,19 @@ const AttendanceReport = ({ service }) => {
                 {attendance.attendances.map((record) => (
                   <tr key={record.id}>
                     <td>{record.member_details.full_name}</td>
-                    <td>{record.member_details.member_id}</td>
+                    <td>
+                      <div className="contact-info">
+                        {record.member_details.email && (
+                          <div className="email">📧 {record.member_details.email}</div>
+                        )}
+                        {record.member_details.phone && (
+                          <div className="phone">📱 {record.member_details.phone}</div>
+                        )}
+                        {!record.member_details.email && !record.member_details.phone && (
+                          <span className="no-contact">—</span>
+                        )}
+                      </div>
+                    </td>
                     <td>{GROUP_LABELS[record.member_details.group] || record.member_details.group || '—'}</td>
                     <td>
                       <span className={`status-badge status-${record.status}`}>

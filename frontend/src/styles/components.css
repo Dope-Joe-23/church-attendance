@@ -396,6 +396,30 @@
   background-color: var(--light-color);
 }
 
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.contact-info .email {
+  color: #3b82f6;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.contact-info .phone {
+  color: #10b981;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.contact-info .no-contact {
+  color: #9ca3af;
+  font-style: italic;
+}
+
 /* Scanner Layout */
 .scanner-page .page-header {
   border-bottom: none;
