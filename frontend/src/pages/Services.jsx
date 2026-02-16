@@ -126,6 +126,11 @@ const Services = () => {
       setShowSessionsModal(true);
     } else {
       // For one-off services, directly open attendance scanner
+      // Add extra safety check: prevent scanner on parent recurring services
+      if (service.is_recurring && !service.parent_service && !service.date) {
+        alert(`"${service.name}" is a recurring service template. Please add sessions first or the system will automatically generate them.`);
+        return;
+      }
       setSelectedSessionForAttendance(service);
       setShowAttendanceScanner(true);
     }

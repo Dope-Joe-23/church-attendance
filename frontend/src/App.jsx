@@ -6,6 +6,7 @@ import {
   Services,
   Scanner,
   Reports,
+  CareDashboard,
 } from './pages';
 import './styles/index.css';
 import './styles/components.css';
@@ -23,6 +24,7 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/care" element={<CareDashboard />} />
           </Routes>
         </main>
       </div>

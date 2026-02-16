@@ -49,8 +49,14 @@ const Scanner = () => {
   const handleParentServiceClick = (parentId, parentService) => {
     const group = groupedServices.find((g) => g.parent.id === parentId);
     
-    // If no sessions, directly select the parent service
+    // If no sessions, directly select the parent service only if it's not recurring
+    // (Parent recurring services are templates, can't take attendance on them)
     if (!group || group.sessions.length === 0) {
+      if (parentService.is_recurring && !parentService.parent_service) {
+        // This is a recurring parent service with no sessions - show error
+        alert(`"${parentService.name}" is a recurring service template. Please generate or add sessions first.`);
+        return;
+      }
       setSelectedService(parentService);
       setExpandedParentService(null);
       return;

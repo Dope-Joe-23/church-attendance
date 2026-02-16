@@ -35,6 +35,11 @@ const Navigation = ({ user, onLogout }) => {
             </a>
           </li>
           <li className="nav-item">
+            <a href="/care" className={`nav-link ${isActive('/care') ? 'active' : ''}`}>
+              Care
+            </a>
+          </li>
+          <li className="nav-item">
             <a href="/scanner" className={`nav-link ${isActive('/scanner') ? 'active' : ''}`}>
               Scanner
             </a>

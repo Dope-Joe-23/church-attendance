@@ -20,6 +20,12 @@ const SessionsModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState(null);
 
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   if (!isOpen || !service) return null;
 
   const formatDate = (date) => {
@@ -40,7 +46,8 @@ const SessionsModal = ({
 
   const handleAddDateSubmit = async (e) => {
     e.preventDefault();
-    if (!newDate || !newStartTime || !newEndTime) return;
+    if (!newDate) return;
+    // Times are now optional - they will default to parent service times if not provided
 
     setIsSubmitting(true);
     setLocalError(null);
@@ -63,12 +70,22 @@ const SessionsModal = ({
   };
 
   const toggleAddForm = () => {
+    if (!showAddForm) {
+      // When opening the form, set defaults
+      setNewDate(getTodayDate()); // Default to today
+      setNewLocation('');
+      setNewStartTime(service.start_time || ''); // Default to parent service start time
+      setNewEndTime(service.end_time || ''); // Default to parent service end time
+      setLocalError(null);
+    } else {
+      // When closing the form, clear values
+      setNewDate('');
+      setNewLocation('');
+      setNewStartTime('');
+      setNewEndTime('');
+      setLocalError(null);
+    }
     setShowAddForm(!showAddForm);
-    setNewDate('');
-    setNewLocation('');
-    setNewStartTime('');
-    setNewEndTime('');
-    setLocalError(null);
   };
 
   return (
@@ -153,19 +170,19 @@ const SessionsModal = ({
                   type="time"
                   value={newStartTime}
                   onChange={(e) => setNewStartTime(e.target.value)}
-                  required
                   disabled={isSubmitting}
                   className="session-time-input"
-                  title="Start Time"
+                  title="Start Time (optional - defaults to parent service time)"
+                  placeholder="Start Time (optional)"
                 />
                 <input
                   type="time"
                   value={newEndTime}
                   onChange={(e) => setNewEndTime(e.target.value)}
-                  required
                   disabled={isSubmitting}
                   className="session-time-input"
-                  title="End Time"
+                  title="End Time (optional - defaults to parent service time)"
+                  placeholder="End Time (optional)"
                 />
                 <input
                   type="text"

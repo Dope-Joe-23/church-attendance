@@ -19,6 +19,14 @@ const AttendanceReport = ({ service }) => {
 
   useEffect(() => {
     if (service) {
+      // Check if this is a parent recurring service (template/label)
+      // Parent services have: is_recurring=true, parent_service=null, date=null
+      if (service.is_recurring && !service.parent_service && !service.date) {
+        setError(`"${service.name}" is a recurring service template. Please select a specific session/date to view attendance.`);
+        setAttendance(null);
+        return;
+      }
+
       fetchAttendance();
       
       // Check if service has ended and auto-mark absent if needed

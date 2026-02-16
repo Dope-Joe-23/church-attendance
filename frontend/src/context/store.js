@@ -95,3 +95,32 @@ export const useAttendanceStore = create((set) => ({
       attendances: state.attendances.filter((a) => a.id !== id),
     })),
 }));
+
+export const useNotificationStore = create((set) => ({
+  notifications: [],
+
+  showNotification: (message, type = 'info') => {
+    const id = Date.now();
+    set((state) => ({
+      notifications: [...state.notifications, { id, message, type }],
+    }));
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      set((state) => ({
+        notifications: state.notifications.filter((n) => n.id !== id),
+      }));
+    }, 3000);
+  },
+
+  removeNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+}));
+
+// Default export for convenience
+export default {
+  showNotification: (message, type = 'info') => {
+    useNotificationStore.getState().showNotification(message, type);
+  },
+};

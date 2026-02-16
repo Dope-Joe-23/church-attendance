@@ -27,6 +27,14 @@ class Member(models.Model):
         ('group_d', 'Group D'),
     ]
     
+    # Attendance Status choices
+    ATTENDANCE_STATUS_CHOICES = [
+        ('active', 'Active - Good Attendance'),
+        ('at_risk', 'At Risk - Pattern Change'),
+        ('inactive', 'Inactive - Extended Absence'),
+        ('vacation', 'On Vacation'),
+    ]
+    
     id = models.AutoField(primary_key=True)
     member_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=255)
@@ -36,6 +44,15 @@ class Member(models.Model):
     group = models.CharField(max_length=100, choices=GROUP_CHOICES, blank=True, null=True)
     is_visitor = models.BooleanField(default=False)
     qr_code_image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    
+    # Absence & Engagement Tracking
+    consecutive_absences = models.IntegerField(default=0)
+    last_attendance_date = models.DateField(null=True, blank=True)
+    attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='active')
+    engagement_score = models.IntegerField(default=100)  # 0-100 scale
+    last_contact_date = models.DateField(null=True, blank=True)
+    pastoral_notes = models.TextField(blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -91,3 +108,55 @@ def send_qr_code_on_creation(sender, instance, created, **kwargs):
             logger.info(f"QR code email sent to {instance.email}: {result}")
         except Exception as e:
             logger.error(f"Failed to send QR code email to {instance.email}: {str(e)}")
+
+
+class MemberAlert(models.Model):
+    """Model to track alerts for members with absence patterns"""
+    
+    ALERT_LEVEL_CHOICES = [
+        ('early_warning', 'Early Warning - 2 absences'),
+        ('at_risk', 'At Risk - 4+ absences'),
+        ('critical', 'Critical - 8+ absences'),
+    ]
+    
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='alerts')
+    alert_level = models.CharField(max_length=20, choices=ALERT_LEVEL_CHOICES)
+    reason = models.TextField()  # "2 consecutive absences", "4 out of 5 services missed", etc.
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.member.full_name} - {self.alert_level}"
+
+
+class ContactLog(models.Model):
+    """Model to track all outreach and communication with members"""
+    
+    CONTACT_METHOD_CHOICES = [
+        ('email', 'Email'),
+        ('sms', 'SMS Text'),
+        ('phone', 'Phone Call'),
+        ('visit', 'In-Person Visit'),
+        ('small_group', 'Small Group Leader Check-in'),
+        ('social_media', 'Social Media Message'),
+    ]
+    
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='contact_logs')
+    contact_method = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES)
+    message_sent = models.TextField()
+    contacted_by = models.CharField(max_length=255, blank=True, null=True)  # Name of person who made contact
+    response_received = models.TextField(blank=True, null=True)
+    follow_up_needed = models.BooleanField(default=False)
+    follow_up_date = models.DateField(null=True, blank=True)
+    contact_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-contact_date']
+    
+    def __str__(self):
+        return f"{self.member.full_name} - {self.contact_method} ({self.contact_date.strftime('%Y-%m-%d')})"

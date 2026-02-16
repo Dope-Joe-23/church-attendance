@@ -172,6 +172,18 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       return;
     }
 
+    // Prevent checking in to parent recurring services (template/label only)
+    // Parent services have: is_recurring=true, parent_service=null, date=null
+    if (service.is_recurring && !service.parent_service && !service.date) {
+      const errorMsg = `"${service.name}" is a recurring service template. Please select a specific session/date to check in.`;
+      setMessage(errorMsg);
+      setMessageType('error');
+      stopCamera();
+      setCameraActive(false);
+      console.warn(errorMsg);
+      return;
+    }
+
     try {
       console.log(`Checking in member: ${memberID} for service: ${service.id}`);
       const result = await attendanceApi.checkInMember(memberID, service.id);
@@ -206,6 +218,13 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
 
     if (!service) {
       setMessage('Please select a service first');
+      setMessageType('error');
+      return;
+    }
+
+    // Prevent checking in to parent recurring services (template/label only)
+    if (service.is_recurring && !service.parent_service && !service.date) {
+      setMessage(`"${service.name}" is a recurring service template. Please select a specific session/date to check in.`);
       setMessageType('error');
       return;
     }

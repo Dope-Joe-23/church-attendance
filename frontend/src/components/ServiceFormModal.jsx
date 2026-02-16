@@ -73,47 +73,51 @@ const ServiceFormModal = ({
             )}
 
             {!formData.is_recurring && (
-              <>
-                <div className="form-group">
-                  <label>Date *</label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      onFormChange({ ...formData, date: e.target.value })
-                    }
-                    required={!formData.is_recurring}
-                    className="input-field"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Start Time *</label>
-                  <input
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) =>
-                      onFormChange({ ...formData, start_time: e.target.value })
-                    }
-                    required={!formData.is_recurring}
-                    className="input-field"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>End Time *</label>
-                  <input
-                    type="time"
-                    value={formData.end_time || ''}
-                    onChange={(e) =>
-                      onFormChange({ ...formData, end_time: e.target.value })
-                    }
-                    required={!formData.is_recurring}
-                    className="input-field"
-                  />
-                </div>
-              </>
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) =>
+                    onFormChange({ ...formData, date: e.target.value })
+                  }
+                  required={!formData.is_recurring}
+                  className="input-field"
+                />
+              </div>
             )}
+
+            <div className="form-group">
+              <label>Start Time {!formData.is_recurring && '*'}</label>
+              <p className="form-hint">
+                {formData.is_recurring ? 'Default time for all instances of this recurring service' : 'Required for one-time services'}
+              </p>
+              <input
+                type="time"
+                value={formData.start_time}
+                onChange={(e) =>
+                  onFormChange({ ...formData, start_time: e.target.value })
+                }
+                required={!formData.is_recurring}
+                className="input-field"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>End Time {!formData.is_recurring && '*'}</label>
+              <p className="form-hint">
+                {formData.is_recurring ? 'Default time for all instances of this recurring service' : 'Required for one-time services'}
+              </p>
+              <input
+                type="time"
+                value={formData.end_time || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, end_time: e.target.value })
+                }
+                required={!formData.is_recurring}
+                className="input-field"
+              />
+            </div>
 
             <div className="form-group">
               <label>Location</label>

@@ -6,6 +6,7 @@ from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
 from services.models import Service
 from members.models import Member
+from members.utils import update_member_absence_tracking
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -45,6 +46,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             member = Member.objects.get(member_id=member_id)
             service = Service.objects.get(id=service_id)
             
+            # Prevent attendance on parent recurring services (template/label only)
+            # Parent recurring services have: is_recurring=True, parent_service=None, date=None
+            if service.is_recurring and service.parent_service is None and service.date is None:
+                return Response({
+                    'success': False,
+                    'message': f'"{service.name}" is a recurring service template. Please select a specific session/date to check in.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Check if member is a visitor - visitors cannot check in for attendance
             if member.is_visitor:
                 return Response({
@@ -60,6 +69,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             )
             
             if created:
+                # Update member's absence tracking
+                update_member_absence_tracking(member, 'present')
+                
                 return Response({
                     'success': True,
                     'message': f'{member.full_name} checked in successfully',
@@ -86,8 +98,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_service(self, request):
         """
-        Get attendance records for a specific service
+        Get attendance records for a specific service/session
         Usage: /attendance/by_service/?service_id=1
+        Only works for sessions (specific dates), not parent recurring services
         """
         service_id = request.query_params.get('service_id')
         if not service_id:
@@ -97,6 +110,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         
         try:
             service = Service.objects.get(id=service_id)
+            
+            # Prevent attendance reports for parent recurring services (template/label only)
+            if service.is_recurring and service.parent_service is None and service.date is None:
+                return Response({
+                    'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to view attendance.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             attendances = Attendance.objects.filter(service=service)
             serializer = AttendanceSerializer(attendances, many=True)
             return Response({
@@ -119,8 +139,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def mark_absent(self, request):
         """
-        Mark all members who haven't checked in as absent for a service.
+        Mark all members who haven't checked in as absent for a service/session.
         This is typically called at the end of a service/session.
+        Only works for sessions (specific dates), not parent recurring services.
         
         Request body:
         {
@@ -136,6 +157,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         try:
             service = Service.objects.get(id=service_id)
             
+            # Prevent marking absent for parent recurring services (template/label only)
+            if service.is_recurring and service.parent_service is None and service.date is None:
+                return Response({
+                    'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to mark attendance.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Get all members who are NOT visitors
             all_members = Member.objects.filter(is_visitor=False)
             
@@ -150,6 +177,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     defaults={'status': 'absent'}
                 )
                 if created:
+                    # Update member's absence tracking
+                    update_member_absence_tracking(member, 'absent')
+                    
                     absent_count += 1
                     marked_members.append(member.full_name)
             

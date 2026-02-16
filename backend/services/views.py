@@ -42,8 +42,16 @@ class ServiceViewSet(viewsets.ModelViewSet):
     def close(self, request, pk=None):
         """
         Mark all non-visitor members as absent who haven't checked in.
+        Only works for actual services/sessions, not parent recurring services.
         """
         service = self.get_object()
+        
+        # Prevent closing parent recurring services (template/label only)
+        if service.is_recurring and service.parent_service is None and service.date is None:
+            return Response(
+                {'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to close.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         if not service.end_time:
             return Response(

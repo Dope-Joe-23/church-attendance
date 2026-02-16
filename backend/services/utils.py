@@ -120,16 +120,25 @@ def create_service_instance(parent_service, instance_date, location=None, start_
 def auto_mark_absent(service):
     """
     Automatically mark all non-visitor members as absent who haven't checked in.
-    Called when a service ends.
+    Called when a service/session ends. Also updates member absence tracking and creates alerts.
+    
+    Only works for actual services/sessions (with dates), not parent recurring services (templates).
     
     Args:
-        service: Service object
+        service: Service object (must have a date)
     
     Returns:
-        Number of attendance records created
+        Number of attendance records created, or 0 if service is a parent template
     """
+    # Only process actual services/sessions with dates
+    # Parent recurring services (is_recurring=True, parent_service=None, date=None) are templates
+    if not service.date:
+        return 0
+    
     if not service.end_time:
         return 0
+    
+    from members.utils import update_member_absence_tracking
     
     # Get all non-visitor members
     members = Member.objects.filter(is_visitor=False)
@@ -150,6 +159,8 @@ def auto_mark_absent(service):
                 status='absent',
                 is_auto_marked=True,
             )
+            # Update member's absence tracking to trigger alert creation
+            update_member_absence_tracking(member, 'absent')
             count += 1
     
     return count
