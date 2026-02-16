@@ -24,7 +24,7 @@ const ServiceFormModal = ({
           {error && <div className="form-error">{error}</div>}
 
           <div className="modal-body form-body">
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Service Name *</label>
               <input
                 type="text"
@@ -38,7 +38,7 @@ const ServiceFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Is Recurring?</label>
               <div className="checkbox-group">
                 <input
@@ -50,12 +50,12 @@ const ServiceFormModal = ({
                   className="checkbox-input"
                   id="is_recurring"
                 />
-                <label htmlFor="is_recurring">This is a recurring service</label>
+                <label htmlFor="is_recurring">Recurring service</label>
               </div>
             </div>
 
             {formData.is_recurring && (
-              <div className="form-group">
+              <div className="form-group half-width">
                 <label>Recurrence Pattern *</label>
                 <select
                   value={formData.recurrence_pattern || ''}
@@ -73,7 +73,7 @@ const ServiceFormModal = ({
             )}
 
             {!formData.is_recurring && (
-              <div className="form-group">
+              <div className="form-group half-width">
                 <label>Date *</label>
                 <input
                   type="date"
@@ -87,10 +87,10 @@ const ServiceFormModal = ({
               </div>
             )}
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Start Time {!formData.is_recurring && '*'}</label>
               <p className="form-hint">
-                {formData.is_recurring ? 'Default time for all instances of this recurring service' : 'Required for one-time services'}
+                {formData.is_recurring ? 'Default for instances' : 'Required'}
               </p>
               <input
                 type="time"
@@ -103,10 +103,10 @@ const ServiceFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>End Time {!formData.is_recurring && '*'}</label>
               <p className="form-hint">
-                {formData.is_recurring ? 'Default time for all instances of this recurring service' : 'Required for one-time services'}
+                {formData.is_recurring ? 'Default for instances' : 'Required'}
               </p>
               <input
                 type="time"
@@ -119,7 +119,7 @@ const ServiceFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Location</label>
               <input
                 type="text"
@@ -132,7 +132,7 @@ const ServiceFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Description</label>
               <textarea
                 value={formData.description}

@@ -15,7 +15,10 @@ const Members = () => {
     email: '',
     department: '',
     group: '',
+    location: '',
     is_visitor: false,
+    baptised: false,
+    confirmed: false,
   });
   const { members, setMembers, isLoading, setIsLoading } = useMemberStore();
 
@@ -63,7 +66,10 @@ const Members = () => {
       email: member.email || '',
       department: member.department || '',
       group: member.group || '',
+      location: member.location || '',
       is_visitor: member.is_visitor || false,
+      baptised: member.baptised || false,
+      confirmed: member.confirmed || false,
     });
     setEditingId(member.id);
     setFormError(null);
@@ -88,7 +94,10 @@ const Members = () => {
       email: '',
       department: '',
       group: '',
+      location: '',
       is_visitor: false,
+      baptised: false,
+      confirmed: false,
     });
     setEditingId(null);
     setFormError(null);
@@ -131,7 +140,10 @@ const Members = () => {
               email: '',
               department: '',
               group: '',
+              location: '',
               is_visitor: false,
+              baptised: false,
+              confirmed: false,
             });
             setShowFormModal(true);
           }}

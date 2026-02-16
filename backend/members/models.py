@@ -42,7 +42,10 @@ class Member(models.Model):
     email = models.EmailField(blank=True, null=True)
     department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES, blank=True, null=True)
     group = models.CharField(max_length=100, choices=GROUP_CHOICES, blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
     is_visitor = models.BooleanField(default=False)
+    baptised = models.BooleanField(default=False)
+    confirmed = models.BooleanField(default=False)
     qr_code_image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     
     # Absence & Engagement Tracking

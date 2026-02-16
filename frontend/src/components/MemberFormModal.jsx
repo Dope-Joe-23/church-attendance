@@ -38,7 +38,7 @@ const MemberFormModal = ({
           {error && <div className="form-error">{error}</div>}
 
           <div className="modal-body form-body">
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Full Name *</label>
               <input
                 type="text"
@@ -52,7 +52,7 @@ const MemberFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Phone</label>
               <input
                 type="tel"
@@ -65,7 +65,7 @@ const MemberFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Email</label>
               <input
                 type="email"
@@ -78,7 +78,7 @@ const MemberFormModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Department</label>
               <select
                 value={formData.department}
@@ -96,7 +96,7 @@ const MemberFormModal = ({
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Group</label>
               <select
                 value={formData.group}
@@ -114,7 +114,7 @@ const MemberFormModal = ({
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>
                 <input
                   type="checkbox"
@@ -130,6 +130,56 @@ const MemberFormModal = ({
                 Is Visitor
               </label>
             </div>
+
+            <div className="form-group full-width">
+              <label>Location</label>
+              <input
+                type="text"
+                value={formData.location || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, location: e.target.value })
+                }
+                className="input-field"
+                placeholder="Enter location"
+              />
+            </div>
+
+            <div className="form-group half-width">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.baptised || false}
+                  onChange={(e) =>
+                    onFormChange({
+                      ...formData,
+                      baptised: e.target.checked,
+                      confirmed: e.target.checked ? formData.confirmed : false,
+                    })
+                  }
+                  className="checkbox-field"
+                />
+                Baptised
+              </label>
+            </div>
+
+            {formData.baptised && (
+              <div className="form-group half-width">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.confirmed || false}
+                    onChange={(e) =>
+                      onFormChange({
+                        ...formData,
+                        confirmed: e.target.checked,
+                      })
+                    }
+                    className="checkbox-field"
+                  />
+                  Confirmed
+                </label>
+              </div>
+            )}
           </div>
 
           <div className="modal-footer form-footer">

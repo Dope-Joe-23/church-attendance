@@ -78,7 +78,7 @@ const AddServiceDateModal = ({
           {error && <div className="form-error">{error}</div>}
 
           <div className="modal-body form-body">
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Service Date *</label>
               <p className="form-hint">
                 Pattern: {service.recurrence_pattern?.charAt(0).toUpperCase() + service.recurrence_pattern?.slice(1)}
@@ -93,9 +93,9 @@ const AddServiceDateModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>Start Time (optional)</label>
-              <p className="form-hint">Defaults to parent service time if not specified</p>
+              <p className="form-hint">Defaults to parent</p>
               <input
                 type="time"
                 value={selectedStartTime}
@@ -105,9 +105,9 @@ const AddServiceDateModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group half-width">
               <label>End Time (optional)</label>
-              <p className="form-hint">Defaults to parent service time if not specified</p>
+              <p className="form-hint">Defaults to parent</p>
               <input
                 type="time"
                 value={selectedEndTime}
@@ -117,7 +117,7 @@ const AddServiceDateModal = ({
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group full-width">
               <label>Location (optional)</label>
               <input
                 type="text"
