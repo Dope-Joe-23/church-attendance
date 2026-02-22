@@ -43,7 +43,29 @@ export const memberApi = {
 export const serviceApi = {
   getServices: async () => {
     const response = await apiClient.get('/services/');
-    return response.data;
+    const data = response.data;
+    
+    // Handle paginated responses - fetch all pages if needed
+    if (data.results && typeof data === 'object' && data.count > data.results.length) {
+      const allResults = [...data.results];
+      let nextUrl = data.next;
+      
+      while (nextUrl) {
+        // Extract the path part after the domain
+        // nextUrl is like: http://localhost:8000/api/services/?page=2
+        // We need just: /services/?page=2
+        const url = new URL(nextUrl);
+        const pathAndQuery = url.pathname.substring(4) + url.search; // Remove '/api' from pathname
+        
+        const nextResponse = await apiClient.get(pathAndQuery);
+        allResults.push(...(nextResponse.data.results || []));
+        nextUrl = nextResponse.data.next;
+      }
+      
+      return { ...data, results: allResults };
+    }
+    
+    return data;
   },
 
   getServiceById: async (id) => {

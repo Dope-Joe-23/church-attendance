@@ -197,7 +197,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
             📥 PDF
           </button>
           <button
-            className="btn btn-primary"
+            className="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all hover:shadow-sm"
             onClick={onClose}
           >
             Close

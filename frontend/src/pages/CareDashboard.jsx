@@ -1,127 +1,174 @@
 import React, { useState, useEffect } from 'react';
+import { MemberDetailsModal } from '../components';
 import store from '../context/store';
 import apiClient from '../services/apiClient';
-import '../styles/care-dashboard.css';
+import '../styles/care-dashboard-new.css';
 
 const CareDashboard = () => {
-  const [alerts, setAlerts] = useState({
-    early_warning: [],
-    at_risk: [],
-    critical: []
-  });
-  const [contactLogs, setContactLogs] = useState([]);
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [memberStats, setMemberStats] = useState(null);
+  // Main data
+  const [members, setMembers] = useState([]);
+  const [metricsMap, setMetricsMap] = useState({});  // member.id -> metric data
+  const [alertsMap, setAlertsMap] = useState({});    // member.id -> alert data
+  
+  // UI state
   const [loading, setLoading] = useState(true);
-  const [filterLevel, setFilterLevel] = useState('all');
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    contact_method: 'email',
-    message_sent: '',
-    contacted_by: '',
-    response_received: '',
-    follow_up_needed: false,
-    follow_up_date: ''
-  });
+  const [sortBy, setSortBy] = useState('absenteeism_desc');  // absenteeism_desc, absenteeism_asc, name_asc, name_desc
+  const [filterAbsenteeism, setFilterAbsenteeism] = useState('all');  // all, critical, at_risk, early_warning, active
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Modal state
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showMemberModal, setShowMemberModal] = useState(false);
 
+  // Fetch all members with their metrics and alerts
   useEffect(() => {
-    fetchAlerts();
+    fetchAllData();
   }, []);
 
-  const fetchAlerts = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/members/alerts/unresolved/');
       
-      // Group alerts by level
-      const grouped = {
-        early_warning: [],
-        at_risk: [],
-        critical: []
-      };
+      // Fetch all members (required)
+      const membersResponse = await apiClient.get('/members/');
+      const membersList = membersResponse.data.results || membersResponse.data;
+      const allMembers = membersList.filter(m => !m.is_visitor);
       
-      response.data.forEach(alert => {
-        grouped[alert.alert_level].push(alert);
-      });
+      // Fetch metrics (optional - use empty map if fails)
+      let metricsMap = {};
+      try {
+        const metricsResponse = await apiClient.get('/members/absenteeism-metrics/');
+        const metricsList = metricsResponse.data.results || metricsResponse.data || [];
+        metricsList.forEach(metric => {
+          metricsMap[metric.member] = metric;
+        });
+      } catch (err) {
+        console.warn('Metrics unavailable, using empty map');
+      }
       
-      setAlerts(grouped);
+      // Fetch alerts (optional - use empty map if fails)
+      let alertsMap = {};
+      try {
+        const alertsResponse = await apiClient.get('/members/absenteeism-alerts/unresolved/');
+        const alertsList = alertsResponse.data.results || alertsResponse.data || [];
+        alertsList.forEach(alert => {
+          if (!alertsMap[alert.member]) {
+            alertsMap[alert.member] = alert;
+          }
+        });
+      } catch (err) {
+        console.warn('Alerts unavailable, using empty map');
+      }
+      
+      setMembers(allMembers);
+      setMetricsMap(metricsMap);
+      setAlertsMap(alertsMap);
+      
     } catch (error) {
-      console.error('Error fetching alerts:', error);
+      console.error('Error fetching dashboard data:', error);
+      store.showNotification('Error loading dashboard data', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMemberDetails = async (memberId) => {
+  // Get metric for a member
+  const getMetric = (memberId) => {
+    return metricsMap[memberId] || null;
+  };
+
+  // Get alert for a member
+  const getAlert = (memberId) => {
+    return alertsMap[memberId] || null;
+  };
+
+  // Filter and sort members
+  const getFilteredAndSortedMembers = () => {
+    let filtered = members.filter(member => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (!member.full_name.toLowerCase().includes(query) &&
+            !member.member_id.toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+      
+      // Absenteeism filter
+      const metric = getMetric(member.id);
+      if (filterAbsenteeism !== 'all') {
+        if (!metric) return filterAbsenteeism === 'active';  // No metric = active
+        
+        const ratio = metric.absenteeism_ratio;
+        switch(filterAbsenteeism) {
+          case 'critical':
+            return ratio >= 0.60;
+          case 'at_risk':
+            return ratio >= 0.40 && ratio < 0.60;
+          case 'early_warning':
+            return ratio >= 0.25 && ratio < 0.40;
+          case 'active':
+            return ratio < 0.25;
+          default:
+            return true;
+        }
+      }
+      
+      return true;
+    });
+    
+    // Sort
+    filtered.sort((a, b) => {
+      const metricA = getMetric(a.id);
+      const metricB = getMetric(b.id);
+      const ratioA = metricA?.absenteeism_ratio || 0;
+      const ratioB = metricB?.absenteeism_ratio || 0;
+      
+      switch(sortBy) {
+        case 'absenteeism_desc':
+          return ratioB - ratioA;
+        case 'absenteeism_asc':
+          return ratioA - ratioB;
+        case 'name_asc':
+          return a.full_name.localeCompare(b.full_name);
+        case 'name_desc':
+          return b.full_name.localeCompare(a.full_name);
+        default:
+          return 0;
+      }
+    });
+    
+    return filtered;
+  };
+
+  // Fetch member details and open modal
+  const handleViewMember = async (memberId) => {
     try {
       const response = await apiClient.get(`/members/${memberId}/`);
       setSelectedMember(response.data);
-      
-      // Fetch contact logs for this member
-      const contactResponse = await apiClient.get(`/members/contact-logs/by_member/?member_id=${memberId}`);
-      setContactLogs(contactResponse.data);
-      
-      setMemberStats({
-        consecutive_absences: response.data.consecutive_absences,
-        attendance_percentage: response.data.attendance_percentage || '0',
-        engagement_score: response.data.engagement_score,
-        last_attendance_date: response.data.last_attendance_date,
-        last_contact_date: response.data.last_contact_date,
-        attendance_status: response.data.attendance_status
-      });
+      setShowMemberModal(true);
     } catch (error) {
       console.error('Error fetching member details:', error);
+      store.showNotification('Error loading member details', 'error');
     }
   };
 
-  const handleContactFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setContactForm(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  // Handle log contact
+  const handleOpenLogContact = (member) => {
+    console.log('Log contact for:', member);
+    store.showNotification('Contact logging feature coming soon', 'info');
+    // TODO: Implement contact logging modal
   };
 
-  const handleLogContact = async () => {
-    if (!selectedMember) return;
-    
-    try {
-      const payload = {
-        member: selectedMember.id,
-        ...contactForm
-      };
-      
-      await apiClient.post('/members/contact-logs/', payload);
-      
-      // Clear form and refresh contact logs
-      setContactForm({
-        contact_method: 'email',
-        message_sent: '',
-        contacted_by: '',
-        response_received: '',
-        follow_up_needed: false,
-        follow_up_date: ''
-      });
-      setShowContactForm(false);
-      
-      // Refresh member details
-      fetchMemberDetails(selectedMember.id);
-      
-      store.showNotification('Contact logged successfully', 'success');
-    } catch (error) {
-      console.error('Error logging contact:', error);
-      store.showNotification('Error logging contact', 'error');
-    }
-  };
-
+  // Handle resolve alert
   const handleResolveAlert = async (alertId) => {
     try {
-      await apiClient.post(`/members/alerts/${alertId}/resolve/`, {
+      await apiClient.post(`/members/absenteeism-alerts/${alertId}/resolve/`, {
         resolution_notes: 'Alert resolved through pastoral care'
       });
       
-      // Refresh alerts
-      fetchAlerts();
+      // Refresh data
+      fetchAllData();
       store.showNotification('Alert marked as resolved', 'success');
     } catch (error) {
       console.error('Error resolving alert:', error);
@@ -129,351 +176,251 @@ const CareDashboard = () => {
     }
   };
 
-  const getAlertStats = () => {
-    return {
-      critical: alerts.critical.length,
-      at_risk: alerts.at_risk.length,
-      early_warning: alerts.early_warning.length,
-      total: alerts.critical.length + alerts.at_risk.length + alerts.early_warning.length
+  // Get alert color and label
+  const getAlertBadge = (alert) => {
+    if (!alert) return null;
+    
+    const levelConfig = {
+      critical: { color: '#d32f2f', label: 'CRITICAL', icon: '🔴' },
+      at_risk: { color: '#f57c00', label: 'AT RISK', icon: '🟠' },
+      early_warning: { color: '#fbc02d', label: 'WARNING', icon: '🟡' }
     };
-  };
-
-  const getAllAlerts = () => {
-    if (filterLevel === 'all') {
-      return [...alerts.critical, ...alerts.at_risk, ...alerts.early_warning];
-    }
-    return alerts[filterLevel] || [];
-  };
-
-  const getAlertColor = (level) => {
-    switch(level) {
-      case 'critical': return '#d32f2f';
-      case 'at_risk': return '#f57c00';
-      case 'early_warning': return '#fbc02d';
-      default: return '#999';
-    }
-  };
-
-  const getAlertBadgeClass = (level) => {
-    return `alert-badge alert-${level}`;
+    
+    const config = levelConfig[alert.alert_level] || {};
+    return (
+      <span
+        className="alert-badge"
+        style={{ 
+          backgroundColor: config.color,
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: 'bold'
+        }}
+        title={alert.reason}
+      >
+        {config.icon} {config.label}
+      </span>
+    );
   };
 
   if (loading) {
-    return <div className="care-dashboard"><div className="loading">Loading...</div></div>;
+    return (
+      <div className="care-dashboard-new">
+        <div className="loading">Loading dashboard...</div>
+      </div>
+    );
   }
 
-  const stats = getAlertStats();
-  const displayAlerts = getAllAlerts();
+  const filteredMembers = getFilteredAndSortedMembers();
+  const stats = {
+    total: members.length,
+    critical: members.filter(m => {
+      const metric = getMetric(m.id);
+      return metric && metric.absenteeism_ratio >= 0.60;
+    }).length,
+    at_risk: members.filter(m => {
+      const metric = getMetric(m.id);
+      return metric && metric.absenteeism_ratio >= 0.40 && metric.absenteeism_ratio < 0.60;
+    }).length,
+    early_warning: members.filter(m => {
+      const metric = getMetric(m.id);
+      return metric && metric.absenteeism_ratio >= 0.25 && metric.absenteeism_ratio < 0.40;
+    }).length,
+    active: members.filter(m => {
+      const metric = getMetric(m.id);
+      return !metric || metric.absenteeism_ratio < 0.25;
+    }).length,
+  };
 
   return (
-    <div className="care-dashboard">
-      <div className="dashboard-header">
-        <h1>Member Care & Engagement Dashboard</h1>
-        <p>Track absent members and manage pastoral outreach</p>
+    <div className="care-dashboard-new">
+      {/* Header */}
+      <div className="dashboard-header-new">
+        <h1>Member Care & Attendance Dashboard</h1>
+        <p>Comprehensive member attendance tracking with absenteeism metrics</p>
       </div>
 
-      {/* Alert Statistics */}
-      <div className="alert-statistics">
+      {/* Statistics Cards */}
+      <div className="stats-grid">
         <div className="stat-card critical">
           <div className="stat-number">{stats.critical}</div>
-          <div className="stat-label">🔴 Critical</div>
-          <div className="stat-desc">8+ weeks absent</div>
+          <div className="stat-label">🔴 Critical (60%+ absent)</div>
         </div>
         <div className="stat-card at-risk">
           <div className="stat-number">{stats.at_risk}</div>
-          <div className="stat-label">🟠 At Risk</div>
-          <div className="stat-desc">4+ absences</div>
+          <div className="stat-label">🟠 At Risk (40-59% absent)</div>
         </div>
-        <div className="stat-card early-warning">
+        <div className="stat-card warning">
           <div className="stat-number">{stats.early_warning}</div>
-          <div className="stat-label">🟡 Early Warning</div>
-          <div className="stat-desc">2 absences</div>
+          <div className="stat-label">🟡 Early Warning (25-39% absent)</div>
+        </div>
+        <div className="stat-card active">
+          <div className="stat-number">{stats.active}</div>
+          <div className="stat-label">🟢 Active (0-24% absent)</div>
         </div>
         <div className="stat-card total">
           <div className="stat-number">{stats.total}</div>
-          <div className="stat-label">📊 Total Alerts</div>
-          <div className="stat-desc">Needing attention</div>
+          <div className="stat-label">👥 Total Members</div>
         </div>
       </div>
 
-      {/* Filter and Content */}
-      <div className="dashboard-content">
-        {/* Left Column - Member List */}
-        <div className="members-list-section">
-          <div className="section-header">
-            <h2>Members Needing Attention</h2>
-            <div className="filter-buttons">
-              <button
-                className={filterLevel === 'all' ? 'active' : ''}
-                onClick={() => setFilterLevel('all')}
-              >
-                All ({stats.total})
-              </button>
-              <button
-                className={filterLevel === 'critical' ? 'active' : ''}
-                onClick={() => setFilterLevel('critical')}
-              >
-                Critical ({stats.critical})
-              </button>
-              <button
-                className={filterLevel === 'at_risk' ? 'active' : ''}
-                onClick={() => setFilterLevel('at_risk')}
-              >
-                At Risk ({stats.at_risk})
-              </button>
-              <button
-                className={filterLevel === 'early_warning' ? 'active' : ''}
-                onClick={() => setFilterLevel('early_warning')}
-              >
-                Warning ({stats.early_warning})
-              </button>
-            </div>
-          </div>
-
-          <div className="members-list">
-            {displayAlerts.length === 0 ? (
-              <div className="empty-state">
-                <p>✨ No alerts in this category!</p>
-              </div>
-            ) : (
-              displayAlerts.map(alert => (
-                <div
-                  key={alert.id}
-                  className={`member-card ${selectedMember?.id === alert.member ? 'selected' : ''}`}
-                  onClick={() => fetchMemberDetails(alert.member)}
-                  style={{ borderLeft: `4px solid ${getAlertColor(alert.alert_level)}` }}
-                >
-                  <div className="member-card-header">
-                    <h3>{alert.member_name}</h3>
-                    <span className={getAlertBadgeClass(alert.alert_level)}>
-                      {alert.alert_level.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="member-card-reason">
-                    <p>{alert.reason}</p>
-                  </div>
-                  <div className="member-card-date">
-                    <small>Alert created: {new Date(alert.created_at).toLocaleDateString()}</small>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* Controls */}
+      <div className="dashboard-controls">
+        <div className="search-section">
+          <input
+            type="text"
+            placeholder="Search by name or member ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
         </div>
 
-        {/* Right Column - Member Details */}
-        <div className="member-details-section">
-          {selectedMember ? (
-            <>
-              <div className="section-header">
-                <h2>Member Details</h2>
-              </div>
+        <div className="filter-section">
+          <label>Filter by Status:</label>
+          <select 
+            value={filterAbsenteeism}
+            onChange={(e) => setFilterAbsenteeism(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Members ({stats.total})</option>
+            <option value="critical">🔴 Critical ({stats.critical})</option>
+            <option value="at_risk">🟠 At Risk ({stats.at_risk})</option>
+            <option value="early_warning">🟡 Warning ({stats.early_warning})</option>
+            <option value="active">🟢 Active ({stats.active})</option>
+          </select>
+        </div>
 
-              <div className="member-profile">
-                <div className="profile-header">
-                  <h3>{selectedMember.full_name}</h3>
-                  <p className="member-id">ID: {selectedMember.member_id}</p>
-                </div>
+        <div className="sort-section">
+          <label>Sort by:</label>
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="sort-select"
+          >
+            <option value="absenteeism_desc">Absenteeism (High to Low)</option>
+            <option value="absenteeism_asc">Absenteeism (Low to High)</option>
+            <option value="name_asc">Name (A to Z)</option>
+            <option value="name_desc">Name (Z to A)</option>
+          </select>
+        </div>
 
-                {memberStats && (
-                  <div className="member-stats">
-                    <div className="stat">
-                      <label>Engagement Score</label>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${memberStats.engagement_score}%` }}
-                        ></div>
-                      </div>
-                      <span>{memberStats.engagement_score}/100</span>
-                    </div>
+        <button 
+          className="refresh-button"
+          onClick={fetchAllData}
+          title="Refresh all data"
+        >
+          🔄 Refresh
+        </button>
+      </div>
 
-                    <div className="stat">
-                      <label>Consecutive Absences</label>
-                      <span className="value">{memberStats.consecutive_absences}</span>
-                    </div>
-
-                    <div className="stat">
-                      <label>Status</label>
-                      <span className={`status-badge ${memberStats.attendance_status}`}>
-                        {memberStats.attendance_status}
-                      </span>
-                    </div>
-
-                    <div className="stat">
-                      <label>Last Attendance</label>
-                      <span>{memberStats.last_attendance_date || 'No record'}</span>
-                    </div>
-
-                    <div className="stat">
-                      <label>Last Contact</label>
-                      <span>{memberStats.last_contact_date || 'Not contacted yet'}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="contact-info">
-                  <h4>Contact Information</h4>
-                  <p>
-                    <strong>Email:</strong> {selectedMember.email || 'Not provided'}
-                  </p>
-                  <p>
-                    <strong>Phone:</strong> {selectedMember.phone || 'Not provided'}
-                  </p>
-                  <p>
-                    <strong>Group:</strong> {selectedMember.group || 'Not assigned'}
-                  </p>
-                </div>
-
-                {selectedMember.pastoral_notes && (
-                  <div className="pastoral-notes">
-                    <h4>Pastoral Notes</h4>
-                    <p>{selectedMember.pastoral_notes}</p>
-                  </div>
-                )}
-
-                {/* Contact History */}
-                <div className="contact-history">
-                  <h4>Recent Contact Attempts ({contactLogs.length})</h4>
-                  {contactLogs.length === 0 ? (
-                    <p className="empty-history">No contact attempts yet</p>
-                  ) : (
-                    <div className="history-list">
-                      {contactLogs.map(log => (
-                        <div key={log.id} className="history-item">
-                          <div className="history-method">{log.contact_method.toUpperCase()}</div>
-                          <div className="history-content">
-                            <p className="history-message">{log.message_sent}</p>
-                            {log.response_received && (
-                              <p className="history-response">Response: {log.response_received}</p>
-                            )}
-                            <small>{new Date(log.contact_date).toLocaleDateString()}</small>
+      {/* Members Table */}
+      <div className="members-table-container">
+        {filteredMembers.length === 0 ? (
+          <div className="empty-state">
+            <p>No members match your filters.</p>
+          </div>
+        ) : (
+          <table className="members-table">
+            <thead>
+              <tr>
+                <th>Member Name</th>
+                <th>ID</th>
+                <th>Department</th>
+                <th>Group</th>
+                <th>Absenteeism</th>
+                <th>Services</th>
+                <th>Alert Status</th>
+                <th>Last Attendance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMembers.map(member => {
+                const metric = getMetric(member.id);
+                const alert = getAlert(member.id);
+                
+                return (
+                  <tr key={member.id} className="member-row">
+                    <td className="member-name">
+                      <strong>{member.full_name}</strong>
+                    </td>
+                    <td className="member-id">{member.member_id}</td>
+                    <td>{member.department || '—'}</td>
+                    <td>{member.group || '—'}</td>
+                    
+                    <td className="absenteeism-cell">
+                      {metric ? (
+                        <div>
+                          <div className="absenteeism-ratio">
+                            {metric.absenteeism_percentage.toFixed(1)}%
+                          </div>
+                          <div className="absenteeism-breakdown">
+                            {metric.absent_count}/{metric.total_services} services
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Contact Form */}
-                {!showContactForm ? (
-                  <button
-                    className="btn btn-primary contact-btn"
-                    onClick={() => setShowContactForm(true)}
-                  >
-                    📞 Log Contact
-                  </button>
-                ) : (
-                  <div className="contact-form">
-                    <h4>Log Member Contact</h4>
-
-                    <div className="form-group">
-                      <label>Contact Method</label>
-                      <select
-                        name="contact_method"
-                        value={contactForm.contact_method}
-                        onChange={handleContactFormChange}
-                      >
-                        <option value="email">Email</option>
-                        <option value="sms">SMS Text</option>
-                        <option value="phone">Phone Call</option>
-                        <option value="visit">In-Person Visit</option>
-                        <option value="small_group">Small Group Check-in</option>
-                        <option value="social_media">Social Media</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Your Name (Optional)</label>
-                      <input
-                        type="text"
-                        name="contacted_by"
-                        placeholder="Your name"
-                        value={contactForm.contacted_by}
-                        onChange={handleContactFormChange}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Message Sent *</label>
-                      <textarea
-                        name="message_sent"
-                        placeholder="What message did you send?"
-                        value={contactForm.message_sent}
-                        onChange={handleContactFormChange}
-                        rows="3"
-                      ></textarea>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Response Received (Optional)</label>
-                      <textarea
-                        name="response_received"
-                        placeholder="What was their response?"
-                        value={contactForm.response_received}
-                        onChange={handleContactFormChange}
-                        rows="2"
-                      ></textarea>
-                    </div>
-
-                    <div className="form-group checkbox">
-                      <input
-                        type="checkbox"
-                        id="follow_up"
-                        name="follow_up_needed"
-                        checked={contactForm.follow_up_needed}
-                        onChange={handleContactFormChange}
-                      />
-                      <label htmlFor="follow_up">Follow-up needed?</label>
-                    </div>
-
-                    {contactForm.follow_up_needed && (
-                      <div className="form-group">
-                        <label>Follow-up Date</label>
-                        <input
-                          type="date"
-                          name="follow_up_date"
-                          value={contactForm.follow_up_date}
-                          onChange={handleContactFormChange}
-                        />
-                      </div>
-                    )}
-
-                    <div className="form-actions">
+                      ) : (
+                        <span className="no-data">No data</span>
+                      )}
+                    </td>
+                    
+                    <td className="services-cell">
+                      {metric ? (
+                        <div>
+                          <span className="present">✓ {metric.present_count}</span>
+                          <span className="absent">✗ {metric.absent_count}</span>
+                        </div>
+                      ) : (
+                        <span className="no-data">—</span>
+                      )}
+                    </td>
+                    
+                    <td className="alert-cell">
+                      {getAlertBadge(alert) || <span style={{ color: '#4caf50' }}>🟢 Active</span>}
+                    </td>
+                    
+                    <td className="last-attendance">
+                      {member.last_attendance_date 
+                        ? new Date(member.last_attendance_date).toLocaleDateString()
+                        : '—'
+                      }
+                    </td>
+                    
+                    <td className="actions-cell">
                       <button
-                        className="btn btn-success"
-                        onClick={handleLogContact}
+                        className="btn-view"
+                        onClick={() => handleViewMember(member.id)}
+                        title="View details"
                       >
-                        ✓ Save Contact Log
+                        👁️ View
                       </button>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setShowContactForm(false);
-                          setContactForm({
-                            contact_method: 'email',
-                            message_sent: '',
-                            contacted_by: '',
-                            response_received: '',
-                            follow_up_needed: false,
-                            follow_up_date: ''
-                          });
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <p>Select a member from the list to view details and log contact</p>
-            </div>
-          )}
-        </div>
+                      {alert && (
+                        <button
+                          className="btn-resolve"
+                          onClick={() => handleResolveAlert(alert.id)}
+                          title="Resolve alert"
+                        >
+                          ✓ Resolve
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* Member Details Modal */}
+      <MemberDetailsModal
+        isOpen={showMemberModal}
+        member={selectedMember}
+        onClose={() => setShowMemberModal(false)}
+        onOpenLogContact={handleOpenLogContact}
+      />
     </div>
   );
 };

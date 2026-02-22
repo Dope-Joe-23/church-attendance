@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class Service(models.Model):
@@ -33,6 +35,10 @@ class Service(models.Model):
         related_name='instances'
     )
     
+    # Lazy-loading tracking: DATE until which instances have been generated
+    # Enables on-demand session generation without batch-creating all upfront
+    generated_until = models.DateField(null=True, blank=True, help_text="Last date instances were generated until")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -41,3 +47,21 @@ class Service(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.date} at {self.start_time}"
+
+
+@receiver(post_delete, sender=Service)
+def recalculate_alerts_on_service_delete(sender, instance, **kwargs):
+    """
+    Recalculate member alerts when a service is deleted.
+    This ensures alerts are based on actual attendance data, not phantom services.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from members.utils import recalculate_member_alerts
+        logger.info(f"Service deleted: {instance.name}. Recalculating member alerts...")
+        summary = recalculate_member_alerts()
+        logger.info(f"Alert recalculation complete. Summary: {summary}")
+    except Exception as e:
+        logger.error(f"Failed to recalculate alerts after service deletion: {str(e)}", exc_info=True)

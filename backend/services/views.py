@@ -1,24 +1,30 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from datetime import date
+from datetime import date, timedelta
 from .models import Service
 from .serializers import ServiceSerializer, ServiceDetailSerializer
-from .utils import auto_mark_absent, generate_recurring_service_instances, create_service_instance
+from .utils import auto_mark_absent, generate_sessions_until, get_sessions_for_range, create_service_instance
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Service management
+    ViewSet for Service management with Lazy-Loading pattern.
+    
+    Lazy-Loading Pattern:
+    - Recurring services are stored as templates (no date)
+    - Sessions are generated on-demand via generate_instances endpoint
+    - This allows unlimited sessions without database bloat
     
     Endpoints:
-    - GET /services/ - List all services
-    - POST /services/ - Create new service
+    - GET /services/ - List all services (includes lazy-loaded sessions for requested date range)
+    - POST /services/ - Create new service (no automatic session generation)
     - GET /services/{id}/ - Get service details
-    - PUT /services/{id}/ - Update service
+    - PUT /services/{id}/ - Update service (applies to future sessions)
     - DELETE /services/{id}/ - Delete service
     - POST /services/{id}/close/ - Mark all non-attendees as absent
-    - POST /services/{id}/generate-instances/ - Generate recurring service instances
+    - POST /services/{id}/generate-instances/ - Lazy-load: Generate sessions up to a date
+    - POST /services/{id}/add-instance/ - Add single session outside recurrence pattern
     """
     
     queryset = Service.objects.all()
@@ -30,13 +36,16 @@ class ServiceViewSet(viewsets.ModelViewSet):
         return ServiceSerializer
     
     def perform_create(self, serializer):
-        """Override create to handle recurring services"""
-        service = serializer.save()
+        """
+        Create service - no automatic session generation.
         
-        # If this is a recurring service, generate initial instances
-        if service.is_recurring and not service.parent_service:
-            # Generate instances for next 3 months
-            generate_recurring_service_instances(service)
+        With lazy-loading pattern:
+        - Non-recurring services are created normally
+        - Recurring services are created as templates (parents)
+        - Sessions are generated on-demand when requested via API
+        """
+        service = serializer.save()
+        # Sessions will be generated lazily when needed, not upfront
     
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
@@ -69,33 +78,55 @@ class ServiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def generate_instances(self, request, pk=None):
         """
-        Generate recurring service instances for the next N months.
+        Lazy-loading endpoint: Generate recurring service sessions up to a specific date.
+        
+        Request body:
+        {
+            "until_date": "2026-05-15",  # Generate sessions up to this date (optional, defaults to 3 months ahead)
+            "months": 3                   # Alternative to until_date: number of months ahead
+        }
+        
+        Returns:
+        {
+            "generated": 5,               # New sessions created in this call
+            "existing": 3,                # Sessions that already existed
+            "instances": [...]            # All sessions up to the requested date
+        }
         """
         service = self.get_object()
         
-        if not service.is_recurring:
+        if not service.is_recurring or service.parent_service:
             return Response(
-                {'error': 'Service is not a recurring service.'},
+                {'error': 'Service must be a recurring parent service.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Get target date
+        until_date_str = request.data.get('until_date')
         months = request.data.get('months', 3)
         
         try:
-            from datetime import timedelta
-            end_date = date.today() + timedelta(days=30 * months)
-            instances = generate_recurring_service_instances(
-                service,
-                start_date=date.today(),
-                end_date=end_date
-            )
+            if until_date_str:
+                until_date = date.fromisoformat(until_date_str)
+            else:
+                until_date = date.today() + timedelta(days=30 * months)
+            
+            result = generate_sessions_until(service, until_date)
             
             return Response(
                 {
-                    'message': f'Generated {len(instances)} service instances.',
-                    'instances': ServiceSerializer(instances, many=True).data
+                    'message': f'Generated {result["generated"]} new sessions, found {result["existing"]} existing.',
+                    'generated': result['generated'],
+                    'existing': result['existing'],
+                    'instances': ServiceSerializer(result['instances'], many=True).data,
+                    'generated_until': service.generated_until.isoformat() if service.generated_until else None
                 },
                 status=status.HTTP_201_CREATED
+            )
+        except ValueError as e:
+            return Response(
+                {'error': f'Invalid date format: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             return Response(

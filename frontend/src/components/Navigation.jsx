@@ -1,12 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import apiClient from '../services/apiClient';
 import '../styles/components.css';
 
 const Navigation = ({ user, onLogout }) => {
   const location = useLocation();
+  const [alertCount, setAlertCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  useEffect(() => {
+    fetchUnresolvedAlerts();
+    // Refresh alerts every 30 seconds
+    const interval = setInterval(fetchUnresolvedAlerts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchUnresolvedAlerts = async () => {
+    try {
+      const response = await apiClient.get('/members/alerts/unresolved/');
+      setAlertCount(response.data.length);
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,11 +56,6 @@ const Navigation = ({ user, onLogout }) => {
             </a>
           </li>
           <li className="nav-item">
-            <a href="/care" className={`nav-link ${isActive('/care') ? 'active' : ''}`}>
-              Care
-            </a>
-          </li>
-          <li className="nav-item">
             <a href="/scanner" className={`nav-link ${isActive('/scanner') ? 'active' : ''}`}>
               Scanner
             </a>
@@ -47,6 +63,14 @@ const Navigation = ({ user, onLogout }) => {
           <li className="nav-item">
             <a href="/reports" className={`nav-link ${isActive('/reports') ? 'active' : ''}`}>
               Reports
+            </a>
+          </li>
+          <li className="nav-item notification-item">
+            <a href="/care" className={`nav-link notification-link ${isActive('/care') ? 'active' : ''}`}>
+              <span className="notification-icon">🔔</span>
+              {alertCount > 0 && (
+                <span className="alert-badge">{alertCount > 99 ? '99+' : alertCount}</span>
+              )}
             </a>
           </li>
         </ul>

@@ -36,9 +36,21 @@ const Services = () => {
     setIsLoading(true);
     try {
       const data = await serviceApi.getServices();
-      setServices(data.results || data);
+      console.log('Fetched services data:', data);
+      
+      // Handle paginated response structure
+      const servicesList = data.results || data;
+      
+      if (Array.isArray(servicesList)) {
+        setServices(servicesList);
+        console.log(`Successfully loaded ${servicesList.length} services`);
+      } else {
+        console.warn('Services data is not an array:', servicesList);
+        setServices([]);
+      }
     } catch (error) {
       console.error('Error fetching services:', error);
+      setServices([]);
     } finally {
       setIsLoading(false);
     }

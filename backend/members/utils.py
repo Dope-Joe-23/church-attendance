@@ -190,15 +190,19 @@ def recalculate_member_alerts():
     Can be called to rebuild alerts if they're missing or out of sync.
     
     This counts absent records from attendance table and generates appropriate alerts.
+    Automatically resolves alerts for members with no recent absences.
     
     Returns:
         dict: Summary of recalculated alerts
     """
     from attendance.models import Attendance
     from services.models import Service
+    import logging
+    logger = logging.getLogger(__name__)
     
     summary = {
         'members_processed': 0,
+        'alerts_resolved': 0,
         'early_warning_created': 0,
         'at_risk_created': 0,
         'critical_created': 0,
@@ -227,11 +231,13 @@ def recalculate_member_alerts():
         # Determine alert level based on absences
         if absent_count == 0:
             member.attendance_status = 'active'
-            # Resolve any existing alerts
-            MemberAlert.objects.filter(
+            # Resolve any existing unresolved alerts for this member
+            resolved_count = MemberAlert.objects.filter(
                 member=member,
                 is_resolved=False
             ).update(is_resolved=True, resolved_at=datetime.now())
+            summary['alerts_resolved'] += resolved_count
+            logger.info(f"Resolved {resolved_count} alerts for member {member.full_name} (no recent absences)")
         
         elif absent_count >= 2 and absent_count < 4:
             # Early warning: 2-3 absences
@@ -309,3 +315,267 @@ def recalculate_member_alerts():
     
     return summary
 
+
+def calculate_absenteeism_metric(member):
+    """
+    Calculate absenteeism metric for a member based on last 10 services.
+    
+    Recurring services are weighted 1.5x in the calculation.
+    
+    Args:
+        member: Member instance
+    
+    Returns:
+        dict: Metric data with keys:
+            - total_services
+            - absent_count
+            - present_count
+            - weighted_absent
+            - weighted_total
+            - absenteeism_ratio (0.0-1.0)
+            - recurring_absent
+            - recurring_present
+            - onetime_absent
+            - onetime_present
+    """
+    from attendance.models import Attendance
+    from services.models import Service
+    
+    # Get last 10 services by date (descending) that have any attendance records
+    last_10_services = Service.objects.filter(
+        attendances__member=member,
+        date__isnull=False
+    ).order_by('-date').distinct()[:10]
+    
+    if not last_10_services:
+        # No attendance history, return empty metric
+        return {
+            'total_services': 0,
+            'absent_count': 0,
+            'present_count': 0,
+            'weighted_absent': 0.0,
+            'weighted_total': 0.0,
+            'absenteeism_ratio': 0.0,
+            'recurring_absent': 0,
+            'recurring_present': 0,
+            'onetime_absent': 0,
+            'onetime_present': 0,
+        }
+    
+    # Count attendance records for these services
+    attendance_records = Attendance.objects.filter(
+        member=member,
+        service__in=last_10_services
+    )
+    
+    total_services = attendance_records.count()
+    absent_count = attendance_records.filter(status='absent').count()
+    present_count = attendance_records.filter(status='present').count()
+    
+    # Calculate weights: recurring services count 1.5x
+    weighted_absent = 0.0
+    weighted_total = 0.0
+    recurring_absent = 0
+    recurring_present = 0
+    onetime_absent = 0
+    onetime_present = 0
+    
+    for record in attendance_records:
+        # Check if service is recurring (has a parent_service)
+        is_recurring = record.service.parent_service is not None
+        weight = 1.5 if is_recurring else 1.0
+        
+        weighted_total += weight
+        
+        if record.status == 'absent':
+            weighted_absent += weight
+            if is_recurring:
+                recurring_absent += 1
+            else:
+                onetime_absent += 1
+        else:  # present
+            if is_recurring:
+                recurring_present += 1
+            else:
+                onetime_present += 1
+    
+    # Calculate ratio
+    absenteeism_ratio = (weighted_absent / weighted_total) if weighted_total > 0 else 0.0
+    
+    return {
+        'total_services': total_services,
+        'absent_count': absent_count,
+        'present_count': present_count,
+        'weighted_absent': weighted_absent,
+        'weighted_total': weighted_total,
+        'absenteeism_ratio': absenteeism_ratio,
+        'recurring_absent': recurring_absent,
+        'recurring_present': recurring_present,
+        'onetime_absent': onetime_absent,
+        'onetime_present': onetime_present,
+    }
+
+
+def get_alert_level_for_ratio(absenteeism_ratio):
+    """
+    Determine alert level based on absenteeism ratio.
+    
+    Args:
+        absenteeism_ratio: Float between 0.0 and 1.0
+    
+    Returns:
+        str: 'early_warning', 'at_risk', 'critical', or None
+    """
+    if absenteeism_ratio >= 0.60:
+        return 'critical'
+    elif absenteeism_ratio >= 0.40:
+        return 'at_risk'
+    elif absenteeism_ratio >= 0.25:
+        return 'early_warning'
+    return None
+
+
+def update_absenteeism_alerts(member):
+    """
+    Update absenteeism alerts for a member based on current metrics.
+    
+    This is the main function to call when attendance changes.
+    It calculates the metric, creates/updates the MemberAbsenteeismMetric,
+    and creates/resolves MemberAbsenteeismAlerts accordingly.
+    
+    Args:
+        member: Member instance
+    
+    Returns:
+        dict: Result with keys:
+            - metric: The calculated metric dict
+            - alert_level: The new alert level (or None)
+            - alert_created: Boolean
+            - alert_resolved: Boolean
+            - alert: The MemberAbsenteeismAlert instance (or None)
+    """
+    from .models import MemberAbsenteeismMetric, MemberAbsenteeismAlert
+    from attendance.models import Attendance
+    
+    result = {
+        'metric': None,
+        'alert_level': None,
+        'alert_created': False,
+        'alert_resolved': False,
+        'alert': None,
+    }
+    
+    # Calculate metric
+    metric_data = calculate_absenteeism_metric(member)
+    result['metric'] = metric_data
+    
+    # Update or create MemberAbsenteeismMetric
+    metric, created = MemberAbsenteeismMetric.objects.get_or_create(member=member)
+    metric.total_services = metric_data['total_services']
+    metric.absent_count = metric_data['absent_count']
+    metric.present_count = metric_data['present_count']
+    metric.weighted_absent = metric_data['weighted_absent']
+    metric.weighted_total = metric_data['weighted_total']
+    metric.absenteeism_ratio = metric_data['absenteeism_ratio']
+    metric.recurring_absent = metric_data['recurring_absent']
+    metric.recurring_present = metric_data['recurring_present']
+    metric.onetime_absent = metric_data['onetime_absent']
+    metric.onetime_present = metric_data['onetime_present']
+    metric.save()
+    
+    # Update member's denormalized ratio field
+    member.current_absenteeism_ratio = metric_data['absenteeism_ratio']
+    member.save()
+    
+    # Determine required alert level
+    required_alert_level = get_alert_level_for_ratio(metric_data['absenteeism_ratio'])
+    result['alert_level'] = required_alert_level
+    
+    # Find existing unresolved alert
+    existing_alert = MemberAbsenteeismAlert.objects.filter(
+        member=member,
+        is_resolved=False
+    ).first()
+    
+    if required_alert_level is None:
+        # No alert needed - resolve any existing alert
+        if existing_alert:
+            existing_alert.is_resolved = True
+            existing_alert.resolved_at = datetime.now()
+            existing_alert.resolution_notes = 'Absenteeism ratio dropped below threshold'
+            existing_alert.save()
+            result['alert_resolved'] = True
+    else:
+        # Alert is needed
+        if existing_alert and existing_alert.alert_level == required_alert_level:
+            # Alert exists at same level, just update it
+            result['alert'] = existing_alert
+        else:
+            # Need to create new alert or replace existing
+            if existing_alert:
+                # Resolve old alert
+                existing_alert.is_resolved = True
+                existing_alert.resolved_at = datetime.now()
+                existing_alert.resolution_notes = 'Alert level changed'
+                existing_alert.save()
+            
+            # Create new alert
+            reason = f"{metric_data['absent_count']} absences out of {metric_data['total_services']} services ({metric_data['absenteeism_ratio']:.1%})"
+            alert = MemberAbsenteeismAlert.objects.create(
+                member=member,
+                alert_level=required_alert_level,
+                absenteeism_ratio_at_creation=metric_data['absenteeism_ratio'],
+                absent_count_at_creation=metric_data['absent_count'],
+                total_services_at_creation=metric_data['total_services'],
+                reason=reason,
+            )
+            result['alert'] = alert
+            result['alert_created'] = True
+    
+    return result
+
+
+def recalculate_all_absenteeism_metrics():
+    """
+    Recalculate absenteeism metrics and alerts for all members.
+    
+    This is the batch operation to sync all member metrics and alerts.
+    Called after service deletion, bulk attendance changes, etc.
+    
+    Returns:
+        dict: Summary of the recalculation
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    summary = {
+        'members_processed': 0,
+        'alerts_created': 0,
+        'alerts_resolved': 0,
+        'early_warning_count': 0,
+        'at_risk_count': 0,
+        'critical_count': 0,
+    }
+    
+    members = Member.objects.filter(is_visitor=False)
+    
+    for member in members:
+        result = update_absenteeism_alerts(member)
+        summary['members_processed'] += 1
+        
+        if result['alert_created']:
+            summary['alerts_created'] += 1
+            if result['alert_level'] == 'early_warning':
+                summary['early_warning_count'] += 1
+            elif result['alert_level'] == 'at_risk':
+                summary['at_risk_count'] += 1
+            elif result['alert_level'] == 'critical':
+                summary['critical_count'] += 1
+        
+        if result['alert_resolved']:
+            summary['alerts_resolved'] += 1
+        
+        logger.debug(f"Processed {member.full_name}: ratio={result['metric']['absenteeism_ratio']:.1%}, alert_level={result['alert_level']}")
+    
+    logger.info(f"Absenteeism metrics recalculation complete. Summary: {summary}")
+    return summary

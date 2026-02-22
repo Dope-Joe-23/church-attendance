@@ -1,8 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Member, MemberAlert, ContactLog
-from .serializers import MemberSerializer, MemberDetailSerializer, MemberAlertSerializer, ContactLogSerializer
+from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric
+from .serializers import (
+    MemberSerializer, MemberDetailSerializer, MemberAlertSerializer, 
+    ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer
+)
 from .email_service import send_qr_code_email
 
 
@@ -109,7 +112,16 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def unresolved(self, request):
-        """Get all unresolved alerts"""
+        """Get all unresolved alerts. Always recalculates to ensure fresh data."""
+        try:
+            from members.utils import recalculate_member_alerts
+            # Recalculate alerts before returning to ensure they're based on current data
+            recalculate_member_alerts()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error recalculating alerts: {str(e)}")
+        
         alerts = MemberAlert.objects.filter(is_resolved=False).order_by('-created_at')
         serializer = self.get_serializer(alerts, many=True)
         return Response(serializer.data)
@@ -290,3 +302,139 @@ class ContactLogViewSet(viewsets.ModelViewSet):
         logs = ContactLog.objects.filter(follow_up_needed=True, follow_up_date__isnull=False).order_by('follow_up_date')
         serializer = self.get_serializer(logs, many=True)
         return Response(serializer.data)
+
+
+class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Member Absenteeism Alerts (NEW SYSTEM)
+    
+    Ratio-based alerts triggered by absenteeism metrics.
+    Thresholds:
+    - early_warning: 25-39% absent
+    - at_risk: 40-59% absent
+    - critical: 60%+ absent
+    
+    Endpoints:
+    - GET /absenteeism-alerts/ - List all alerts
+    - GET /absenteeism-alerts/unresolved/ - List unresolved alerts
+    - GET /absenteeism-alerts/by-level/ - Filter by level
+    - POST /absenteeism-alerts/{id}/resolve/ - Resolve an alert
+    """
+    
+    queryset = MemberAbsenteeismAlert.objects.all()
+    serializer_class = MemberAbsenteeismAlertSerializer
+    
+    @action(detail=False, methods=['get'])
+    def unresolved(self, request):
+        """Get all unresolved absenteeism alerts"""
+        from members.utils import recalculate_all_absenteeism_metrics
+        
+        # Optionally recalculate metrics if requested
+        if request.query_params.get('recalculate') == 'true':
+            try:
+                recalculate_all_absenteeism_metrics()
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error recalculating absenteeism metrics: {str(e)}")
+        
+        alerts = MemberAbsenteeismAlert.objects.filter(is_resolved=False).order_by('-created_at')
+        serializer = self.get_serializer(alerts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_level(self, request):
+        """Get alerts by level. Usage: /absenteeism-alerts/by_level/?level=critical"""
+        level = request.query_params.get('level')
+        if not level:
+            return Response(
+                {'error': 'level query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        alerts = MemberAbsenteeismAlert.objects.filter(alert_level=level, is_resolved=False).order_by('-created_at')
+        serializer = self.get_serializer(alerts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def resolve(self, request, pk=None):
+        """Resolve an alert"""
+        from datetime import datetime
+        alert = self.get_object()
+        alert.is_resolved = True
+        alert.resolved_at = datetime.now()
+        alert.resolution_notes = request.data.get('resolution_notes', 'Resolved through pastoral care')
+        alert.save()
+        serializer = self.get_serializer(alert)
+        return Response(serializer.data)
+
+
+class MemberAbsenteeismMetricViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for Member Absenteeism Metrics (READ-ONLY)
+    
+    Metrics are calculated from last 10 services with recurring services weighted 1.5x.
+    
+    Endpoints:
+    - GET /absenteeism-metrics/ - List all metrics
+    - GET /absenteeism-metrics/{id}/ - Get metric details
+    - GET /absenteeism-metrics/by_member/ - Get metric for a specific member
+    """
+    
+    queryset = MemberAbsenteeismMetric.objects.all()
+    serializer_class = MemberAbsenteeismMetricSerializer
+    
+    def list(self, request, *args, **kwargs):
+        """Override list to handle empty results gracefully"""
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_member(self, request):
+        """Get absenteeism metric for a specific member. Usage: /absenteeism-metrics/by_member/?member_id=1"""
+        member_id = request.query_params.get('member_id')
+        if not member_id:
+            return Response(
+                {'error': 'member_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            metric = MemberAbsenteeismMetric.objects.get(member_id=member_id)
+            serializer = self.get_serializer(metric)
+            return Response(serializer.data)
+        except MemberAbsenteeismMetric.DoesNotExist:
+            return Response(
+                {'error': f'No absenteeism metric found for member {member_id}'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['post'])
+    def recalculate_all(self, request):
+        """
+        Recalculate all absenteeism metrics.
+        This rebuilds metrics for all members based on actual attendance data.
+        """
+        from members.utils import recalculate_all_absenteeism_metrics
+        
+        try:
+            summary = recalculate_all_absenteeism_metrics()
+            return Response({
+                'success': True,
+                'message': 'Absenteeism metrics recalculated',
+                'summary': summary
+            })
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error recalculating metrics: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,12 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
 from services.models import Service
 from members.models import Member
-from members.utils import update_member_absence_tracking
+from members.utils import update_absenteeism_alerts
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -15,14 +17,20 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     
     Endpoints:
     - GET /attendance/ - List all attendance records
+    - GET /attendance/?member=<id> - Filter by member ID
+    - GET /attendance/?service=<id> - Filter by service ID
     - POST /attendance/ - Create attendance record
     - GET /attendance/{id}/ - Get attendance details
     - POST /attendance/checkin/ - Check-in member via QR code
     - GET /attendance/by-service/{service_id}/ - Get attendance for a service
     """
     
-    queryset = Attendance.objects.all()
+    queryset = Attendance.objects.all().select_related('member', 'service').order_by('-created_at')
     serializer_class = AttendanceSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['member', 'service', 'status']
+    ordering_fields = ['created_at', 'member', 'service']
+    ordering = ['-created_at']
     
     @action(detail=False, methods=['post'])
     def checkin(self, request):
@@ -65,12 +73,15 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             attendance, created = Attendance.objects.get_or_create(
                 member=member,
                 service=service,
-                defaults={'status': 'present'}
+                defaults={
+                    'status': 'present',
+                    'marked_by': 'check_in',
+                }
             )
             
             if created:
-                # Update member's absence tracking
-                update_member_absence_tracking(member, 'present')
+                # Update member's absenteeism metrics and alerts
+                update_absenteeism_alerts(member)
                 
                 return Response({
                     'success': True,
@@ -174,11 +185,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 attendance, created = Attendance.objects.get_or_create(
                     member=member,
                     service=service,
-                    defaults={'status': 'absent'}
+                    defaults={
+                        'status': 'absent',
+                        'marked_by': 'manual',
+                    }
                 )
                 if created:
-                    # Update member's absence tracking
-                    update_member_absence_tracking(member, 'absent')
+                    # Update member's absenteeism metrics and alerts
+                    update_absenteeism_alerts(member)
                     
                     absent_count += 1
                     marked_members.append(member.full_name)

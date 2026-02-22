@@ -49,7 +49,8 @@ class Member(models.Model):
     qr_code_image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     
     # Absence & Engagement Tracking
-    consecutive_absences = models.IntegerField(default=0)
+    consecutive_absences = models.IntegerField(default=0)  # DEPRECATED: use current_absenteeism_ratio instead
+    current_absenteeism_ratio = models.FloatField(default=0.0)  # Percentage of absences (0.0-1.0) based on last 10 services
     last_attendance_date = models.DateField(null=True, blank=True)
     attendance_status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='active')
     engagement_score = models.IntegerField(default=100)  # 0-100 scale
@@ -163,3 +164,77 @@ class ContactLog(models.Model):
     
     def __str__(self):
         return f"{self.member.full_name} - {self.contact_method} ({self.contact_date.strftime('%Y-%m-%d')})"
+
+
+class MemberAbsenteeismMetric(models.Model):
+    """
+    Model to store calculated absenteeism metrics for members.
+    
+    Absenteeism is calculated from the last 10 attended services/sessions.
+    Recurring services count with 1.5x weight (considered more important).
+    """
+    
+    member = models.OneToOneField(Member, on_delete=models.CASCADE, related_name='absenteeism_metric')
+    
+    # Metrics based on last 10 services
+    total_services = models.IntegerField(default=0)  # Total services in last 10 (0-10)
+    absent_count = models.IntegerField(default=0)  # Number of absences
+    present_count = models.IntegerField(default=0)  # Number of presents
+    
+    # Weighted metrics (recurring services weighted 1.5x)
+    weighted_absent = models.FloatField(default=0.0)  # Weighted absence count
+    weighted_total = models.FloatField(default=0.0)  # Weighted total count
+    absenteeism_ratio = models.FloatField(default=0.0)  # weighted_absent / weighted_total (0.0-1.0)
+    
+    # Breakdown by service type
+    recurring_absent = models.IntegerField(default=0)
+    recurring_present = models.IntegerField(default=0)
+    onetime_absent = models.IntegerField(default=0)
+    onetime_present = models.IntegerField(default=0)
+    
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "Member Absenteeism Metrics"
+    
+    def __str__(self):
+        return f"{self.member.full_name} - {self.absenteeism_ratio:.1%} absent"
+
+
+class MemberAbsenteeismAlert(models.Model):
+    """
+    Model for ratio-based alerts triggered by absenteeism metrics.
+    
+    Alert levels based on absenteeism ratio (not consecutive absences):
+    - early_warning: 25-39% absent
+    - at_risk: 40-59% absent
+    - critical: 60%+ absent
+    """
+    
+    ALERT_LEVEL_CHOICES = [
+        ('early_warning', 'Early Warning - 25-39% absent'),
+        ('at_risk', 'At Risk - 40-59% absent'),
+        ('critical', 'Critical - 60%+ absent'),
+    ]
+    
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='absenteeism_alerts')
+    alert_level = models.CharField(max_length=20, choices=ALERT_LEVEL_CHOICES)
+    
+    # Snapshot of metrics when alert was created
+    absenteeism_ratio_at_creation = models.FloatField()
+    absent_count_at_creation = models.IntegerField()
+    total_services_at_creation = models.IntegerField()
+    
+    reason = models.TextField()  # e.g., "3 absences out of 8 services (37.5%)"
+    is_resolved = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.member.full_name} - {self.alert_level} ({self.absenteeism_ratio_at_creation:.1%})"

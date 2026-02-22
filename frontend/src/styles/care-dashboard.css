@@ -79,22 +79,8 @@
   color: #999;
 }
 
-/* Dashboard Content */
-.dashboard-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-@media (max-width: 1200px) {
-  .dashboard-content {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Members List Section */
-.members-list-section,
-.member-details-section {
+.members-list-section {
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -142,6 +128,31 @@
   background: #667eea;
   color: white;
   border-color: #667eea;
+}
+
+.refresh-btn {
+  padding: 0.6rem 1.2rem;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.refresh-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.refresh-btn:active {
+  transform: scale(0.98);
 }
 
 /* Members List */
@@ -193,6 +204,47 @@
   white-space: nowrap;
 }
 
+/* Member Card Wrapper with Contact Button */
+.member-card-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  align-items: stretch;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.member-card-wrapper .member-card {
+  flex: 1;
+  margin-bottom: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.member-card-wrapper .btn-contact {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 8px 8px 0;
+  background: #667eea;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.member-card-wrapper .btn-contact:hover {
+  background: #5568d3;
+  transform: translateX(2px);
+}
+
+.member-card-wrapper .btn-contact:active {
+  transform: translateX(0);
+}
+
 .alert-badge.alert-critical {
   background: #d32f2f;
   color: white;
@@ -221,6 +273,451 @@
 .member-card-date small {
   color: #999;
   font-size: 0.8rem;
+}
+
+/* Simplified Member Details Modal Styles */
+.key-stats-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.key-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  gap: 1rem;
+}
+
+.key-stat-row .stat-label {
+  color: #666;
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 180px;
+}
+
+.key-stat-row .stat-value-large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.key-stat-row .stat-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  max-width: 250px;
+}
+
+.key-stat-row .progress-bar {
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 100px;
+}
+
+.key-stat-row .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.key-stat-row .stat-value-small {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+.key-stat-row .status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.key-stat-row .status-badge.at_risk {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.key-stat-row .status-badge.critical {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+/* Attendance Trend - Modal Row */
+.info-row-container .attendance-trend {
+  background: #f9fafb;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-row-container .trend-scroll {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.info-row-container .trend-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 80px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.info-row-container .trend-bar.present {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 2px solid #10b981;
+}
+
+.info-row-container .trend-bar.absent {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 2px solid #ef4444;
+}
+
+.info-row-container .trend-bar.marked_present {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 2px solid #3b82f6;
+}
+
+.info-row-container .trend-bar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.info-row-container .trend-label {
+  line-height: 1;
+}
+
+.info-row-container .trend-legend {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.info-row-container .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-row-container .legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.info-row-container .legend-dot.present {
+  background-color: #10b981;
+}
+
+.info-row-container .legend-dot.absent {
+  background-color: #ef4444;
+}
+
+.info-row-container .legend-dot.marked_present {
+  background-color: #3b82f6;
+}
+
+/* Grouped Attendance Trend - By Service */
+.attendance-trend-grouped {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.service-category-header {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0.5rem 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Single Service Items */
+.service-attendance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.service-title {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.service-date {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.attendance-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.status-indicator.present {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 2px solid #10b981;
+}
+
+.status-indicator.absent {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 2px solid #ef4444;
+}
+
+.status-indicator.not-attended {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 2px solid #d1d5db;
+}
+
+.status-indicator:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Recurring Service Groups */
+.service-attendance-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+}
+
+.service-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.service-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.service-name::before {
+  content: "•";
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+.recurrence-badge {
+  font-size: 0.75rem;
+  background: #eef2ff;
+  color: #667eea;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.recurring-instances {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.instance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 4px;
+  border-left: 3px solid #bfdbfe;
+}
+
+.instance-date {
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+/* Contact History Compact */
+.contact-history-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contact-history-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  font-size: 0.9rem;
+}
+
+.contact-method-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-date {
+  font-size: 0.8rem;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-summary {
+  flex: 1;
+  margin: 0;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Last Activity */
+.last-activity {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.activity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 1rem;
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+.activity-row span {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.activity-row strong {
+  color: #333;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Info rows */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.info-value {
+  color: #333;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* Full width button */
+.btn.full-width {
+  width: 100%;
 }
 
 .empty-state {
@@ -342,43 +839,19 @@
   color: #1565c0;
 }
 
-/* Contact Info */
-.contact-info {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.contact-info h4,
-.pastoral-notes h4,
-.contact-history h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  color: #333;
-  font-weight: 600;
-}
-
-.contact-info p {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
-  color: #666;
-}
-
 /* Pastoral Notes */
 .pastoral-notes {
-  margin-bottom: 1.5rem;
+  background: #fef9e7;
   padding: 1rem;
-  background: #fff3e0;
-  border-left: 4px solid #f57c00;
   border-radius: 8px;
+  border-left: 4px solid #fbc02d;
 }
 
 .pastoral-notes p {
   margin: 0;
   color: #333;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 /* Contact History */
@@ -557,6 +1030,505 @@
 
 .members-list::-webkit-scrollbar-thumb {
   background: #ccc;
+/* Dashboard Content Layouts */
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.dashboard-content .members-list-section.full-width {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Member Details Modal Styles */
+.member-details-modal {
+  max-width: 700px;
+  width: 95%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.member-details-modal .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  color: white;
+  flex-shrink: 0;
+  padding: 1.5rem;
+}
+
+.member-details-modal .modal-header h2 {
+  color: white;
+  margin: 0;
+  margin-bottom: 0.25rem;
+  font-size: 1.8rem;
+}
+
+.modal-title-section {
+  flex: 1;
+}
+
+.member-details-modal .member-id {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.member-details-modal .modal-close {
+  color: white;
+}
+
+.member-details-modal .modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 50%;
+}
+
+.member-details-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0 !important;
+  display: block;
+}
+
+.modal-content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.info-row-container {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-row-container:last-child {
+  border-bottom: none;
+}
+
+.info-row-container h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.button-container {
+  padding: 1.5rem;
+  background-color: #f9fafb;
+}
+
+.button-container .btn {
+  margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.stat-item label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.stat-item .stat-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-item .stat-value.large {
+  font-size: 1.5rem;
+}
+
+.stat-item .progress-bar {
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.stat-item .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.stat-item .status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.stat-item .status-badge.at_risk {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.stat-item .status-badge.critical {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+/* Contact Information */
+.contact-info {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.contact-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 1rem;
+}
+
+.contact-info .info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.contact-info .info-label {
+  color: #666;
+  font-weight: 500;
+  font-size: 0.95rem;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.contact-info .info-value {
+  color: #333;
+  text-align: right;
+  word-break: break-word;
+  flex: 1;
+  font-size: 0.95rem;
+}
+
+/* Pastoral Notes */
+.pastoral-notes {
+  background-color: #fef9e7;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #fbc02d;
+}
+
+.pastoral-notes p {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Contact History - Compact */
+.contact-history-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contact-history-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  font-size: 0.9rem;
+}
+
+.contact-method-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-date {
+  font-size: 0.8rem;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-summary {
+  flex: 1;
+  margin: 0;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Contact History - Full List */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-item {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.history-method {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.history-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.history-message {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+.history-response {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+  padding-left: 1rem;
+  border-left: 2px solid #888;
+}
+
+.history-item small {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.empty-state-text {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 1rem 0;
+}
+
+/* Contact Form in Modal */
+.contact-form {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.contact-form h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.contact-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.contact-form .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.contact-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.contact-form .input-field,
+.contact-form select,
+.contact-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.contact-form .input-field:focus,
+.contact-form select:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.contact-form .form-group.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.contact-form .form-group.checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.contact-form .form-group.checkbox label {
+  margin: 0;
+  cursor: pointer;
+}
+
+.contact-form .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.contact-form .form-actions .btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.contact-form .btn-success {
+  background-color: #10b981;
+  color: white;
+}
+
+.contact-form .btn-success:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.contact-form .btn-secondary {
+  background-color: #e5e7eb;
+  color: #333;
+}
+
+.contact-form .btn-secondary:hover {
+  background-color: #d1d5db;
+}
+
+/* Scrollbar Styling for Modal */
+.member-details-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.member-details-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.member-details-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.member-details-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+@media (max-width: 768px) {
+  .member-details-modal {
+    max-width: 98vw;
+    width: 98vw;
+    max-height: 95vh;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .contact-form .form-actions {
+    flex-direction: column;
+  }
+
+  .member-details-body {
+    overflow-y: auto;
+  }
+
+  .key-stat-row {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .key-stat-row .stat-label {
+    min-width: auto;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .key-stat-row .stat-display {
+    width: 100%;
+    max-width: none;
+  }
+
+  .key-stat-row .stat-value-large {
+    width: 100%;
+  }
+
+  .key-stat-row .status-badge {
+    align-self: flex-start;
+  }
+}
+
   border-radius: 3px;
 }
 

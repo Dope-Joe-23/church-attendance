@@ -42,17 +42,17 @@ const ServiceCard = ({ service, onEdit, onDelete, onSelect }) => {
       </div>
       <div className="card-footer">
         {onSelect && (
-          <button className="btn btn-success" onClick={() => onSelect(service)}>
+          <button className="px-3 py-1.5 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors hover:shadow-sm" onClick={() => onSelect(service)}>
             Take Attendance
           </button>
         )}
         {onEdit && (
-          <button className="btn btn-primary" onClick={() => onEdit(service)}>
+          <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors hover:shadow-sm" onClick={() => onEdit(service)}>
             Edit
           </button>
         )}
         {onDelete && (
-          <button className="btn btn-danger" onClick={() => onDelete(service.id)}>
+          <button className="px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors hover:shadow-sm" onClick={() => onDelete(service.id)}>
             Delete
           </button>
         )}

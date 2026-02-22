@@ -285,7 +285,7 @@
 .members-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 4rem 2rem 0 2rem;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 50%, rgba(240, 147, 251, 0.08) 100%);
   min-height: 100vh;
   position: relative;
@@ -325,7 +325,7 @@
 .services-page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 4rem 2rem 0 2rem;
   background: linear-gradient(135deg, rgba(118, 75, 162, 0.08) 0%, rgba(102, 126, 234, 0.08) 50%, rgba(147, 51, 234, 0.08) 100%);
   min-height: 100vh;
   position: relative;

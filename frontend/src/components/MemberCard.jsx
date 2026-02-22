@@ -75,12 +75,12 @@ const MemberCard = ({ member, onEdit, onDelete }) => {
         </div>
       <div className="card-footer">
         {onEdit && (
-          <button className="btn btn-primary" onClick={() => onEdit(member)}>
+          <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors hover:shadow-sm" onClick={() => onEdit(member)}>
             Edit
           </button>
         )}
         {onDelete && (
-          <button className="btn btn-danger" onClick={() => onDelete(member.id)}>
+          <button className="px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors hover:shadow-sm" onClick={() => onDelete(member.id)}>
             Delete
           </button>
         )}
