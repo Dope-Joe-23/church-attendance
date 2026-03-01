@@ -194,3 +194,18 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+import os
+from django.contrib.auth import get_user_model
+
+if os.environ.get("CREATE_SUPERUSER") == "True":
+    try:
+        User = get_user_model()
+        if not User.objects.filter(username=os.environ.get("DJANGO_SUPERUSER_USERNAME")).exists():
+            User.objects.create_superuser(
+                os.environ.get("DJANGO_SUPERUSER_USERNAME"),
+                os.environ.get("DJANGO_SUPERUSER_EMAIL"),
+                os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+            )
+    except Exception as e:
+        print("Superuser creation skipped:", e)
