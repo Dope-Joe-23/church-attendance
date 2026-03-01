@@ -9,8 +9,10 @@ This guide covers deploying the Church Attendance System to production.
 - Ubuntu 20.04 or similar Linux server
 - PostgreSQL database
 - Nginx web server
-- Gunicorn for Django
 - Node.js for frontend build
+
+> **Python dependencies** such as `gunicorn`, `whitenoise`, `psycopg2-binary` and `dj-database-url` are installed via `pip install -r requirements.txt` (see section 3).
+
 
 ## Backend Deployment
 
@@ -252,6 +254,100 @@ server {
 ```
 
 ## Docker Deployment
+
+## Cloud Platform Deployment
+
+### Using Render for Backend
+
+1. **Connect repository**: Log in to [Render](https://render.com) and create a new Web Service pointing at your GitHub repository (`church-attendance`).
+2. **Service Settings**:
+   - **Name**: `church-backend` (or similar)
+   - **Region**: pick nearest region.
+   - **Environment**: `Python 3` (choose 3.11+ or match local env).
+   - **Build Command**: `pip install -r backend/requirements.txt && python backend/manage.py collectstatic --noinput`
+   - **Start Command**: `gunicorn church_config.wsgi:application --bind 0.0.0.0:$PORT`
+   - **Instance Type**: select based on traffic; start with `Free` or `Starter`.
+   - **Auto-Deploy**: enable automatic deploys from `main`/`master` or desired branch.
+
+3. **Environment Variables**:
+   Render allows you to set env vars in the dashboard. Add the contents of your `.env` or at least the following:
+   ```
+   DEBUG=False
+   SECRET_KEY=<your secret>
+   ALLOWED_HOSTS=<your-render-service>.onrender.com
+   DB_ENGINE=django.db.backends.postgresql
+   DB_NAME=<value>
+   DB_USER=<value>
+   DB_PASSWORD=<value>
+   DB_HOST=<your-postgres-addon-host>
+   DB_PORT=<your-postgres-addon-port>
+   CORS_ALLOWED_ORIGINS=https://<your-front-end>.vercel.app
+   CELERY_BROKER_URL=redis://<render-redis-host>:6379/0   # if using Redis
+   ```
+   Render also offers Postgres and Redis as managed add-ons—provision those and wire the connection strings into the environment variables.
+
+4. **Database**:
+   - Create the database via the Render Postgres add-on or external provider.
+   - After the service is deployed, run migrations using Render's shell or by adding a one‑off deploy script:
+     ```bash
+     render shell service/church-backend   # opens a shell
+     python manage.py migrate
+     python manage.py createsuperuser
+     ```
+
+5. **Static & Media Files**:
+   - `collectstatic` runs during build. Static files will be served by Gunicorn, which is acceptable for low traffic.
+   - For media uploads, use an external storage service like AWS S3; configure `DEFAULT_FILE_STORAGE` accordingly.
+
+6. **Scaling & Logs**:
+   - Monitor logs from the Render dashboard under the service’s **Logs** tab.
+   - Scale instances or add workers as needed.
+
+### Deploying Frontend on Vercel
+
+1. **Connect repository**: Go to [Vercel](https://vercel.com) and import the `frontend` directory of the same repo.
+   - Choose the `frontend` subdirectory as the project root during setup.
+
+2. **Project Settings**:
+   - **Framework Preset**: Select `Vite` or `Other` and set build command to `npm run build` and output directory to `dist`.
+   - **Install Command**: `npm ci` (or `npm install`).
+   - **Development Command**: `npm run dev` (for previews).
+
+3. **Environment Variables**:
+   - Add any necessary variables (e.g. API base URL) under **Settings → Environment Variables**.
+     Example:
+     ```text
+     VITE_API_URL=https://<your-backend-service>.onrender.com/api/
+     ```
+   Vite exposes variables prefixed with `VITE_`.
+
+4. **Automatic Deploys**: Enable deployments from the `main` (or primary) branch; each push will trigger a build.
+
+5. **Custom Domain**:
+   - Add your custom domain in Vercel settings and follow instructions to configure DNS.
+   - Configure CNAME pointing to `cname.vercel-dns.com`.
+
+6. **Routing & Redirects**:
+   - If you need custom rewrites (for example redirecting `/api` to backend), add a `vercel.json` file in `frontend`:
+     ```json
+     {
+       "rewrites": [
+         { "source": "/api/(.*)", "destination": "https://<your-backend-service>.onrender.com/api/$1" }
+       ]
+     }
+     ```
+   - For SPA routing, Vercel will serve `index.html` by default, so no extra config is needed.
+
+7. **Preview Environments**: Each pull request creates a unique preview deployment automatically.
+
+### Notes
+- You can protect sensitive settings using secrets on both platforms.
+- The above steps assume the backend’s API root is `/api/`; adjust if different.
+- Since Render handles HTTPS termination, update `ALLOWED_HOSTS` accordingly.
+
+---
+
+(Original on‑premises/pure‑server instructions remain above for self‑hosted deployments.)
 
 ### Build Docker Images
 

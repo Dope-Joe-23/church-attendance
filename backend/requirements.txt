@@ -7,3 +7,7 @@ django-cors-headers==4.3.1
 celery==5.3.4
 django-celery-beat
 redis==5.0.1
+gunicorn
+whitenoise
+psycopg2-binary
+dj-database-url
