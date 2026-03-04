@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import '../styles/components.css';
 
 const QRCodeModal = ({ isOpen, member, onClose }) => {
@@ -6,8 +6,16 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
 
   if (!isOpen || !member) return null;
 
+  // Use base64 data if available (new system), otherwise fall back to image URL (old system)
+  const qrCodeSrc = useMemo(() => {
+    if (member.qr_code_base64) {
+      return `data:image/png;base64,${member.qr_code_base64}`;
+    }
+    return member.qr_code_image;
+  }, [member.qr_code_base64, member.qr_code_image]);
+
   const downloadQRCodeAsPNG = () => {
-    if (!member.qr_code_image) return;
+    if (!qrCodeSrc) return;
 
     // Create an image element to get the actual QR code image
     const img = new Image();
@@ -112,7 +120,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
         window.URL.revokeObjectURL(url);
       }, 'image/png');
     };
-    img.src = member.qr_code_image;
+    img.src = qrCodeSrc;
   };
 
   const handlePDFDownload = () => {
@@ -156,7 +164,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
           <div class="container">
             <h2>${member.full_name}</h2>
             <p class="member-info">Member ID: <strong>${member.member_id}</strong></p>
-            <img src="${member.qr_code_image}" alt="QR Code" />
+            <img src="${qrCodeSrc}" alt="QR Code" />
           </div>
         </body>
       </html>
@@ -176,7 +184,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
           <div className="qr-display">
             <img
               ref={qrImageRef}
-              src={member.qr_code_image}
+              src={qrCodeSrc}
               alt={`QR code for ${member.member_id}`}
               className="modal-qr-image"
             />

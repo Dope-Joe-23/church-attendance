@@ -35,7 +35,7 @@ const MemberCard = ({ member, onEdit, onDelete }) => {
             <span className="member-id">ID: {member.member_id}</span>
             {member.is_visitor && <span className="visitor-badge">Visitor</span>}
           </div>
-          {member.qr_code_image && (
+          {(member.qr_code_image || member.qr_code_base64) && (
             <button
               className="qr-view-btn"
               onClick={() => setShowQRModal(true)}
