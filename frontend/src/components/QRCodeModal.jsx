@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import '../styles/components.css';
 
 const QRCodeModal = ({ isOpen, member, onClose }) => {
@@ -7,12 +7,9 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
   if (!isOpen || !member) return null;
 
   // Use base64 data if available (new system), otherwise fall back to image URL (old system)
-  const qrCodeSrc = useMemo(() => {
-    if (member.qr_code_base64) {
-      return `data:image/png;base64,${member.qr_code_base64}`;
-    }
-    return member.qr_code_image;
-  }, [member.qr_code_base64, member.qr_code_image]);
+  const qrCodeSrc = member.qr_code_base64 
+    ? `data:image/png;base64,${member.qr_code_base64}`
+    : member.qr_code_image;
 
   const downloadQRCodeAsPNG = () => {
     if (!qrCodeSrc) return;
