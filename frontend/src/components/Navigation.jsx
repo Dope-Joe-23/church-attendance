@@ -13,10 +13,9 @@ const Navigation = ({ user, onLogout }) => {
   };
 
   useEffect(() => {
+    // Fetch alerts once on mount — disable automatic polling
     fetchUnresolvedAlerts();
-    // Refresh alerts every 30 seconds
-    const interval = setInterval(fetchUnresolvedAlerts, 30000);
-    return () => clearInterval(interval);
+    return undefined;
   }, []);
 
   const fetchUnresolvedAlerts = async () => {

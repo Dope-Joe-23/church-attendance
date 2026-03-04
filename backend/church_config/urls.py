@@ -26,6 +26,6 @@ urlpatterns = [
     path('api/attendance/', include('attendance.urls')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files in development and production
+# In production on Render, ensure DEBUG=False but still serve media
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

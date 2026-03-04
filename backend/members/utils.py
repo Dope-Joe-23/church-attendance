@@ -1,7 +1,8 @@
 """
 Utility functions for member management and absence tracking.
 """
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from .models import Member, MemberAlert, ContactLog
 from django.db.models import Q
 
@@ -17,7 +18,7 @@ def update_member_absence_tracking(member, attendance_status):
     if attendance_status == 'present':
         # Reset absence counter on attendance
         member.consecutive_absences = 0
-        member.last_attendance_date = datetime.now().date()
+        member.last_attendance_date = timezone.now().date()
         
         # If member was at risk or inactive, move back to active
         if member.attendance_status in ['at_risk', 'inactive']:
@@ -48,7 +49,7 @@ def update_member_absence_tracking(member, attendance_status):
                 member=member,
                 is_resolved=False,
                 alert_level='early_warning'
-            ).update(is_resolved=True, resolved_at=datetime.now())
+            ).update(is_resolved=True, resolved_at=timezone.now())
             
             alert = MemberAlert.objects.create(
                 member=member,
@@ -62,7 +63,7 @@ def update_member_absence_tracking(member, attendance_status):
             MemberAlert.objects.filter(
                 member=member,
                 is_resolved=False
-            ).update(is_resolved=True, resolved_at=datetime.now())
+            ).update(is_resolved=True, resolved_at=timezone.now())
             
             alert = MemberAlert.objects.create(
                 member=member,
@@ -85,7 +86,7 @@ def resolve_member_alert(alert, resolution_notes=''):
         resolution_notes: Notes about how the alert was resolved
     """
     alert.is_resolved = True
-    alert.resolved_at = datetime.now()
+    alert.resolved_at = timezone.now()
     alert.resolution_notes = resolution_notes
     alert.save()
 
@@ -104,7 +105,7 @@ def get_member_attendance_stats(member):
     from services.models import Service
     
     # Get services from the last 3 months
-    three_months_ago = datetime.now().date() - timedelta(days=90)
+    three_months_ago = timezone.now().date() - timedelta(days=90)
     recent_services = Service.objects.filter(date__gte=three_months_ago).count()
     
     # Get attendance records
@@ -178,7 +179,7 @@ def log_contact(member, contact_method, message_sent, contacted_by=None, respons
     )
     
     # Update member's last contact date
-    member.last_contact_date = datetime.now().date()
+    member.last_contact_date = timezone.now().date()
     member.save()
     
     return contact_log
@@ -215,7 +216,7 @@ def recalculate_member_alerts():
     for member in members:
         # Count recent absences (from actual attendance data)
         # We count absences from the last 3 months
-        three_months_ago = datetime.now().date() - timedelta(days=90)
+        three_months_ago = timezone.now().date() - timedelta(days=90)
         
         absent_count = Attendance.objects.filter(
             member=member,
@@ -235,7 +236,7 @@ def recalculate_member_alerts():
             resolved_count = MemberAlert.objects.filter(
                 member=member,
                 is_resolved=False
-            ).update(is_resolved=True, resolved_at=datetime.now())
+            ).update(is_resolved=True, resolved_at=timezone.now())
             summary['alerts_resolved'] += resolved_count
             logger.info(f"Resolved {resolved_count} alerts for member {member.full_name} (no recent absences)")
         
@@ -268,7 +269,7 @@ def recalculate_member_alerts():
                 member=member,
                 alert_level='early_warning',
                 is_resolved=False
-            ).update(is_resolved=True, resolved_at=datetime.now())
+            ).update(is_resolved=True, resolved_at=timezone.now())
             
             alert_exists = MemberAlert.objects.filter(
                 member=member,
@@ -293,7 +294,7 @@ def recalculate_member_alerts():
             MemberAlert.objects.filter(
                 member=member,
                 is_resolved=False
-            ).update(is_resolved=True, resolved_at=datetime.now())
+            ).update(is_resolved=True, resolved_at=timezone.now())
             
             alert_exists = MemberAlert.objects.filter(
                 member=member,
@@ -501,7 +502,7 @@ def update_absenteeism_alerts(member):
         # No alert needed - resolve any existing alert
         if existing_alert:
             existing_alert.is_resolved = True
-            existing_alert.resolved_at = datetime.now()
+            existing_alert.resolved_at = timezone.now()
             existing_alert.resolution_notes = 'Absenteeism ratio dropped below threshold'
             existing_alert.save()
             result['alert_resolved'] = True
@@ -515,7 +516,7 @@ def update_absenteeism_alerts(member):
             if existing_alert:
                 # Resolve old alert
                 existing_alert.is_resolved = True
-                existing_alert.resolved_at = datetime.now()
+                existing_alert.resolved_at = timezone.now()
                 existing_alert.resolution_notes = 'Alert level changed'
                 existing_alert.save()
             

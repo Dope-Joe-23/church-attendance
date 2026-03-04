@@ -7,6 +7,7 @@ from .serializers import (
     ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer
 )
 from .email_service import send_qr_code_email
+from django.utils import timezone
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -169,9 +170,9 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
         """
         from attendance.models import Attendance
         from services.models import Service
-        from datetime import datetime, timedelta
-        
-        three_months_ago = datetime.now().date() - timedelta(days=90)
+        from datetime import timedelta
+
+        three_months_ago = timezone.now().date() - timedelta(days=90)
         
         # Count total attendance records
         total_attendance = Attendance.objects.count()
@@ -260,9 +261,8 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
     def resolve(self, request, pk=None):
         """Resolve an alert"""
         alert = self.get_object()
-        from datetime import datetime
         alert.is_resolved = True
-        alert.resolved_at = datetime.now()
+        alert.resolved_at = timezone.now()
         alert.resolution_notes = request.data.get('resolution_notes', '')
         alert.save()
         serializer = self.get_serializer(alert)
@@ -359,10 +359,9 @@ class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def resolve(self, request, pk=None):
         """Resolve an alert"""
-        from datetime import datetime
         alert = self.get_object()
         alert.is_resolved = True
-        alert.resolved_at = datetime.now()
+        alert.resolved_at = timezone.now()
         alert.resolution_notes = request.data.get('resolution_notes', 'Resolved through pastoral care')
         alert.save()
         serializer = self.get_serializer(alert)
