@@ -30,13 +30,22 @@ def send_qr_code_email(member):
     try:
         subject = f"Your Church Attendance QR Code - {member.full_name}"
         
-        # Email context
-        context = {
-            'member_name': member.full_name,
-            'member_id': member.member_id,
-            'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
-            'qr_code_url': member.qr_code_image.url if member.qr_code_image else None,
-        }
+        # Email context (prefer base64 data if available)
+        if getattr(member, 'qr_code_data', None):
+            qr_data_uri = f"data:image/png;base64,{member.qr_code_data}"
+            context = {
+                'member_name': member.full_name,
+                'member_id': member.member_id,
+                'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
+                'qr_code_data_uri': qr_data_uri,
+            }
+        else:
+            context = {
+                'member_name': member.full_name,
+                'member_id': member.member_id,
+                'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
+                'qr_code_url': member.qr_code_image.url if member.qr_code_image else None,
+            }
         
         # HTML email template
         html_content = f"""
@@ -51,7 +60,15 @@ def send_qr_code_email(member):
                     
                     <div style="text-align: center; margin: 30px 0;">
                         <p><strong>Your Member ID:</strong> <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 3px;">{context['member_id']}</code></p>
-                        {f'<img src="{context["qr_code_url"]}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">' if context['qr_code_url'] else '<p>QR code will be available shortly</p>'}
+                        {(
+                            f'<img src="{context.get("qr_code_data_uri")}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">'
+                            if context.get('qr_code_data_uri')
+                            else (
+                                f'<img src="{context.get("qr_code_url")}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">'
+                                if context.get('qr_code_url')
+                                else '<p>QR code will be available shortly</p>'
+                            )
+                        )}
                     </div>
                     
                     <h3 style="color: #2c3e50;">How to Use Your QR Code:</h3>
@@ -108,8 +125,19 @@ def send_qr_code_email(member):
         # Attach HTML version
         email.attach_alternative(html_content, "text/html")
         
-        # Attach QR code image if it exists
-        if member.qr_code_image:
+        # Attach QR code image or data if it exists
+        if getattr(member, 'qr_code_data', None):
+            try:
+                import base64
+                data = base64.b64decode(member.qr_code_data)
+                email.attach(
+                    f'qr_code_{member.member_id}.png',
+                    data,
+                    'image/png'
+                )
+            except Exception as file_error:
+                print(f"Warning: Could not attach QR code data: {str(file_error)}")
+        elif member.qr_code_image:
             try:
                 with open(member.qr_code_image.path, 'rb') as f:
                     email.attach(

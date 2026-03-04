@@ -32,7 +32,9 @@ venv.bak/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+# ignore media directories at project root and backend
 /media/
+/backend/media/
 /staticfiles/
 
 # IDE

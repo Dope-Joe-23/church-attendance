@@ -55,9 +55,14 @@ class MemberViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def qr_code(self, request, pk=None):
-        """Get QR code image for a member"""
+        """Get QR code for a member; returns base64 data when possible."""
         member = self.get_object()
-        if member.qr_code_image:
+        if member.qr_code_data:
+            return Response({
+                'qr_code_base64': member.qr_code_data,
+                'member_id': member.member_id
+            })
+        elif member.qr_code_image:
             return Response({
                 'qr_code_url': member.qr_code_image.url,
                 'member_id': member.member_id

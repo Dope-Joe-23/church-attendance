@@ -18,6 +18,7 @@ class MemberSerializer(serializers.ModelSerializer):
             'baptised',
             'confirmed',
             'qr_code_image',
+            'qr_code_data',
             'consecutive_absences',
             'last_attendance_date',
             'attendance_status',
@@ -26,7 +27,7 @@ class MemberSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'member_id', 'qr_code_image', 'created_at', 'updated_at', 
+        read_only_fields = ['id', 'member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at', 
                            'consecutive_absences', 'last_attendance_date', 'attendance_status', 
                            'engagement_score', 'last_contact_date']
 
@@ -41,7 +42,7 @@ class MemberDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = '__all__'
-        read_only_fields = ['id', 'member_id', 'qr_code_image', 'created_at', 'updated_at',
+        read_only_fields = ['id', 'member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at',
                            'consecutive_absences', 'last_attendance_date', 'attendance_status',
                            'engagement_score', 'last_contact_date', 'current_absenteeism_ratio']
     

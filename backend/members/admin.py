@@ -7,13 +7,13 @@ class MemberAdmin(admin.ModelAdmin):
     list_display = ('member_id', 'full_name', 'email', 'attendance_status', 'consecutive_absences', 'engagement_score', 'created_at')
     list_filter = ('department', 'attendance_status', 'created_at')
     search_fields = ('member_id', 'full_name', 'email', 'phone')
-    readonly_fields = ('member_id', 'qr_code_image', 'created_at', 'updated_at', 'consecutive_absences', 'last_attendance_date', 'engagement_score')
+    readonly_fields = ('member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at', 'consecutive_absences', 'last_attendance_date', 'engagement_score')
     fieldsets = (
         ('Member Information', {
             'fields': ('member_id', 'full_name', 'phone', 'email', 'department', 'group', 'is_visitor')
         }),
         ('QR Code', {
-            'fields': ('qr_code_image',)
+            'fields': ('qr_code_image','qr_code_data',)
         }),
         ('Attendance & Engagement', {
             'fields': ('consecutive_absences', 'last_attendance_date', 'attendance_status', 'engagement_score', 'last_contact_date', 'pastoral_notes')
