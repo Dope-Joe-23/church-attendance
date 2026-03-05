@@ -44,17 +44,61 @@ const Members = () => {
       setFormError('Full name is required');
       return;
     }
+    
+    // Validate that non-visitors have at least one contact method
+    if (!formData.is_visitor && !formData.email.trim() && !formData.phone.trim()) {
+      setFormError('Non-visitor members must have at least one contact method (email or phone)');
+      return;
+    }
+
+    // Clean form data - convert empty strings to null for optional fields
+    const cleanedData = {
+      full_name: formData.full_name.trim(),
+      phone: formData.phone.trim() || null,
+      email: formData.email.trim() || null,
+      department: formData.department || null,
+      group: formData.group || null,
+      location: formData.location?.trim() || null,
+      is_visitor: formData.is_visitor,
+      baptised: formData.baptised,
+      confirmed: formData.confirmed,
+    };
+
     try {
       if (editingId) {
-        await memberApi.updateMember(editingId, formData);
+        await memberApi.updateMember(editingId, cleanedData);
       } else {
-        await memberApi.createMember(formData);
+        await memberApi.createMember(cleanedData);
       }
       fetchMembers();
       resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
-      const errorMsg = error.response?.data?.full_name?.[0] || error.response?.data?.detail || 'Failed to save member';
+      
+      // Handle various error response formats
+      const errorData = error.response?.data;
+      let errorMsg = 'Failed to save member';
+      
+      if (typeof errorData === 'string') {
+        errorMsg = errorData;
+      } else if (errorData?.detail) {
+        errorMsg = errorData.detail;
+      } else if (errorData?.non_field_errors) {
+        errorMsg = Array.isArray(errorData.non_field_errors) 
+          ? errorData.non_field_errors[0] 
+          : errorData.non_field_errors;
+      } else if (typeof errorData === 'object') {
+        // Get the first field error
+        for (const [field, messages] of Object.entries(errorData)) {
+          if (Array.isArray(messages)) {
+            errorMsg = messages[0];
+          } else if (typeof messages === 'string') {
+            errorMsg = messages;
+          }
+          break;
+        }
+      }
+      
       setFormError(errorMsg);
     }
   };

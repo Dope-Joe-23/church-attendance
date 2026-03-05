@@ -26,6 +26,8 @@ const MemberFormModal = ({
 }) => {
   if (!isOpen) return null;
 
+  const contactMethodMissing = !formData.is_visitor && !formData.email?.trim() && !formData.phone?.trim();
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content form-modal" onClick={(e) => e.stopPropagation()}>
@@ -36,6 +38,11 @@ const MemberFormModal = ({
 
         <form className="member-form-modal" onSubmit={onSubmit}>
           {error && <div className="form-error">{error}</div>}
+          {contactMethodMissing && (
+            <div className="form-warning">
+              ⚠️ Non-visitor members must have at least one contact method (email or phone)
+            </div>
+          )}
 
           <div className="modal-body form-body">
             <div className="form-group full-width">

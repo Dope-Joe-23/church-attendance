@@ -3,6 +3,9 @@ from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismMetric, Me
 
 
 class MemberSerializer(serializers.ModelSerializer):
+    # Override qr_code_image to return base64 data (or URL if data unavailable)
+    qr_code_image = serializers.SerializerMethodField()
+    
     class Meta:
         model = Member
         fields = [
@@ -31,6 +34,15 @@ class MemberSerializer(serializers.ModelSerializer):
                            'consecutive_absences', 'last_attendance_date', 'attendance_status', 
                            'engagement_score', 'last_contact_date']
     
+    def get_qr_code_image(self, obj):
+        """Return base64 QR code data if available, otherwise return URL.
+        This avoids CORS/CORB issues when displaying images from different origins."""
+        if obj.qr_code_data:
+            return f"data:image/png;base64,{obj.qr_code_data}"
+        elif obj.qr_code_image:
+            return obj.qr_code_image.url
+        return None
+    
     def validate_full_name(self, value):
         """Validate that full_name is not empty and not duplicated"""
         if not value or not value.strip():
@@ -58,12 +70,22 @@ class MemberSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validate overall member data"""
         # At least one contact method should be provided (email or phone)
-        if not data.get('email') and not data.get('phone'):
-            # Only warn for non-visitors, visitors often have minimal info
-            if not data.get('is_visitor'):
-                raise serializers.ValidationError(
-                    "At least one contact method (email or phone) is required for non-visitor members."
-                )
+        email = data.get('email')
+        phone = data.get('phone')
+        is_visitor = data.get('is_visitor', False)
+        
+        # Treat empty strings as no value
+        email_provided = email and str(email).strip()
+        phone_provided = phone and str(phone).strip()
+        
+        if not email_provided and not phone_provided:
+            # Only enforce for non-visitors, visitors often have minimal info
+            if not is_visitor:
+                raise serializers.ValidationError({
+                    'non_field_errors': [
+                        "At least one contact method (email or phone) is required for non-visitor members."
+                    ]
+                })
         return data
     
     def create(self, validated_data):
@@ -78,6 +100,8 @@ class MemberDetailSerializer(serializers.ModelSerializer):
     absenteeism_metric = serializers.SerializerMethodField()
     recent_contacts = serializers.SerializerMethodField()
     attendance_history = serializers.SerializerMethodField()
+    # Override qr_code_image to return base64 data (or URL if data unavailable)
+    qr_code_image = serializers.SerializerMethodField()
     
     class Meta:
         model = Member
@@ -85,6 +109,15 @@ class MemberDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at',
                            'consecutive_absences', 'last_attendance_date', 'attendance_status',
                            'engagement_score', 'last_contact_date', 'current_absenteeism_ratio']
+    
+    def get_qr_code_image(self, obj):
+        """Return base64 QR code data if available, otherwise return URL.
+        This avoids CORS/CORB issues when displaying images from different origins."""
+        if obj.qr_code_data:
+            return f"data:image/png;base64,{obj.qr_code_data}"
+        elif obj.qr_code_image:
+            return obj.qr_code_image.url
+        return None
     
     def get_alerts(self, obj):
         alerts = obj.alerts.filter(is_resolved=False)

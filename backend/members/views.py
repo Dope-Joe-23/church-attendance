@@ -45,9 +45,19 @@ class MemberViewSet(viewsets.ModelViewSet):
         Auto-generated: member_id (if not provided), qr_code_image, qr_code_data
         """
         try:
-            return super().create(request, *args, **kwargs)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:
             logger.error(f"Error creating member: {str(e)}", exc_info=True)
+            # Return serializer errors if validation failed, otherwise return generic error
+            if hasattr(e, 'detail'):
+                return Response(
+                    {'error': str(e.detail)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(
                 {'error': f'Failed to create member: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -78,16 +88,18 @@ class MemberViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def qr_code(self, request, pk=None):
-        """Get QR code for a member; returns base64 data when possible."""
+        """Get QR code for a member; returns base64 data as a data URI."""
         member = self.get_object()
         if member.qr_code_data:
             return Response({
+                'qr_code_image': f"data:image/png;base64,{member.qr_code_data}",
                 'qr_code_base64': member.qr_code_data,
                 'member_id': member.member_id
             })
         elif member.qr_code_image:
+            # Fallback to file URL if base64 data not available
             return Response({
-                'qr_code_url': member.qr_code_image.url,
+                'qr_code_image': member.qr_code_image.url,
                 'member_id': member.member_id
             })
         return Response(
