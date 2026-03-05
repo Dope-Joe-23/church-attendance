@@ -19,7 +19,10 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file located at project root
+# BASE_DIR is backend/, but we also want to support a repo-root .env
 load_dotenv(BASE_DIR / '.env')
+# if a top-level .env exists (workspace root), load it as well
+load_dotenv(Path(BASE_DIR).parent / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -48,6 +51,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'cloudinary_storage',
+    'cloudinary',
     
     # Local apps
     'members',
@@ -143,6 +148,27 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary Configuration
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+
+# Only configure Cloudinary if all credentials are provided
+if all(CLOUDINARY_STORAGE.values()):
+    cloudinary.config(**CLOUDINARY_STORAGE)
+    # Use Cloudinary for media files
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    # Fall back to local storage if Cloudinary not configured
+    # this ensures settings always has the attribute
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # WhiteNoise static files storage for production
 STATIC_URL = '/static/'

@@ -8,6 +8,9 @@ from .serializers import (
 )
 from .email_service import send_qr_code_email
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -20,6 +23,8 @@ class MemberViewSet(viewsets.ModelViewSet):
     - GET /members/{id}/ - Get member details
     - PUT /members/{id}/ - Update member
     - DELETE /members/{id}/ - Delete member
+    - GET /members/{id}/qr_code/ - Get member QR code
+    - POST /members/{id}/send_qr_email/ - Send QR code via email
     """
     
     queryset = Member.objects.all()
@@ -29,6 +34,24 @@ class MemberViewSet(viewsets.ModelViewSet):
         if self.action == 'retrieve':
             return MemberDetailSerializer
         return MemberSerializer
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new member
+        
+        Required fields: full_name
+        Optional fields: member_id, email, phone, department, group, etc.
+        
+        Auto-generated: member_id (if not provided), qr_code_image, qr_code_data
+        """
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error creating member: {str(e)}", exc_info=True)
+            return Response(
+                {'error': f'Failed to create member: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=False, methods=['get'])
     def by_member_id(self, request):

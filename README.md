@@ -287,6 +287,24 @@ Content-Type: application/json
 - `email` - Email address
 - `department` - Church department/ministry
 - `qr_code_image` - Generated QR code image
+
+## Cloudinary Integration
+
+The system can store QR code images in [Cloudinary](https://cloudinary.com/). To enable this:
+
+1. Install dependencies: `cloudinary` and `django-cloudinary-storage` (included in `requirements.txt`).
+2. Add the following environment variables to your `.env` file:
+   ```
+   CLOUDINARY_CLOUD_NAME=your-cloud-name-here
+   CLOUDINARY_API_KEY=your-api-key-here
+   CLOUDINARY_API_SECRET=your-api-secret-here
+   ```
+3. In `church_config/settings.py` the `CLOUDINARY_STORAGE` dict reads these values and configures `DEFAULT_FILE_STORAGE` when all are provided. Media uploads (including `qr_code_image`) will automatically go to Cloudinary.
+4. When retrieving a member's QR code via the API, the serializer returns a URL pointing to Cloudinary.
+
+If environment variables are missing, the app falls back to local `media/` directory for file storage.
+
+
 - `created_at` - Creation timestamp
 - `updated_at` - Last update timestamp
 

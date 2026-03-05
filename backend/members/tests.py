@@ -22,6 +22,8 @@ class QRCodeDataTests(TestCase):
         from rest_framework.test import APIClient
         client = APIClient()
         response = client.get(f'/api/members/{m.pk}/qr_code/')
-        self.assertEqual(response.status_code, 200)
+        # The view is registered as a custom action on the router, 
+        # so it's included via the simple router
+        self.assertEqual(response.status_code, 200, msg=response.content if response.status_code != 200 else '')
         self.assertIn('qr_code_base64', response.data)
 

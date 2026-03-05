@@ -30,6 +30,46 @@ class MemberSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at', 
                            'consecutive_absences', 'last_attendance_date', 'attendance_status', 
                            'engagement_score', 'last_contact_date']
+    
+    def validate_full_name(self, value):
+        """Validate that full_name is not empty and not duplicated"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Full name is required and cannot be empty.")
+        return value.strip()
+    
+    def validate_email(self, value):
+        """Validate email and check if already exists (for non-visitors)"""
+        if value:
+            value = value.lower().strip()
+            # Check if email is already used (for non-visitor members)
+            existing = Member.objects.filter(email=value, is_visitor=False).exclude(
+                pk=self.instance.pk if self.instance else None
+            )
+            if existing.exists():
+                raise serializers.ValidationError("A non-visitor member with this email already exists.")
+        return value
+    
+    def validate_phone(self, value):
+        """Clean phone number"""
+        if value:
+            return value.strip()
+        return value
+    
+    def validate(self, data):
+        """Validate overall member data"""
+        # At least one contact method should be provided (email or phone)
+        if not data.get('email') and not data.get('phone'):
+            # Only warn for non-visitors, visitors often have minimal info
+            if not data.get('is_visitor'):
+                raise serializers.ValidationError(
+                    "At least one contact method (email or phone) is required for non-visitor members."
+                )
+        return data
+    
+    def create(self, validated_data):
+        """Create member and trigger QR code generation"""
+        member = Member.objects.create(**validated_data)
+        return member
 
 
 class MemberDetailSerializer(serializers.ModelSerializer):

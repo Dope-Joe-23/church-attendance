@@ -69,39 +69,55 @@ class Member(models.Model):
     
     def save(self, *args, **kwargs):
         """Override save to generate QR code on member creation"""
+        import base64
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
         # Generate member_id if not provided
         if not self.member_id:
             self.member_id = str(uuid.uuid4())[:8].upper()
         
         # Generate QR code if we don't already have data
         if not self.qr_code_data:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(self.member_id)
-            qr.make(fit=True)
-            
-            img = qr.make_image(fill_color="black", back_color="white")
-            
-            # Save to BytesIO
-            img_io = BytesIO()
-            img.save(img_io, 'PNG')
-            img_io.seek(0)
-            
-            # encode as base64
-            import base64
-            self.qr_code_data = base64.b64encode(img_io.getvalue()).decode('utf-8')
-            
-            # optionally still save as file for backward compatibility
-            if not self.qr_code_image:
-                self.qr_code_image.save(
-                    f"qr_code_{self.member_id}.png",
-                    File(img_io),
-                    save=False
+            try:
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
                 )
+                qr.add_data(self.member_id)
+                qr.make(fit=True)
+                
+                img = qr.make_image(fill_color="black", back_color="white")
+                
+                # Save to BytesIO buffer
+                img_io = BytesIO()
+                img.save(img_io, format='PNG')
+                img_io.seek(0)  # Reset position for reading
+                
+                # Encode as base64 for database storage
+                qr_png_data = img_io.getvalue()
+                self.qr_code_data = base64.b64encode(qr_png_data).decode('utf-8')
+                
+                # Optionally save as file for backward compatibility (will use Cloudinary if configured)
+                if not self.qr_code_image:
+                    img_io.seek(0)  # Reset again before saving to file field
+                    self.qr_code_image.save(
+                        f"qr_code_{self.member_id}.png",
+                        File(img_io),
+                        save=False  # Don't save yet - we'll do it below
+                    )
+                    
+                logger.info(f"Generated QR code for member {self.member_id}")
+                    
+            except Exception as e:
+                logger.error(f"Error generating QR code for {self.member_id}: {str(e)}")
+                # Don't raise - allow member creation even if QR generation fails
+        
+        # Now save the member record to database
+        super().save(*args, **kwargs)
 @receiver(post_save, sender=Member)
 def send_qr_code_on_creation(sender, instance, created, **kwargs):
     """Send QR code email when a new member is created"""

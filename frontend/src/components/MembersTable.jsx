@@ -67,7 +67,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                 </td>
                 <td className="actions-col" data-label="Actions">
                   <div className="action-buttons">
-                    {(member.qr_code_image || member.qr_code_base64) && (
+                    {member.qr_code_image && (
                       <button
                         className="btn-icon qr-icon"
                         onClick={() => handleQRClick(member)}
