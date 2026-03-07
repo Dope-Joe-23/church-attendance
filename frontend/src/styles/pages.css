@@ -283,10 +283,9 @@
 
 /* Members Page */
 .members-page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 4rem 2rem 0 2rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 50%, rgba(240, 147, 251, 0.08) 100%);
   min-height: 100vh;
   position: relative;
 }
@@ -298,10 +297,10 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .members-page::after {
@@ -311,10 +310,10 @@
   left: -5%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(240, 147, 251, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .members-page .page-header {
@@ -323,10 +322,9 @@
 
 /* Services Page */
 .services-page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 4rem 2rem 0 2rem;
-  background: linear-gradient(135deg, rgba(118, 75, 162, 0.08) 0%, rgba(102, 126, 234, 0.08) 50%, rgba(147, 51, 234, 0.08) 100%);
   min-height: 100vh;
   position: relative;
 }
@@ -338,10 +336,10 @@
   left: -5%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .services-page::after {
@@ -351,10 +349,10 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .services-page .page-header {
@@ -363,10 +361,9 @@
 
 /* Scanner Page */
 .scanner-page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(240, 147, 251, 0.08) 50%, rgba(118, 75, 162, 0.08) 100%);
   min-height: 100vh;
   position: relative;
 }
@@ -378,10 +375,10 @@
   right: 5%;
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.12) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .scanner-page::after {
@@ -391,10 +388,10 @@
   left: -15%;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(240, 147, 251, 0.12) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .scanner-page .page-header {
@@ -643,10 +640,9 @@
 
 /* Reports Page */
 .reports-page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
-  background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 50%, rgba(102, 126, 234, 0.08) 100%);
   min-height: 100vh;
   position: relative;
 }
@@ -658,10 +654,10 @@
   left: 10%;
   width: 550px;
   height: 550px;
-  background: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .reports-page::after {
@@ -671,10 +667,10 @@
   right: 5%;
   width: 650px;
   height: 650px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   z-index: -1;
+  display: none;
 }
 
 .reports-page .page-header {
