@@ -13,18 +13,48 @@ class Member(models.Model):
     
     # Department choices
     DEPARTMENT_CHOICES = [
-        ('worship', 'Worship'),
-        ('outreach', 'Outreach'),
-        ('youth', 'Youth'),
-        ('administration', 'Administration'),
+        ('technical', 'Technical'),
+        ('media', 'Media'),
+        ('echoes_of_grace', 'Echoes of Grace'),
+        ('celestial_harmony_choir', 'Celestial Harmony Choir'),
+        ('heavenly_vibes', 'Heavenly Vibes'),
+        ('prayer_evangelism', 'Prayer and Evangelism'),
+        ('visitor_care', 'Visitor Care'),
+        ('protocol_ushering', 'Protocol & Ushering'),
     ]
     
-    # Group choices
-    GROUP_CHOICES = [
-        ('group_a', 'Group A'),
-        ('group_b', 'Group B'),
-        ('group_c', 'Group C'),
-        ('group_d', 'Group D'),
+    # Class choices (formerly Group)
+    CLASS_CHOICES = [
+        ('airport', 'Airport'),
+        ('abesim', 'Abesim'),
+        ('old_abesim', 'Old Abesim'),
+        ('asufufu_adomako', 'Asufufu / Adomako'),
+        ('baakoniaba', 'Baakoniaba'),
+        ('berlin_top_class_1', 'Berlin Top class 1'),
+        ('berlin_top_class_2', 'Berlin Top class 2'),
+        ('penkwase_class_1', 'Penkwase class 1'),
+        ('penkwase_class_2', 'Penkwase class 2'),
+        ('mayfair', 'Mayfair'),
+        ('odumase', 'Odumase'),
+        ('new_dormaa_kotokrom', 'New Dormaa / Kotokrom'),
+        ('dumasua', 'Dumasua'),
+        ('fiapre_class_1', 'Fiapre Class 1'),
+        ('fiapre_class_2', 'Fiapre Class 2'),
+        ('magazine', 'Magazine'),
+        ('town_centre', 'Town Centre'),
+        ('newton_estate', 'Newton/Estate'),
+        ('distance', 'Distance'),
+    ]
+    
+    # Committee choices
+    COMMITTEE_CHOICES = [
+        ('finance', 'Finance'),
+        ('audit', 'Audit'),
+        ('project', 'Project'),
+        ('life_builders', 'Life Builders'),
+        ('health', 'Health'),
+        ('welfare', 'Welfare'),
+        ('harvest', 'Harvest'),
     ]
     
     # Attendance Status choices
@@ -38,11 +68,14 @@ class Member(models.Model):
     id = models.AutoField(primary_key=True)
     member_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=255)
+    date_of_birth = models.DateField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+    place_of_residence = models.CharField(max_length=255, blank=True, null=True)
+    profession = models.CharField(max_length=255, blank=True, null=True)
     department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES, blank=True, null=True)
-    group = models.CharField(max_length=100, choices=GROUP_CHOICES, blank=True, null=True)
-    location = models.CharField(max_length=255, blank=True, null=True)
+    class_name = models.CharField(max_length=100, choices=CLASS_CHOICES, blank=True, null=True)
+    committee = models.CharField(max_length=100, choices=COMMITTEE_CHOICES, blank=True, null=True)
     is_visitor = models.BooleanField(default=False)
     baptised = models.BooleanField(default=False)
     confirmed = models.BooleanField(default=False)

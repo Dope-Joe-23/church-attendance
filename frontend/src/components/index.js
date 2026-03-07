@@ -12,3 +12,4 @@ export { default as AttendanceScanner } from './AttendanceScanner';
 export { default as AttendanceReport } from './AttendanceReport';
 export { default as Navigation } from './Navigation';
 export { default as QRCodeModal } from './QRCodeModal';
+export { default as ProtectedRoute } from './ProtectedRoute';

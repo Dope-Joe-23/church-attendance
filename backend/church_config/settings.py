@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
     'cloudinary_storage',
@@ -94,10 +95,25 @@ WSGI_APPLICATION = 'church_config.wsgi.application'
 
 # Database
 # Use `DATABASE_URL` env var when available (recommended for production)
-DATABASE_URL = os.getenv('DATABASE_URL')
-if DATABASE_URL:
-    DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv('DB_CONN_MAX_AGE', 600)))}
+# For local development, defaults to SQLite
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+
+# Check if DATABASE_URL is actually configured
+# (empty string or looks like a valid postgres/mysql URL)
+if DATABASE_URL and ('postgres' in DATABASE_URL or 'mysql' in DATABASE_URL or 'postgresql' in DATABASE_URL):
+    try:
+        DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=int(os.getenv('DB_CONN_MAX_AGE', 600)))}
+    except Exception as e:
+        # If DATABASE_URL fails, fall back to SQLite
+        print(f"Warning: Could not connect to DATABASE_URL, using SQLite instead")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': str(BASE_DIR / 'db.sqlite3'),
+            }
+        }
 else:
+    # Use individual DB settings or default to SQLite
     DATABASES = {
         'default': {
             'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
@@ -193,15 +209,45 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
 }
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://localhost:3000'
+    'http://localhost:5173,http://localhost:5174,http://localhost:3000'
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')  # Allow all in debug mode
+
+# Additional CORS settings for preflight requests
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Email Configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

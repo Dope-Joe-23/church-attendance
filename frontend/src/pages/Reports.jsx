@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
-import { AttendanceReport, ServiceCard } from '../components';
+import { AttendanceReport } from '../components';
 import '../styles/pages.css';
 
 const Reports = () => {
   const [services, setServices] = useState([]);
+  const [groupedServices, setGroupedServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [expandedParentService, setExpandedParentService] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedService, setExpandedService] = useState(null);
 
   useEffect(() => {
     fetchServices();
@@ -19,143 +21,213 @@ const Reports = () => {
     try {
       const data = await serviceApi.getServices();
       const servicesList = data.results || data;
-      setServices(servicesList);
-      if (servicesList.length > 0) {
-        setSelectedService(servicesList[0]);
+      
+      if (Array.isArray(servicesList)) {
+        // Separate parent services and their sessions
+        const parentServices = servicesList.filter(s => s.parent_service === null);
+        const childSessions = servicesList.filter(s => s.parent_service !== null);
+        
+        // Group sessions by parent service
+        const grouped = parentServices.map(parent => ({
+          ...parent,
+          sessions: childSessions.filter(session => session.parent_service === parent.id)
+        }));
+        
+        setGroupedServices(grouped);
+        setServices(servicesList);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
+      setServices([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Group services: parent services with their sessions (instances)
-  const groupedServices = React.useMemo(() => {
-    const parentServices = services.filter((s) => !s.parent_service);
-    const instances = services.filter((s) => s.parent_service);
+  const filteredServices = groupedServices.filter(service =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (service.location && service.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    service.sessions.some(session =>
+      session.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (session.location && session.location.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+  );
 
-    return parentServices.map((parent) => ({
-      parent,
-      sessions: instances.filter((inst) => inst.parent_service === parent.id),
-    }));
-  }, [services]);
-
-  const handleParentServiceClick = (parentId, parentService) => {
-    const group = groupedServices.find((g) => g.parent.id === parentId);
-    
-    // If no sessions, directly select the parent service
-    if (!group || group.sessions.length === 0) {
-      setSelectedService(parentService);
-      setExpandedParentService(null);
-      return;
-    }
-    
-    // Otherwise, toggle the dropdown
-    if (expandedParentService === parentId) {
-      setExpandedParentService(null);
-    } else {
-      setExpandedParentService(parentId);
-    }
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    setShowReportModal(true);
   };
 
-  const filteredGroupedServices = React.useMemo(() => {
-    const query = searchQuery.toLowerCase();
-    return groupedServices.filter((group) => 
-      group.parent.name.toLowerCase().includes(query) ||
-      (group.parent.location && group.parent.location.toLowerCase().includes(query))
-    );
-  }, [groupedServices, searchQuery]);
+  const toggleExpandService = (serviceId) => {
+    setExpandedService(expandedService === serviceId ? null : serviceId);
+  };
+
+  const handleCloseModal = () => {
+    setShowReportModal(false);
+  };
 
   return (
     <div className="reports-page">
       <div className="page-header">
-        <h1>Attendance Reports</h1>
+        <h1>📊 Attendance Reports</h1>
+        <p>View attendance data for church services and sessions</p>
       </div>
 
       {loading ? (
         <p>Loading services...</p>
       ) : (
-        <div className="reports-layout">
-          <div className="services-sidebar">
-            <h3>Select a Service</h3>
-            <div className="search-box" style={{ marginBottom: '1rem' }}>
+        <>
+          {/* Services Selection Grid */}
+          <div className="reports-services-container">
+            <div className="services-list-header">
+              <h2>Available Services & Sessions</h2>
+              <p>Click on a session to view attendance details</p>
+            </div>
+
+            <div className="search-box" style={{ marginBottom: '2rem' }}>
               <input
                 type="text"
-                placeholder="🔍 Search services..."
+                placeholder="🔍 Search services or locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
             </div>
-            <div className="service-list">
-              {filteredGroupedServices.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#9ca3af' }}>No services found</p>
-              ) : (
-                filteredGroupedServices.map((group) => (
-                  <div key={group.parent.id} className="service-group">
-                    <button
-                      className={`service-parent-button ${
-                        expandedParentService === group.parent.id ? 'expanded' : ''
-                      } ${
-                        selectedService?.id === group.parent.id ? 'active' : ''
-                      } ${group.sessions.length === 0 ? 'no-sessions' : ''}`}
-                      onClick={() => handleParentServiceClick(group.parent.id, group.parent)}
-                    >
-                      <div className="service-parent-content">
-                        <span className="service-name">{group.parent.name}</span>
-                        <span className="session-count">
-                          {group.sessions.length > 0
-                            ? `${group.sessions.length} sessions`
-                            : 'One-time service'}
-                        </span>
-                      </div>
-                      {group.sessions.length > 0 && (
-                        <span className="expand-icon">
-                          {expandedParentService === group.parent.id ? '\u25bc' : '\u25b6'}
-                        </span>
-                      )}
-                    </button>
 
-                    {expandedParentService === group.parent.id && group.sessions.length > 0 && (
-                      <div className="sessions-dropdown">
-                        {group.sessions.length > 0 ? (
-                          group.sessions.map((session) => (
-                            <button
-                              key={session.id}
-                              className={`session-button ${
-                                selectedService?.id === session.id ? 'active' : ''
-                              }`}
-                              onClick={() => setSelectedService(session)}
-                            >
-                              <div className="session-info">
-                                <strong>{new Date(session.date).toLocaleDateString()}</strong>
-                                <span className="session-time">
-                                  {session.start_time} - {session.end_time}
-                                </span>
-                                {session.location && (
-                                  <span className="session-location">📍 {session.location}</span>
-                                )}
-                              </div>
-                            </button>
-                          ))
-                        ) : (
-                          <p className="no-sessions">No sessions scheduled</p>
+            {filteredServices.length === 0 ? (
+              <div className="empty-state">
+                <p>No services found. Create a service to start tracking attendance.</p>
+              </div>
+            ) : (
+              <div className="services-with-sessions">
+                {filteredServices.map((parentService) => (
+                  <div key={parentService.id} className="service-with-sessions-group">
+                    {/* Parent Service at Top */}
+                    <div className="parent-service-container">
+                      <div className="service-card-icon">📊</div>
+                      <div className="service-card-content">
+                        <h3>{parentService.name}</h3>
+                        {parentService.location && (
+                          <p className="service-location">📍 {parentService.location}</p>
+                        )}
+                        {parentService.start_time && (
+                          <p className="service-time">⏰ {parentService.start_time}</p>
+                        )}
+                        {parentService.is_recurring && (
+                          <p className="service-badge">🔄 Recurring Service</p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Sessions Below */}
+                    {parentService.sessions && parentService.sessions.length > 0 && (
+                      <>
+                        {parentService.is_recurring ? (
+                          // Collapsible container for recurring services
+                          <div className="sessions-dropdown-container">
+                            <div
+                              className="dropdown-toggle"
+                              onClick={() => toggleExpandService(parentService.id)}
+                            >
+                              <span className="toggle-arrow">
+                                {expandedService === parentService.id ? '▼' : '▶'}
+                              </span>
+                              <span className="toggle-text">
+                                {parentService.sessions.length} session{parentService.sessions.length !== 1 ? 's' : ''} available
+                              </span>
+                            </div>
+                            {expandedService === parentService.id && (
+                              <div className="sessions-list">
+                                {parentService.sessions.map((session) => (
+                                  <div
+                                    key={session.id}
+                                    className="session-item"
+                                    onClick={() => handleServiceSelect(session)}
+                                  >
+                                    <div className="session-info">
+                                      <h4>{session.name}</h4>
+                                      {session.location && (
+                                        <p className="session-location">📍 {session.location}</p>
+                                      )}
+                                      {session.date && (
+                                        <p className="session-datetime">
+                                          📅 {new Date(session.date).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                          })}
+                                        </p>
+                                      )}
+                                      {session.start_time && (
+                                        <p className="session-time">⏰ {session.start_time}</p>
+                                      )}
+                                    </div>
+                                    <div className="session-arrow">→</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Show sessions directly for non-recurring services
+                          <div className="sessions-list direct-sessions">
+                            {parentService.sessions.map((session) => (
+                              <div
+                                key={session.id}
+                                className="session-item"
+                                onClick={() => handleServiceSelect(session)}
+                              >
+                                <div className="session-info">
+                                  <h4>{session.name}</h4>
+                                  {session.location && (
+                                    <p className="session-location">📍 {session.location}</p>
+                                  )}
+                                  {session.date && (
+                                    <p className="session-datetime">
+                                      📅 {new Date(session.date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </p>
+                                  )}
+                                  {session.start_time && (
+                                    <p className="session-time">⏰ {session.start_time}</p>
+                                  )}
+                                </div>
+                                <div className="session-arrow">→</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="reports-content">
-            {selectedService && (
-              <AttendanceReport service={selectedService} />
+                ))}
+              </div>
             )}
           </div>
-        </div>
+
+          {/* Report Modal */}
+          {showReportModal && selectedService && (
+            <div className="modal-overlay" onClick={handleCloseModal}>
+              <div className="modal-content report-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <div className="modal-header-content">
+                    <h2>{selectedService.name}</h2>
+                    {selectedService.location && (
+                      <p className="modal-subtext">📍 {selectedService.location}</p>
+                    )}
+                  </div>
+                  <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
+                </div>
+                <div className="modal-body report-modal-body">
+                  <AttendanceReport service={selectedService} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

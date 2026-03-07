@@ -8,22 +8,41 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
 
   const getDepartmentLabel = (value) => {
     const departments = {
-      'worship': 'Worship',
-      'outreach': 'Outreach',
-      'youth': 'Youth',
-      'administration': 'Administration',
+      'technical': 'Technical',
+      'media': 'Media',
+      'echoes_of_grace': 'Echoes of Grace',
+      'celestial_harmony_choir': 'Celestial Harmony Choir',
+      'heavenly_vibes': 'Heavenly Vibes',
+      'prayer_evangelism': 'Prayer and Evangelism',
+      'visitor_care': 'Visitor Care',
+      'protocol_ushering': 'Protocol & Ushering',
     };
     return departments[value] || value || '-';
   };
 
-  const getGroupLabel = (value) => {
-    const groups = {
-      'group_a': 'Group A',
-      'group_b': 'Group B',
-      'group_c': 'Group C',
-      'group_d': 'Group D',
+  const getClassLabel = (value) => {
+    const classes = {
+      'airport': 'Airport',
+      'abesim': 'Abesim',
+      'old_abesim': 'Old Abesim',
+      'asufufu_adomako': 'Asufufu / Adomako',
+      'baakoniaba': 'Baakoniaba',
+      'berlin_top_class_1': 'Berlin Top class 1',
+      'berlin_top_class_2': 'Berlin Top class 2',
+      'penkwase_class_1': 'Penkwase class 1',
+      'penkwase_class_2': 'Penkwase class 2',
+      'mayfair': 'Mayfair',
+      'odumase': 'Odumase',
+      'new_dormaa_kotokrom': 'New Dormaa / Kotokrom',
+      'dumasua': 'Dumasua',
+      'fiapre_class_1': 'Fiapre Class 1',
+      'fiapre_class_2': 'Fiapre Class 2',
+      'magazine': 'Magazine',
+      'town_centre': 'Town Centre',
+      'newton_estate': 'Newton/Estate',
+      'distance': 'Distance',
     };
-    return groups[value] || value || '-';
+    return classes[value] || value || '-';
   };
 
   const handleQRClick = (member) => {
@@ -42,7 +61,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
               <th>Phone</th>
               <th>Email</th>
               <th>Department</th>
-              <th>Group</th>
+              <th>Class</th>
               <th>Visitor</th>
               <th>Actions</th>
             </tr>
@@ -57,7 +76,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                 <td className="phone-col" data-label="Phone">{member.phone || '-'}</td>
                 <td className="email-col" data-label="Email">{member.email || '-'}</td>
                 <td className="department-col" data-label="Department">{getDepartmentLabel(member.department)}</td>
-                <td className="group-col" data-label="Group">{getGroupLabel(member.group)}</td>
+                <td className="class-col" data-label="Class">{getClassLabel(member.class_name)}</td>
                 <td className="visitor-col" data-label="Visitor">
                   {member.is_visitor ? (
                     <span className="visitor-badge-small">Visitor</span>

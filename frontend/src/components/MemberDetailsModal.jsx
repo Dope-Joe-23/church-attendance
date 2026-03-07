@@ -217,16 +217,48 @@ const MemberDetailsModal = ({
               <h4>📋 Contact Information</h4>
               <div className="contact-info">
                 <div className="info-row">
-                  <span className="info-label">Email:</span>
-                  <span className="info-value">{member.email || 'Not provided'}</span>
+                  <span className="info-label">Full Name:</span>
+                  <span className="info-value">{member.full_name || 'Not provided'}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Phone:</span>
+                  <span className="info-label">Date of Birth:</span>
+                  <span className="info-value">{member.date_of_birth || 'Not provided'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Contact:</span>
                   <span className="info-value">{member.phone || 'Not provided'}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Group:</span>
-                  <span className="info-value">{member.group || 'Not assigned'}</span>
+                  <span className="info-label">Email Address:</span>
+                  <span className="info-value">{member.email || 'Not provided'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Place of Residence:</span>
+                  <span className="info-value">{member.place_of_residence || 'Not provided'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Profession:</span>
+                  <span className="info-value">{member.profession || 'Not provided'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Department:</span>
+                  <span className="info-value">{member.department || 'Not assigned'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Class:</span>
+                  <span className="info-value">{member.class_name || 'Not assigned'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Committee:</span>
+                  <span className="info-value">{member.committee || 'Not assigned'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Baptised:</span>
+                  <span className="info-value">{member.baptised ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Confirmed:</span>
+                  <span className="info-value">{member.confirmed ? 'Yes' : 'No'}</span>
                 </div>
               </div>
             </div>

@@ -2,17 +2,46 @@ import React from 'react';
 import '../styles/components.css';
 
 const DEPARTMENT_CHOICES = [
-  { value: 'worship', label: 'Worship' },
-  { value: 'outreach', label: 'Outreach' },
-  { value: 'youth', label: 'Youth' },
-  { value: 'administration', label: 'Administration' },
+  { value: 'technical', label: 'Technical' },
+  { value: 'media', label: 'Media' },
+  { value: 'echoes_of_grace', label: 'Echoes of Grace' },
+  { value: 'celestial_harmony_choir', label: 'Celestial Harmony Choir' },
+  { value: 'heavenly_vibes', label: 'Heavenly Vibes' },
+  { value: 'prayer_evangelism', label: 'Prayer and Evangelism' },
+  { value: 'visitor_care', label: 'Visitor Care' },
+  { value: 'protocol_ushering', label: 'Protocol & Ushering' },
 ];
 
-const GROUP_CHOICES = [
-  { value: 'group_a', label: 'Group A' },
-  { value: 'group_b', label: 'Group B' },
-  { value: 'group_c', label: 'Group C' },
-  { value: 'group_d', label: 'Group D' },
+const CLASS_CHOICES = [
+  { value: 'airport', label: 'Airport' },
+  { value: 'abesim', label: 'Abesim' },
+  { value: 'old_abesim', label: 'Old Abesim' },
+  { value: 'asufufu_adomako', label: 'Asufufu / Adomako' },
+  { value: 'baakoniaba', label: 'Baakoniaba' },
+  { value: 'berlin_top_class_1', label: 'Berlin Top class 1' },
+  { value: 'berlin_top_class_2', label: 'Berlin Top class 2' },
+  { value: 'penkwase_class_1', label: 'Penkwase class 1' },
+  { value: 'penkwase_class_2', label: 'Penkwase class 2' },
+  { value: 'mayfair', label: 'Mayfair' },
+  { value: 'odumase', label: 'Odumase' },
+  { value: 'new_dormaa_kotokrom', label: 'New Dormaa / Kotokrom' },
+  { value: 'dumasua', label: 'Dumasua' },
+  { value: 'fiapre_class_1', label: 'Fiapre Class 1' },
+  { value: 'fiapre_class_2', label: 'Fiapre Class 2' },
+  { value: 'magazine', label: 'Magazine' },
+  { value: 'town_centre', label: 'Town Centre' },
+  { value: 'newton_estate', label: 'Newton/Estate' },
+  { value: 'distance', label: 'Distance' },
+];
+
+const COMMITTEE_CHOICES = [
+  { value: 'finance', label: 'Finance' },
+  { value: 'audit', label: 'Audit' },
+  { value: 'project', label: 'Project' },
+  { value: 'life_builders', label: 'Life Builders' },
+  { value: 'health', label: 'Health' },
+  { value: 'welfare', label: 'Welfare' },
+  { value: 'harvest', label: 'Harvest' },
 ];
 
 const MemberFormModal = ({
@@ -60,7 +89,19 @@ const MemberFormModal = ({
             </div>
 
             <div className="form-group half-width">
-              <label>Phone</label>
+              <label>Date of Birth</label>
+              <input
+                type="date"
+                value={formData.date_of_birth || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, date_of_birth: e.target.value })
+                }
+                className="input-field"
+              />
+            </div>
+
+            <div className="form-group half-width">
+              <label>Contact</label>
               <input
                 type="tel"
                 value={formData.phone}
@@ -73,7 +114,7 @@ const MemberFormModal = ({
             </div>
 
             <div className="form-group half-width">
-              <label>Email</label>
+              <label>Email Address</label>
               <input
                 type="email"
                 value={formData.email}
@@ -82,6 +123,32 @@ const MemberFormModal = ({
                 }
                 className="input-field"
                 placeholder="Enter email address"
+              />
+            </div>
+
+            <div className="form-group half-width">
+              <label>Place of Residence</label>
+              <input
+                type="text"
+                value={formData.place_of_residence || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, place_of_residence: e.target.value })
+                }
+                className="input-field"
+                placeholder="Enter place of residence"
+              />
+            </div>
+
+            <div className="form-group half-width">
+              <label>Profession</label>
+              <input
+                type="text"
+                value={formData.profession || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, profession: e.target.value })
+                }
+                className="input-field"
+                placeholder="Enter profession"
               />
             </div>
 
@@ -104,18 +171,36 @@ const MemberFormModal = ({
             </div>
 
             <div className="form-group half-width">
-              <label>Group</label>
+              <label>Class</label>
               <select
-                value={formData.group}
+                value={formData.class_name || ''}
                 onChange={(e) =>
-                  onFormChange({ ...formData, group: e.target.value })
+                  onFormChange({ ...formData, class_name: e.target.value })
                 }
                 className="input-field"
               >
-                <option value="">Select Group</option>
-                {GROUP_CHOICES.map((grp) => (
-                  <option key={grp.value} value={grp.value}>
-                    {grp.label}
+                <option value="">Select Class</option>
+                {CLASS_CHOICES.map((cls) => (
+                  <option key={cls.value} value={cls.value}>
+                    {cls.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group half-width">
+              <label>Committee</label>
+              <select
+                value={formData.committee || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, committee: e.target.value })
+                }
+                className="input-field"
+              >
+                <option value="">Select Committee</option>
+                {COMMITTEE_CHOICES.map((com) => (
+                  <option key={com.value} value={com.value}>
+                    {com.label}
                   </option>
                 ))}
               </select>
@@ -136,19 +221,6 @@ const MemberFormModal = ({
                 />
                 Is Visitor
               </label>
-            </div>
-
-            <div className="form-group full-width">
-              <label>Location</label>
-              <input
-                type="text"
-                value={formData.location || ''}
-                onChange={(e) =>
-                  onFormChange({ ...formData, location: e.target.value })
-                }
-                className="input-field"
-                placeholder="Enter location"
-              />
             </div>
 
             <div className="form-group half-width">
