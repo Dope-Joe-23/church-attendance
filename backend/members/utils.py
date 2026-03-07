@@ -5,6 +5,48 @@ from datetime import timedelta
 from django.utils import timezone
 from .models import Member, MemberAlert, ContactLog
 from django.db.models import Q
+import re
+
+
+def generate_sequential_member_id():
+    """
+    Generate a sequential member ID in the format: WIS-YYYY-0001
+    
+    - WIS: Church prefix (static)
+    - YYYY: Current year
+    - 0001: Sequential number for the year (incremented for each new member)
+    
+    Returns:
+        str: Generated member ID (e.g., 'WIS-2026-0001')
+    """
+    from django.utils import timezone
+    
+    current_year = timezone.now().year
+    prefix = f"WIS-{current_year}-"
+    
+    # Get the highest sequence number for the current year
+    # Use regex to find all member IDs matching the pattern WIS-YYYY-XXXX
+    members_this_year = Member.objects.filter(
+        member_id__startswith=prefix
+    ).order_by('member_id')
+    
+    if not members_this_year.exists():
+        # First member of the year
+        sequence = 1
+    else:
+        # Get the last member and extract the sequence number
+        last_member = members_this_year.last()
+        try:
+            # Extract the numeric part (last 4 digits)
+            last_sequence = int(last_member.member_id.split('-')[-1])
+            sequence = last_sequence + 1
+        except (ValueError, IndexError):
+            # Fallback if parsing fails
+            sequence = members_this_year.count() + 1
+    
+    # Format as 4-digit sequence
+    member_id = f"{prefix}{sequence:04d}"
+    return member_id
 
 
 def update_member_absence_tracking(member, attendance_status):

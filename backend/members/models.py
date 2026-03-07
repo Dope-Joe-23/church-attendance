@@ -3,7 +3,6 @@ import qrcode
 from io import BytesIO
 from django.core.files import File
 from PIL import Image
-import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -101,15 +100,16 @@ class Member(models.Model):
         return f"{self.full_name} ({self.member_id})"
     
     def save(self, *args, **kwargs):
-        """Override save to generate QR code on member creation"""
+        """Override save to generate sequential member ID and QR code"""
         import base64
         import logging
+        from .utils import generate_sequential_member_id
         
         logger = logging.getLogger(__name__)
         
-        # Generate member_id if not provided
+        # Generate sequential member_id if not provided
         if not self.member_id:
-            self.member_id = str(uuid.uuid4())[:8].upper()
+            self.member_id = generate_sequential_member_id()
         
         # Generate QR code if we don't already have data
         if not self.qr_code_data:
