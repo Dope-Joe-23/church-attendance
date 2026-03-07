@@ -16,14 +16,29 @@ const MemberCard = ({ member, onEdit, onDelete }) => {
     return departments[value] || value;
   };
 
-  const getGroupLabel = (value) => {
-    const groups = {
-      'group_a': 'Group A',
-      'group_b': 'Group B',
-      'group_c': 'Group C',
-      'group_d': 'Group D',
+  const getClassLabel = (value) => {
+    const classes = {
+      'airport': 'Airport',
+      'abesim': 'Abesim',
+      'old_abesim': 'Old Abesim',
+      'asufufu_adomako': 'Asufufu / Adomako',
+      'baakoniaba': 'Baakoniaba',
+      'berlin_top_class_1': 'Berlin Top class 1',
+      'berlin_top_class_2': 'Berlin Top class 2',
+      'penkwase_class_1': 'Penkwase class 1',
+      'penkwase_class_2': 'Penkwase class 2',
+      'mayfair': 'Mayfair',
+      'odumase': 'Odumase',
+      'new_dormaa_kotokrom': 'New Dormaa / Kotokrom',
+      'dumasua': 'Dumasua',
+      'fiapre_class_1': 'Fiapre Class 1',
+      'fiapre_class_2': 'Fiapre Class 2',
+      'magazine': 'Magazine',
+      'town_centre': 'Town Centre',
+      'newton_estate': 'Newton/Estate',
+      'distance': 'Distance',
     };
-    return groups[value] || value;
+    return classes[value] || value;
   };
 
   return (
@@ -65,10 +80,10 @@ const MemberCard = ({ member, onEdit, onDelete }) => {
                 <span className="info-value">{getDepartmentLabel(member.department)}</span>
               </div>
             )}
-            {member.group && (
+            {member.class_name && (
               <div className="info-row">
-                <span className="info-label">Group:</span>
-                <span className="info-value">{getGroupLabel(member.group)}</span>
+                <span className="info-label">Class:</span>
+                <span className="info-value">{getClassLabel(member.class_name)}</span>
               </div>
             )}
           </div>

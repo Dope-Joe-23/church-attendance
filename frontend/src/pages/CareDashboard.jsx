@@ -349,7 +349,7 @@ const CareDashboard = () => {
                     </td>
                     <td className="member-id">{member.member_id}</td>
                     <td>{member.department || '—'}</td>
-                    <td>{member.group || '—'}</td>
+                    <td>{member.class_name || '—'}</td>
                     
                     <td className="absenteeism-cell">
                       {metric ? (

@@ -76,21 +76,36 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
         yPos += lineHeight;
       }
 
-      // Group (if exists)
-      if (member.group) {
-        const groupLabel = {
-          'group_a': 'Group A',
-          'group_b': 'Group B',
-          'group_c': 'Group C',
-          'group_d': 'Group D',
-        }[member.group] || member.group;
+      // Class (if exists)
+      if (member.class_name) {
+        const classLabel = {
+          'airport': 'Airport',
+          'abesim': 'Abesim',
+          'old_abesim': 'Old Abesim',
+          'asufufu_adomako': 'Asufufu / Adomako',
+          'baakoniaba': 'Baakoniaba',
+          'berlin_top_class_1': 'Berlin Top class 1',
+          'berlin_top_class_2': 'Berlin Top class 2',
+          'penkwase_class_1': 'Penkwase class 1',
+          'penkwase_class_2': 'Penkwase class 2',
+          'mayfair': 'Mayfair',
+          'odumase': 'Odumase',
+          'new_dormaa_kotokrom': 'New Dormaa / Kotokrom',
+          'dumasua': 'Dumasua',
+          'fiapre_class_1': 'Fiapre Class 1',
+          'fiapre_class_2': 'Fiapre Class 2',
+          'magazine': 'Magazine',
+          'town_centre': 'Town Centre',
+          'newton_estate': 'Newton/Estate',
+          'distance': 'Distance',
+        }[member.class_name] || member.class_name;
 
         ctx.fillStyle = '#333333';
         ctx.font = 'bold 20px Arial';
-        ctx.fillText('Group:', leftMargin, yPos);
+        ctx.fillText('Class:', leftMargin, yPos);
         ctx.font = '18px Arial';
         ctx.fillStyle = '#555555';
-        ctx.fillText(groupLabel, leftMargin + 120, yPos);
+        ctx.fillText(classLabel, leftMargin + 120, yPos);
         yPos += lineHeight;
       }
 

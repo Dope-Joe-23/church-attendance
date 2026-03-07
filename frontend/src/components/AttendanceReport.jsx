@@ -2,12 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { attendanceApi } from '../services/api';
 import '../styles/components.css';
 
-// Mapping for group display names
-const GROUP_LABELS = {
-  'group_a': 'Group A',
-  'group_b': 'Group B',
-  'group_c': 'Group C',
-  'group_d': 'Group D',
+// Mapping for class display names
+const CLASS_LABELS = {
+  'airport': 'Airport',
+  'abesim': 'Abesim',
+  'old_abesim': 'Old Abesim',
+  'asufufu_adomako': 'Asufufu / Adomako',
+  'baakoniaba': 'Baakoniaba',
+  'berlin_top_class_1': 'Berlin Top class 1',
+  'berlin_top_class_2': 'Berlin Top class 2',
+  'penkwase_class_1': 'Penkwase class 1',
+  'penkwase_class_2': 'Penkwase class 2',
+  'mayfair': 'Mayfair',
+  'odumase': 'Odumase',
+  'new_dormaa_kotokrom': 'New Dormaa / Kotokrom',
+  'dumasua': 'Dumasua',
+  'fiapre_class_1': 'Fiapre Class 1',
+  'fiapre_class_2': 'Fiapre Class 2',
+  'magazine': 'Magazine',
+  'town_centre': 'Town Centre',
+  'newton_estate': 'Newton/Estate',
+  'distance': 'Distance',
 };
 
 const AttendanceReport = ({ service }) => {
@@ -192,7 +207,7 @@ const AttendanceReport = ({ service }) => {
                         )}
                       </div>
                     </td>
-                    <td>{GROUP_LABELS[record.member_details.group] || record.member_details.group || '—'}</td>
+                    <td>{CLASS_LABELS[record.member_details.class_name] || record.member_details.class_name || '—'}</td>
                     <td>
                       <span className={`status-badge status-${record.status}`}>
                         {record.status.charAt(0).toUpperCase() +

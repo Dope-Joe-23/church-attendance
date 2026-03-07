@@ -20,9 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file located at project root
 # BASE_DIR is backend/, but we also want to support a repo-root .env
-load_dotenv(BASE_DIR / '.env')
+# Use override=True to ensure .env values take precedence over system env vars
+load_dotenv(BASE_DIR / '.env', override=True)
 # if a top-level .env exists (workspace root), load it as well
-load_dotenv(Path(BASE_DIR).parent / '.env')
+load_dotenv(Path(BASE_DIR).parent / '.env', override=True)
 
 
 # Quick-start development settings - unsuitable for production
