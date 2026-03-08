@@ -1796,6 +1796,13 @@
   gap: 1.5rem;
 }
 
+.modal-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
 .modal-header-content h2 {
   margin: 0 0 0.75rem 0;
   color: white;
