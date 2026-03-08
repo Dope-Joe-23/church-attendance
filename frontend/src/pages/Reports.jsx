@@ -118,8 +118,22 @@ const Reports = () => {
                       {/* Parent Service Row */}
                       <tr
                         className="service-row"
-                        onClick={() => parentService.sessions && parentService.sessions.length > 0 && toggleExpandService(parentService.id)}
-                        style={{ cursor: parentService.sessions && parentService.sessions.length > 0 ? 'pointer' : 'default' }}
+                        onClick={() => {
+                          if (!parentService.is_recurring) {
+                            // One-time service: open modal
+                            handleServiceSelect(parentService);
+                          } else if (parentService.sessions && parentService.sessions.length > 0) {
+                            // Recurring with sessions: toggle expand
+                            toggleExpandService(parentService.id);
+                          }
+                          // Recurring without sessions: do nothing
+                        }}
+                        style={{
+                          cursor:
+                            !parentService.is_recurring || (parentService.sessions && parentService.sessions.length > 0)
+                              ? 'pointer'
+                              : 'default'
+                        }}
                       >
                         <td className="expand-cell">
                           {parentService.sessions && parentService.sessions.length > 0 && (
@@ -151,7 +165,10 @@ const Reports = () => {
                           {!parentService.is_recurring && (
                             <button
                               className="btn-select"
-                              onClick={() => handleServiceSelect(parentService)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleServiceSelect(parentService);
+                              }}
                             >
                               Select
                             </button>

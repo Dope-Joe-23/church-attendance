@@ -160,10 +160,6 @@ const AttendanceReport = ({ service }) => {
               <h4>Absent</h4>
               <p>{attendance.total_absent}</p>
             </div>
-            <div className="stat late">
-              <h4>Late</h4>
-              <p>{attendance.total_late}</p>
-            </div>
           </div>
 
           {successMessage && (

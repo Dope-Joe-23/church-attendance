@@ -458,85 +458,147 @@
 
 /* Reports */
 .report-container {
-  background-color: white;
-  border-radius: var(--border-radius);
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.report-container h2 {
+  margin: 0 0 2rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  display: none;
 }
 
 .report-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
   border-bottom: 2px solid #e5e7eb;
+}
+
+.report-header h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.report-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
 }
 
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .stat {
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
+  padding: 2rem;
+  border-radius: 12px;
   text-align: center;
   color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
 .stat h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: white !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .stat p {
   margin: 0;
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: white !important;
 }
 
 .stat.present {
-  background-color: var(--success-color);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+.stat.present:hover {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
 }
 
 .stat.absent {
-  background-color: var(--danger-color);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
+.stat.absent:hover {
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
 }
 
 .stat.late {
-  background-color: var(--warning-color);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+}
+
+.stat.late:hover {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
 }
 
 .attendance-table {
   overflow-x: auto;
+  margin-top: 1rem;
 }
 
 .attendance-table table {
   width: 100%;
   border-collapse: collapse;
+  background: white;
 }
 
 .attendance-table thead {
-  background-color: var(--light-color);
-  border-bottom: 2px solid #e5e7eb;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 2px solid #d1d5db;
 }
 
 .attendance-table th {
-  padding: 1rem;
+  padding: 1.2rem;
   text-align: left;
-  font-weight: 600;
-  color: var(--dark-color);
+  font-weight: 700;
+  color: #374151;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .attendance-table td {
-  padding: 1rem;
+  padding: 1rem 1.2rem;
   border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.attendance-table tbody tr {
+  transition: all 0.2s ease;
 }
 
 .attendance-table tbody tr:hover {
-  background-color: var(--light-color);
+  background-color: #f9fafb;
+}
+
+.attendance-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .contact-info {
@@ -1141,10 +1203,63 @@
   background-color: #dcfce7;
   border: 1px solid #bbf7d0;
   color: #166534;
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
   margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.message {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.message-success {
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.message-error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.message-warning {
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.message-info {
+  background-color: #dbeafe;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
 }
 
 /* Form field sizing */

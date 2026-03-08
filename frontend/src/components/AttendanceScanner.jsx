@@ -335,32 +335,6 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         {message && (
           <div className={`message message-${messageType}`}>{message}</div>
         )}
-        
-        {/* Debug Info - Optional */}
-        {cameraActive && (
-          <div style={{ 
-            marginTop: '20px', 
-            fontSize: '12px', 
-            color: '#666',
-            padding: '10px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '4px',
-            border: '1px solid #ddd'
-          }}>
-            <p style={{ margin: '5px 0' }}>
-              🔍 Scanner active - detecting QR codes...
-            </p>
-            <p style={{ margin: '5px 0', color: detectionActive ? '#28a745' : '#dc3545' }}>
-              {detectionActive ? '✓ Detection running' : '✗ Waiting for video...'}
-            </p>
-            <p style={{ margin: '5px 0' }}>
-              📍 Position QR code in frame for 1-2 seconds
-            </p>
-            <p style={{ margin: '5px 0', fontSize: '11px', color: '#999' }}>
-              Check browser console (F12) for detailed logs
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
