@@ -1845,6 +1845,32 @@
   flex: 1;
 }
 
+/* Scrollbar Styling */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6b3fa1 100%);
+}
+
+/* Firefox scrollbar */
+.modal-body {
+  scrollbar-color: #667eea #f1f5f9;
+  scrollbar-width: thin;
+}
+
 /* Scanner Modal Specific */
 .scanner-modal {
   max-width: 900px;
