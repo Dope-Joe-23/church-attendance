@@ -1,7 +1,16 @@
 import apiClient from './apiClient';
+import axios from 'axios';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_REFRESH_KEY = 'auth_refresh';
+
+// Create a separate axios instance for token refresh to avoid interceptor loops
+const tokenApiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 const authService = {
   /**
@@ -91,7 +100,8 @@ const authService = {
         throw new Error('No refresh token available');
       }
 
-      const response = await apiClient.post('/token/refresh/', {
+      // Use tokenApiClient to avoid interceptor loops
+      const response = await tokenApiClient.post('/token/refresh/', {
         refresh: refreshToken,
       });
 
@@ -117,8 +127,5 @@ const authService = {
     }
   },
 };
-
-// Initialize auth when the module loads
-authService.initializeAuth();
 
 export default authService;

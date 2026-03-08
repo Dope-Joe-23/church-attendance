@@ -106,9 +106,12 @@ const Navigation = ({ isAuthenticated, onLogout }) => {
               Logout
             </button>
           ) : (
-            <a href="/login" className="btn btn-primary login-btn">
-              Login
-            </a>
+            // Don't show login button on login or register pages
+            (location.pathname !== '/login' && location.pathname !== '/register') && (
+              <a href="/login" className="btn btn-primary login-btn">
+                Login
+              </a>
+            )
           )}
         </div>
       </div>

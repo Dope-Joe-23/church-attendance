@@ -29,13 +29,19 @@ const Home = () => {
 
       // Get the latest services for the dashboard
       const servicesList = servicesRes.data.results || servicesRes.data;
-      const latestServices = Array.isArray(servicesList) 
-        ? servicesList.slice(0, 3) 
-        : [];
+      const allServices = Array.isArray(servicesList) ? servicesList : [];
+      
+      // Filter to only parent services (not sessions) - parent_service will be null for parents
+      const parentServices = allServices.filter(service => service.parent_service === null);
+      const latestServices = parentServices.slice(0, 3);
+      
+      // Get total members - membersRes.data.results for paginated API
+      const membersList = membersRes.data.results || membersRes.data;
+      const totalMembersCount = Array.isArray(membersList) ? membersList.length : 0;
 
       setStats({
-        totalMembers: membersRes.data.length || 0,
-        totalServices: (Array.isArray(servicesList) ? servicesList.length : 0),
+        totalMembers: totalMembersCount,
+        totalServices: parentServices.length,
         todayCheckins: 0, // Would need attendance data
         activeAlerts: alertsRes.data ? alertsRes.data.length : 0
       });

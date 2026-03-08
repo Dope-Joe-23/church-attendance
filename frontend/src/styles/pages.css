@@ -1840,12 +1840,12 @@
   background: white;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem 1.2rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.8rem;
 }
 
 .service-selection-card:hover,
@@ -1856,7 +1856,7 @@
 }
 
 .service-card-icon {
-  font-size: 2rem;
+  font-size: 1.75rem;
   flex-shrink: 0;
 }
 
@@ -1866,9 +1866,9 @@
 }
 
 .service-card-content h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   color: var(--primary-color);
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1877,26 +1877,26 @@
 .service-location,
 .service-datetime,
 .service-time {
-  margin: 0.25rem 0;
+  margin: 0.15rem 0;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .service-badge {
   display: inline-block;
-  margin: 0.5rem 0 0 0;
-  padding: 0.25rem 0.75rem;
+  margin: 0.3rem 0 0 0;
+  padding: 0.2rem 0.6rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
 }
 
 .service-card-arrow {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: #d1d5db;
   flex-shrink: 0;
   transition: all 0.3s ease;
@@ -1931,15 +1931,15 @@
 /* Parent Service Container */
 .parent-service-container {
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-  padding: 1.5rem;
+  padding: 1rem 1.2rem;
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.8rem;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .parent-service-container .service-card-icon {
-  font-size: 2.5rem;
+  font-size: 2rem;
   flex-shrink: 0;
 }
 
@@ -1948,27 +1948,27 @@
 }
 
 .parent-service-container .service-card-content h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
   color: var(--primary-color);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
 .parent-service-container .service-location,
 .parent-service-container .service-time {
-  margin: 0.25rem 0;
+  margin: 0.15rem 0;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .parent-service-container .service-badge {
-  margin-top: 0.75rem;
+  margin-top: 0.4rem;
   display: inline-block;
-  padding: 0.35rem 0.9rem;
+  padding: 0.25rem 0.7rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -2125,10 +2125,206 @@
   padding: 2rem;
 }
 
+/* Services Table Layout */
+.services-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.services-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.services-table thead th {
+  padding: 1.2rem 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.services-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.services-table tbody tr.service-row {
+  background: #fafafa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.services-table tbody tr.service-row:hover {
+  background: #f0f4ff;
+}
+
+.services-table tbody tr.session-row {
+  background: white;
+  cursor: pointer;
+  user-select: none;
+}
+
+.services-table tbody tr.session-row:hover {
+  background: #f9fafb;
+}
+
+.services-table tbody td {
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.services-table tbody tr.service-row td {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.services-table tbody tr.service-row .service-name {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.05rem;
+}
+
+.services-table tbody tr.session-row .session-name {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.services-table tbody tr.session-row .session-name span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* Expand Button */
+.expand-cell {
+  text-align: center;
+  padding: 1rem 0.5rem;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+}
+
+.expand-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+/* Service Type Badge */
+.service-type {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.service-type.onetime {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+
+.service-type.recurring {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.service-type.session {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  font-size: 0.75rem;
+}
+
+/* Select Button */
+.btn-select {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-select:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-select:active {
+  transform: translateY(0);
+}
+
+/* Empty State */
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  background: white;
+  border-radius: 8px;
+  border: 2px dashed #e5e7eb;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .services-grid {
     grid-template-columns: 1fr;
+  }
+
+  .services-table {
+    font-size: 0.85rem;
+  }
+
+  .services-table thead th,
+  .services-table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .services-table thead th:nth-child(3),
+  .services-table thead th:nth-child(5),
+  .services-table thead th:nth-child(6) {
+    display: none;
+  }
+
+  .services-table tbody td:nth-child(3),
+  .services-table tbody td:nth-child(5),
+  .services-table tbody td:nth-child(6) {
+    display: none;
+  }
+
+  .btn-select {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
   }
 
   .modal-content {

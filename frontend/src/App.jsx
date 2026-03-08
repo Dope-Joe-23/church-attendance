@@ -23,6 +23,9 @@ function App() {
 
   // Check authentication status on mount and whenever storage changes
   useEffect(() => {
+    // Initialize auth header from stored token
+    authService.initializeAuth();
+    
     const checkAuth = () => {
       setIsAuthenticated(authService.isAuthenticated());
     };
@@ -33,13 +36,9 @@ function App() {
 
     // Listen for storage changes (from other tabs/windows or login/logout)
     window.addEventListener('storage', checkAuth);
-    
-    // Also check periodically in case the app was backgrounded
-    const interval = setInterval(checkAuth, 2000);
 
     return () => {
       window.removeEventListener('storage', checkAuth);
-      clearInterval(interval);
     };
   }, []);
 

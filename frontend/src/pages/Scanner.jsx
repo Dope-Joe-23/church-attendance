@@ -98,112 +98,105 @@ const Scanner = () => {
                 <p>No services found. Please create one to start checking in members.</p>
               </div>
             ) : (
-              <div className="services-with-sessions">
-                {filteredServices.map((parentService) => (
-                  <div key={parentService.id} className="service-with-sessions-group">
-                    {/* Parent Service at Top */}
-                    <div className="parent-service-container">
-                      <div className="service-card-icon">📱</div>
-                      <div className="service-card-content">
-                        <h3>{parentService.name}</h3>
-                        {parentService.location && (
-                          <p className="service-location">📍 {parentService.location}</p>
-                        )}
-                        {parentService.start_time && (
-                          <p className="service-time">⏰ {parentService.start_time}</p>
-                        )}
-                        {parentService.is_recurring && (
-                          <p className="service-badge">🔄 Recurring Service</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Sessions Below */}
-                    {parentService.sessions && parentService.sessions.length > 0 && (
-                      <>
-                        {parentService.is_recurring ? (
-                          // Collapsible container for recurring services
-                          <div className="sessions-dropdown-container">
-                            <div
-                              className="dropdown-toggle"
-                              onClick={() => toggleExpandService(parentService.id)}
+              <table className="services-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px' }}></th>
+                    <th>Service/Session</th>
+                    <th>Location</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Type</th>
+                    <th style={{ width: '100px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredServices.map((parentService) => (
+                    <React.Fragment key={parentService.id}>
+                      {/* Parent Service Row */}
+                      <tr
+                        className="service-row"
+                        onClick={() => parentService.sessions && parentService.sessions.length > 0 && toggleExpandService(parentService.id)}
+                        style={{ cursor: parentService.sessions && parentService.sessions.length > 0 ? 'pointer' : 'default' }}
+                      >
+                        <td className="expand-cell">
+                          {parentService.sessions && parentService.sessions.length > 0 && (
+                            <button
+                              className="expand-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpandService(parentService.id);
+                              }}
+                              title={expandedService === parentService.id ? 'Collapse' : 'Expand'}
                             >
-                              <span className="toggle-arrow">
-                                {expandedService === parentService.id ? '▼' : '▶'}
-                              </span>
-                              <span className="toggle-text">
-                                {parentService.sessions.length} session{parentService.sessions.length !== 1 ? 's' : ''} available
-                              </span>
-                            </div>
-                            {expandedService === parentService.id && (
-                              <div className="sessions-list">
-                                {parentService.sessions.map((session) => (
-                                  <div
-                                    key={session.id}
-                                    className="session-item"
-                                    onClick={() => handleServiceSelect(session)}
-                                  >
-                                    <div className="session-info">
-                                      <h4>{session.name}</h4>
-                                      {session.location && (
-                                        <p className="session-location">📍 {session.location}</p>
-                                      )}
-                                      {session.date && (
-                                        <p className="session-datetime">
-                                          📅 {new Date(session.date).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric'
-                                          })}
-                                        </p>
-                                      )}
-                                      {session.start_time && (
-                                        <p className="session-time">⏰ {session.start_time}</p>
-                                      )}
-                                    </div>
-                                    <div className="session-arrow">→</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          // Show sessions directly for non-recurring services
-                          <div className="sessions-list direct-sessions">
-                            {parentService.sessions.map((session) => (
-                              <div
-                                key={session.id}
-                                className="session-item"
-                                onClick={() => handleServiceSelect(session)}
+                              {expandedService === parentService.id ? '▼' : '▶'}
+                            </button>
+                          )}
+                        </td>
+                        <td className="service-name">
+                          <strong>{parentService.name}</strong>
+                        </td>
+                        <td>{parentService.location || '—'}</td>
+                        <td>{parentService.date || '—'}</td>
+                        <td>{parentService.start_time || '—'}</td>
+                        <td>{parentService.end_time || '—'}</td>
+                        <td>
+                          <span className={`service-type ${parentService.is_recurring ? 'recurring' : 'onetime'}`}>
+                            {parentService.is_recurring ? '🔄 Recurring' : '📅 One-time'}
+                          </span>
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          {!parentService.is_recurring && (
+                            <button
+                              className="btn-select"
+                              onClick={() => handleServiceSelect(parentService)}
+                            >
+                              Select
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+
+                      {/* Session Rows (expanded) */}
+                      {expandedService === parentService.id &&
+                        parentService.sessions &&
+                        parentService.sessions.length > 0 &&
+                        parentService.sessions.map((session) => (
+                          <tr
+                            key={session.id}
+                            className="session-row"
+                            onClick={() => handleServiceSelect(session)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td></td>
+                            <td className="session-name">
+                              <span style={{ marginLeft: '20px' }}>└─ {session.name}</span>
+                            </td>
+                            <td>{session.location || '—'}</td>
+                            <td>{session.date || '—'}</td>
+                            <td>{session.start_time || '—'}</td>
+                            <td>{session.end_time || '—'}</td>
+                            <td>
+                              <span className="service-type session">📅 Session</span>
+                            </td>
+                            <td>
+                              <button
+                                className="btn-select"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleServiceSelect(session);
+                                }}
                               >
-                                <div className="session-info">
-                                  <h4>{session.name}</h4>
-                                  {session.location && (
-                                    <p className="session-location">📍 {session.location}</p>
-                                  )}
-                                  {session.date && (
-                                    <p className="session-datetime">
-                                      📅 {new Date(session.date).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                      })}
-                                    </p>
-                                  )}
-                                  {session.start_time && (
-                                    <p className="session-time">⏰ {session.start_time}</p>
-                                  )}
-                                </div>
-                                <div className="session-arrow">→</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
+                                Select
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 
