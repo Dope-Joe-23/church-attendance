@@ -253,7 +253,6 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   return (
     <div className="scanner-container">
       <div className="scanner-content">
-        <h2>Attendance Scanner</h2>
         
         {!service && (
           <div className="message message-warning" style={{ marginBottom: '20px' }}>
@@ -264,12 +263,13 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         {service && (
           <div className="service-info-panel">
             <p>
-              <strong>Service:</strong> {service.name}
-            </p>
-            <p>
               <strong>Date:</strong> {new Date(service.date).toLocaleDateString()}
             </p>
           </div>
+        )}
+        
+        {message && (
+          <div className={`message message-${messageType}`}>{message}</div>
         )}
 
         <div className="camera-container">
@@ -332,9 +332,6 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
           </button>
         </div>
 
-        {message && (
-          <div className={`message message-${messageType}`}>{message}</div>
-        )}
       </div>
     </div>
   );

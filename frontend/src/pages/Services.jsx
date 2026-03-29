@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner } from '../components';
+import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport } from '../components';
 import '../styles/pages.css';
 
 const Services = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [showSessionsModal, setShowSessionsModal] = useState(false);
   const [showAttendanceScanner, setShowAttendanceScanner] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [modalMode, setModalMode] = useState(null); // 'attendance' or 'report'
   const [selectedServiceForSessions, setSelectedServiceForSessions] = useState(null);
   const [selectedSessionForAttendance, setSelectedSessionForAttendance] = useState(null);
+  const [selectedSessionForReport, setSelectedSessionForReport] = useState(null);
   const [sessionsList, setSessionsList] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [addDateError, setAddDateError] = useState(null);
@@ -123,6 +126,7 @@ const Services = () => {
     // For recurring parent services, fetch all instances and show sessions modal
     if (service.is_recurring && !service.parent_service) {
       setSelectedServiceForSessions(service);
+      setModalMode('attendance');
       setSessionsLoading(true);
       try {
         // Filter instances from the services list where parent_service matches this service
@@ -175,6 +179,43 @@ const Services = () => {
   const handleSessionAdded = async (serviceId) => {
     // Refresh services to update parent service counts
     await fetchServices();
+  };
+
+  const handleViewReport = async (service) => {
+    // For recurring parent services, show sessions modal with report mode
+    if (service.is_recurring && !service.parent_service) {
+      setSelectedServiceForSessions(service);
+      setModalMode('report');
+      setSessionsLoading(true);
+      try {
+        // Filter instances from the services list where parent_service matches this service
+        const instances = services.filter(
+          (s) => s.parent_service === service.id
+        );
+        setSessionsList(instances);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+      setShowSessionsModal(true);
+    } else {
+      // For one-off services, directly open report modal
+      // Add extra safety check: prevent report on parent recurring services
+      if (service.is_recurring && !service.parent_service && !service.date) {
+        alert(`"${service.name}" is a recurring service template. Please add sessions first or the system will automatically generate them.`);
+        return;
+      }
+      setSelectedSessionForReport(service);
+      setShowReportModal(true);
+    }
+  };
+
+  const handleSelectSessionForReport = (session) => {
+    // Close SessionsModal and set up AttendanceReport for the selected session
+    setShowSessionsModal(false);
+    setSelectedSessionForReport(session);
+    setShowReportModal(true);
   };
 
   const resetForm = () => {
@@ -253,22 +294,84 @@ const Services = () => {
         isOpen={showSessionsModal}
         service={selectedServiceForSessions}
         sessions={sessionsList}
-        onSelectSession={handleSelectSession}
-        onClose={() => setShowSessionsModal(false)}
+        onSelectSession={modalMode === 'report' ? handleSelectSessionForReport : handleSelectSession}
+        onClose={() => {
+          setShowSessionsModal(false);
+          setModalMode(null);
+        }}
         isLoading={sessionsLoading}
         onAddDate={handleAddDateSubmit}
         addDateError={addDateError}
         onSessionAdded={handleSessionAdded}
+        mode={modalMode || 'attendance'}
       />
 
+      {/* Scanner Modal */}
       {showAttendanceScanner && selectedSessionForAttendance && (
-        <AttendanceScanner
-          service={selectedSessionForAttendance}
-          onCheckinSuccess={() => {
-            setShowAttendanceScanner(false);
-            setSelectedSessionForAttendance(null);
-          }}
-        />
+        <div className="modal-overlay" onClick={() => {
+          setShowAttendanceScanner(false);
+          setSelectedSessionForAttendance(null);
+        }}>
+          <div className="modal-content scanner-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <h2>{selectedSessionForAttendance.name}</h2>
+                {selectedSessionForAttendance.location && (
+                  <p className="modal-subtext">📍 {selectedSessionForAttendance.location}</p>
+                )}
+              </div>
+              <button 
+                className="modal-close-btn" 
+                onClick={() => {
+                  setShowAttendanceScanner(false);
+                  setSelectedSessionForAttendance(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body scanner-modal-body">
+              <AttendanceScanner
+                service={selectedSessionForAttendance}
+                onCheckinSuccess={() => {
+                  setShowAttendanceScanner(false);
+                  setSelectedSessionForAttendance(null);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && selectedSessionForReport && (
+        <div className="modal-overlay" onClick={() => {
+          setShowReportModal(false);
+          setSelectedSessionForReport(null);
+        }}>
+          <div className="modal-content report-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-content">
+                <h2>{selectedSessionForReport.name}</h2>
+                {selectedSessionForReport.location && (
+                  <p className="modal-subtext">📍 {selectedSessionForReport.location}</p>
+                )}
+              </div>
+              <button 
+                className="modal-close-btn" 
+                onClick={() => {
+                  setShowReportModal(false);
+                  setSelectedSessionForReport(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body report-modal-body">
+              <AttendanceReport service={selectedSessionForReport} />
+            </div>
+          </div>
+        </div>
       )}
 
       {isLoading ? (
@@ -285,6 +388,7 @@ const Services = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onSelect={handleViewSessions}
+            onReport={handleViewReport}
           />
         </>
       )}

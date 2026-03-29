@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { serviceApi } from '../services/api';
 import '../styles/components.css';
 
-const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }) => {
-  const [closingServiceId, setClosingServiceId] = useState(null);
-  
+const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
   // Filter to only show parent services (not session instances)
   const parentServices = services.filter(s => !s.parent_service);
   
@@ -22,25 +20,6 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }
       minute: '2-digit',
       hour12: true,
     });
-  };
-
-  const handleCloseService = async (service) => {
-    if (!confirm(`Close "${service.name}" and mark absent members?`)) {
-      return;
-    }
-
-    setClosingServiceId(service.id);
-    try {
-      const result = await serviceApi.closeService(service.id);
-      alert(`Success: ${result.message}`);
-      if (onServiceClosed) {
-        onServiceClosed(service.id);
-      }
-    } catch (error) {
-      alert(`Error: ${error.response?.data?.error || error.message}`);
-    } finally {
-      setClosingServiceId(null);
-    }
   };
 
   return (
@@ -104,14 +83,13 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onServiceClosed }
                         📋
                       </button>
                     )}
-                    {service.end_time && (
+                    {onReport && (
                       <button
-                        className="btn-icon close-icon"
-                        onClick={() => handleCloseService(service)}
-                        disabled={closingServiceId === service.id}
-                        title="Close Service & Mark Absent"
+                        className="btn-icon report-icon"
+                        onClick={() => onReport(service)}
+                        title="View Report"
                       >
-                        🔒
+                        📊
                       </button>
                     )}
                     <button

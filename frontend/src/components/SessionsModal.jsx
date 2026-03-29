@@ -11,6 +11,7 @@ const SessionsModal = ({
   onAddDate,
   addDateError,
   onSessionAdded,
+  mode = 'attendance', // 'attendance' or 'report'
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDate, setNewDate] = useState('');
@@ -94,7 +95,9 @@ const SessionsModal = ({
         <div className="modal-header">
           <div>
             <h2>{service.name}</h2>
-            <p className="modal-subtitle">Select or add a session</p>
+            <p className="modal-subtitle">
+              {mode === 'report' ? 'Select a session to view report' : 'Select or add a session'}
+            </p>
           </div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
@@ -131,7 +134,7 @@ const SessionsModal = ({
                         className="btn btn-sm btn-success"
                         onClick={() => onSelectSession(session)}
                       >
-                        Take
+                        {mode === 'report' ? 'Report' : 'Take'}
                       </button>
                     </td>
                   </tr>
@@ -145,7 +148,7 @@ const SessionsModal = ({
           )}
         </div>
 
-        {onAddDate && (
+        {onAddDate && mode === 'attendance' && (
           <div className="sessions-footer">
             {!showAddForm ? (
               <button
