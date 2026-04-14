@@ -12,10 +12,12 @@ import {
   Reports,
   CareDashboard,
 } from './pages';
+import InvitationCodesPage from './pages/InvitationCodes';
 import authService from './services/authService';
 import './styles/index.css';
 import './styles/components.css';
 import './styles/pages.css';
+import './styles/invitation-manager.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -94,6 +96,10 @@ function App() {
             <Route
               path="/care"
               element={<ProtectedRoute element={<CareDashboard />} />}
+            />
+            <Route
+              path="/invitations"
+              element={<ProtectedRoute element={<InvitationCodesPage />} />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -1,8 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import '../styles/components.css';
+import apiClient from '../services/apiClient';
 
 const QRCodeModal = ({ isOpen, member, onClose }) => {
   const qrImageRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   if (!isOpen || !member) return null;
 
@@ -33,7 +36,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 24px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Church Attendance', cardWidth / 2, 42);
+      ctx.fillText('Membership Card - WIS', cardWidth / 2, 42);
 
       // Member information section
       let yPos = 100;
@@ -46,7 +49,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
       ctx.textAlign = 'left';
       ctx.fillText('Name:', leftMargin, yPos);
       ctx.font = '18px Arial';
-      ctx.fillText(member.full_name, leftMargin + 120, yPos);
+      ctx.fillText(member.full_name.toUpperCase(), leftMargin + 120, yPos);
       yPos += lineHeight;
 
       // Member ID
@@ -65,7 +68,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
           'outreach': 'Outreach',
           'youth': 'Youth',
           'administration': 'Administration',
-        }[member.department] || member.department;
+        }[member.department.toUpperCase()] || member.department.toUpperCase();
 
         ctx.fillStyle = '#333333';
         ctx.font = 'bold 20px Arial';
@@ -96,7 +99,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
           'fiapre_class_2': 'Fiapre Class 2',
           'magazine': 'Magazine',
           'town_centre': 'Town Centre',
-          'newton_estate': 'Newton/Estate',
+          'newton_estate': 'Newtown/Estate',
           'distance': 'Distance',
         }[member.class_name] || member.class_name;
 
@@ -110,7 +113,7 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
       }
 
       // QR Code - centered
-      const qrSize = 300;
+      const qrSize = 500;
       const qrX = (cardWidth - qrSize) / 2;
       const qrY = yPos + 40;
       ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
@@ -180,6 +183,88 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
     printWindow.print();
   };
 
+  const sendViaWhatsApp = async () => {
+    if (!member.phone) {
+      setMessage({
+        type: 'error',
+        text: '❌ No phone number on file for this member'
+      });
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const response = await apiClient.post(
+        `/members/${member.id}/send_qr_whatsapp/`
+      );
+
+      if (response.data.success) {
+        setMessage({
+          type: 'success',
+          text: `✅ QR code sent via WhatsApp to ${member.phone}`
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: `❌ ${response.data.error || 'Failed to send via WhatsApp'}`
+        });
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message;
+      setMessage({
+        type: 'error',
+        text: `❌ Error: ${errorMsg}`
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendViaEmail = async () => {
+    if (!member.email) {
+      setMessage({
+        type: 'error',
+        text: '❌ No email address on file for this member'
+      });
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const response = await apiClient.post(
+        `/members/${member.id}/send_qr_email/`
+      );
+
+      if (response.data.success) {
+        setMessage({
+          type: 'success',
+          text: `✅ QR code card sent via email to ${member.email}`
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: `❌ ${response.data.error || 'Failed to send email'}`
+        });
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message;
+      setMessage({
+        type: 'error',
+        text: `❌ Error: ${errorMsg}`
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearMessage = () => {
+    setMessage({ type: '', text: '' });
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -198,19 +283,59 @@ const QRCodeModal = ({ isOpen, member, onClose }) => {
             <p className="member-id-display">Member ID: <strong>{member.member_id}</strong></p>
           </div>
         </div>
+        {message.text && (
+          <div className={`modal-message ${message.type}`}>
+            <p>{message.text}</p>
+            <button
+              className="modal-message-close"
+              onClick={clearMessage}
+              style={{ marginLeft: '10px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
         <div className="modal-footer">
-          <button
-            className="btn btn-secondary"
-            onClick={downloadQRCodeAsPNG}
-          >
-            📥 PNG
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handlePDFDownload}
-          >
-            📥 PDF
-          </button>
+          <div className="modal-actions-group">
+            <div className="modal-actions-section">
+              <h4 className="modal-actions-label">Download</h4>
+              <button
+                className="btn btn-secondary"
+                onClick={downloadQRCodeAsPNG}
+              >
+                📥 PNG
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handlePDFDownload}
+              >
+                📥 PDF
+              </button>
+            </div>
+
+            <div className="modal-actions-divider"></div>
+
+            <div className="modal-actions-section">
+              <h4 className="modal-actions-label">Send to Member</h4>
+              <button
+                className="btn btn-action-whatsapp"
+                onClick={sendViaWhatsApp}
+                disabled={loading || !member.phone}
+                title={member.phone ? 'Send via WhatsApp' : 'No phone number'}
+              >
+                💬 WhatsApp
+              </button>
+              <button
+                className="btn btn-action-email"
+                onClick={sendViaEmail}
+                disabled={loading || !member.email}
+                title={member.email ? 'Send via Email' : 'No email address'}
+              >
+                📧 Email
+              </button>
+            </div>
+          </div>
+
           <button
             className="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all hover:shadow-sm"
             onClick={onClose}

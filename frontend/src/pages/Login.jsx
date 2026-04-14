@@ -12,7 +12,8 @@ const Login = ({ onLoginSuccess }) => {
     password: '',
     password_confirm: '',
     first_name: '',
-    last_name: ''
+    last_name: '',
+    invitation_code: ''
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +55,8 @@ const Login = ({ onLoginSuccess }) => {
           password: formData.password,
           password_confirm: formData.password_confirm,
           first_name: formData.first_name,
-          last_name: formData.last_name
+          last_name: formData.last_name,
+          invitation_code: formData.invitation_code
         });
         // Call the success callback
         if (onLoginSuccess) {
@@ -85,7 +87,8 @@ const Login = ({ onLoginSuccess }) => {
       password: '',
       password_confirm: '',
       first_name: '',
-      last_name: ''
+      last_name: '',
+      invitation_code: ''
     });
   };
 
@@ -135,6 +138,24 @@ const Login = ({ onLoginSuccess }) => {
 
           {!isLogin && (
             <>
+              <div className="form-group">
+                <label htmlFor="invitation_code">Invitation Code *</label>
+                <input
+                  id="invitation_code"
+                  name="invitation_code"
+                  type="text"
+                  value={formData.invitation_code}
+                  onChange={handleInputChange}
+                  placeholder="Enter your invitation code"
+                  className="input-field"
+                  required
+                  disabled={isLoading}
+                />
+                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+                  You need an invitation code to register. Ask your administrator.
+                </small>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="email">Email</label>
                 <input

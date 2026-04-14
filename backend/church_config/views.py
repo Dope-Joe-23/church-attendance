@@ -1,25 +1,27 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from members.models import InvitationCode
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
     """
-    Register a new user account.
+    Register a new user account with invitation code.
 
     Required fields:
     - username: Unique username
     - email: Valid email address
     - password: Password for the account
     - password_confirm: Confirmation of password
+    - invitation_code: Valid invitation code
 
     Optional fields:
     - first_name: User's first name
@@ -28,7 +30,7 @@ def register_user(request):
     data = request.data
 
     # Required fields validation
-    required_fields = ['username', 'email', 'password', 'password_confirm']
+    required_fields = ['username', 'email', 'password', 'password_confirm', 'invitation_code']
     for field in required_fields:
         if not data.get(field):
             return Response(
@@ -40,8 +42,32 @@ def register_user(request):
     email = data['email'].strip().lower()
     password = data['password']
     password_confirm = data['password_confirm']
+    invitation_code = data['invitation_code'].strip()
     first_name = data.get('first_name', '').strip()
     last_name = data.get('last_name', '').strip()
+
+    # Validate invitation code FIRST
+    try:
+        code_obj = InvitationCode.objects.get(code=invitation_code)
+    except InvitationCode.DoesNotExist:
+        return Response(
+            {'error': 'Invalid invitation code'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Check if code is valid
+    if not code_obj.is_valid():
+        return Response(
+            {'error': 'Invitation code has expired or already been used'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # If code is restricted to an email, verify it matches
+    if code_obj.email and code_obj.email.lower() != email:
+        return Response(
+            {'error': f'This invitation code is only valid for {code_obj.email}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     # Validate email format
     try:
@@ -91,6 +117,9 @@ def register_user(request):
             is_active=True
         )
 
+        # Mark invitation code as used
+        code_obj.mark_used(user)
+
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
@@ -113,7 +142,7 @@ def register_user(request):
 
     except Exception as e:
         return Response(
-            {'error': 'Registration failed. Please try again.'},
+            {'error': f'Registration failed: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismMetric, MemberAbsenteeismAlert
+from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismMetric, MemberAbsenteeismAlert, InvitationCode
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -280,3 +280,33 @@ class MemberAbsenteeismAlertSerializer(serializers.ModelSerializer):
     
     def get_absenteeism_percentage(self, obj):
         return round(obj.absenteeism_ratio_at_creation * 100, 1)
+
+
+class InvitationCodeSerializer(serializers.ModelSerializer):
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    used_by_username = serializers.CharField(source='used_by.username', read_only=True, allow_null=True)
+    is_valid = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = InvitationCode
+        fields = [
+            'id',
+            'code',
+            'email',
+            'created_by',
+            'created_by_username',
+            'created_at',
+            'expires_at',
+            'used',
+            'used_by',
+            'used_by_username',
+            'used_at',
+            'is_valid',
+        ]
+        read_only_fields = [
+            'id', 'code', 'created_by', 'created_at', 'used', 'used_by', 'used_at'
+        ]
+    
+    def get_is_valid(self, obj):
+        """Check if invitation is currently valid"""
+        return obj.is_valid()

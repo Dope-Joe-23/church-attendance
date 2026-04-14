@@ -2,10 +2,11 @@ from django.urls import path, include
 from rest_framework.routers import SimpleRouter
 from .views import (
     MemberViewSet, MemberAlertViewSet, ContactLogViewSet,
-    MemberAbsenteeismAlertViewSet, MemberAbsenteeismMetricViewSet
+    MemberAbsenteeismAlertViewSet, MemberAbsenteeismMetricViewSet, InvitationCodeViewSet
 )
 
 router = SimpleRouter()
+router.register(r'invitations', InvitationCodeViewSet, basename='invitation-code')
 router.register(r'alerts', MemberAlertViewSet, basename='alert')
 router.register(r'contact-logs', ContactLogViewSet, basename='contact-log')
 router.register(r'absenteeism-alerts', MemberAbsenteeismAlertViewSet, basename='absenteeism-alert')

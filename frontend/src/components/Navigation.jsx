@@ -81,6 +81,11 @@ const Navigation = ({ isAuthenticated, onLogout }) => {
                   Reports
                 </a>
               </li>
+              <li className="nav-item">
+                <a href="/invitations" className={`nav-link ${isActive('/invitations') ? 'active' : ''}`}>
+                  🎫 Invitations
+                </a>
+              </li>
               <li className="nav-item notification-item">
                 <a href="/care" className={`nav-link notification-link ${isActive('/care') ? 'active' : ''}`}>
                   <span className="notification-icon">🔔</span>

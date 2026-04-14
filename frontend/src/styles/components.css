@@ -2697,3 +2697,182 @@
     margin-top: 0.5rem;
   }
 }
+
+/* QR Code Modal - Enhanced Buttons and Message */
+.modal-message {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 0 1.5rem 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+.modal-message.success {
+  background-color: #d1fae5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.modal-message.error {
+  background-color: #fee2e2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.modal-message.warning {
+  background-color: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.modal-message p {
+  margin: 0;
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.modal-message-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.modal-message-close:hover {
+  opacity: 1;
+}
+
+/* Modal Actions Group - Organize buttons into sections */
+.modal-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.modal-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.modal-actions-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding: 0 0.25rem;
+  opacity: 0.8;
+}
+
+.modal-actions-divider {
+  width: 1px;
+  height: 40px;
+  background-color: #d1d5db;
+  opacity: 0.5;
+}
+
+/* Enhanced Button Styles */
+.btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  min-height: 38px;
+  justify-content: center;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action-whatsapp {
+  background: linear-gradient(135deg, #25d366 0%, #20ba58 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.2);
+}
+
+.btn-action-whatsapp:hover:not(:disabled) {
+  background: linear-gradient(135deg, #20ba58 0%, #1a9d4d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.btn-action-email {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.btn-action-email:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-action-whatsapp:disabled,
+.btn-action-email:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments for QR modal buttons */
+@media (max-width: 768px) {
+  .modal-actions-group {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .modal-actions-section {
+    width: 100%;
+  }
+
+  .modal-actions-divider {
+    display: none;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .modal-message {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal-message p {
+    width: 100%;
+  }
+}

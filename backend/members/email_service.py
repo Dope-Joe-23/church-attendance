@@ -5,12 +5,13 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.core.files.base import ContentFile
+from .qr_card_generator import generate_qr_code_card, get_card_as_data_uri
 import os
 
 
 def send_qr_code_email(member):
     """
-    Send member's QR code via email
+    Send member's QR code via email with styled membership card.
     
     Args:
         member: Member instance
@@ -30,54 +31,75 @@ def send_qr_code_email(member):
     try:
         subject = f"Your Church Attendance QR Code - {member.full_name}"
         
-        # Email context (prefer base64 data if available)
-        if getattr(member, 'qr_code_data', None):
-            qr_data_uri = f"data:image/png;base64,{member.qr_code_data}"
-            context = {
-                'member_name': member.full_name,
-                'member_id': member.member_id,
-                'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
-                'qr_code_data_uri': qr_data_uri,
-            }
-        else:
-            context = {
-                'member_name': member.full_name,
-                'member_id': member.member_id,
-                'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
-                'qr_code_url': member.qr_code_image.url if member.qr_code_image else None,
-            }
+        # Generate styled QR code card
+        try:
+            qr_card_data_uri = get_card_as_data_uri(member, format='png')
+            card_generated = True
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Could not generate styled card, using plain QR: {str(e)}")
+            card_generated = False
+            qr_card_data_uri = None
         
-        # HTML email template
+        # Email context
+        context = {
+            'member_name': member.full_name,
+            'member_id': member.member_id,
+            'church_name': settings.CHURCH_NAME if hasattr(settings, 'CHURCH_NAME') else 'Our Church',
+            'qr_code_data_uri': qr_card_data_uri,
+            'card_generated': card_generated,
+        }
+        
+        # Also include plain QR code for fallback
+        if getattr(member, 'qr_code_data', None):
+            context['plain_qr_code_uri'] = f"data:image/png;base64,{member.qr_code_data}"
+        
+        # HTML email template with styled card
         html_content = f"""
         <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="max-width: 700px; margin: 0 auto; padding: 20px;">
                     <h2 style="color: #2c3e50;">Welcome to {context['church_name']}!</h2>
                     
                     <p>Hi <strong>{context['member_name']}</strong>,</p>
                     
-                    <p>Your unique QR code for attendance tracking has been generated. Please find it below:</p>
-                    
+                    <p>Your unique QR code for attendance tracking has been generated. Please find your membership card below:</p>
+        """
+        
+        # Add styled card if generated successfully
+        if card_generated and qr_card_data_uri:
+            html_content += f"""
+                    <div style="text-align: center; margin: 30px 0;">
+                        <img src="{qr_card_data_uri}" alt="Membership Card" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+            """
+        elif context.get('plain_qr_code_uri'):
+            # Fallback to plain QR code
+            html_content += f"""
                     <div style="text-align: center; margin: 30px 0;">
                         <p><strong>Your Member ID:</strong> <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 3px;">{context['member_id']}</code></p>
-                        {(
-                            f'<img src="{context.get("qr_code_data_uri")}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">'
-                            if context.get('qr_code_data_uri')
-                            else (
-                                f'<img src="{context.get("qr_code_url")}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">'
-                                if context.get('qr_code_url')
-                                else '<p>QR code will be available shortly</p>'
-                            )
-                        )}
+                        <img src="{context.get('plain_qr_code_uri')}" alt="QR Code" style="max-width: 300px; height: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
                     </div>
-                    
+            """
+        
+        html_content += """
                     <h3 style="color: #2c3e50;">How to Use Your QR Code:</h3>
                     <ol>
-                        <li>Keep this QR code safe - you'll need it for attendance check-in</li>
-                        <li>You can print it out and carry it with you</li>
+                        <li>Keep your membership card safe - you'll need it for attendance check-in</li>
+                        <li>You can print out the card and carry it with you</li>
                         <li>Or take a screenshot and show it on your phone during check-in</li>
-                        <li>Simply present it to be scanned at our services</li>
+                        <li>Simply present your QR code to be scanned at our services</li>
                     </ol>
+                    
+                    <h3 style="color: #2c3e50;">About Your Card:</h3>
+                    <ul>
+                        <li><strong>Name:</strong> Your registered name</li>
+                        <li><strong>Member ID:</strong> Your unique church identifier</li>
+                        <li><strong>Department:</strong> Your ministry assignment</li>
+                        <li><strong>Class:</strong> Your church location/group</li>
+                        <li><strong>QR Code:</strong> Scanned during attendance check-in</li>
+                    </ul>
                     
                     <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 0.9em;">
                         If you have any questions or need a new QR code, please contact us.
@@ -103,10 +125,10 @@ def send_qr_code_email(member):
         Your Member ID: {context['member_id']}
         
         How to Use Your QR Code:
-        1. Keep this QR code safe - you'll need it for attendance check-in
-        2. You can print it out and carry it with you
+        1. Keep your membership card safe - you'll need it for attendance check-in
+        2. You can print out the card and carry it with you
         3. Or take a screenshot and show it on your phone during check-in
-        4. Simply present it to be scanned at our services
+        4. Simply present your QR code to be scanned at our services
         
         If you have any questions or need a new QR code, please contact us.
         
@@ -125,7 +147,21 @@ def send_qr_code_email(member):
         # Attach HTML version
         email.attach_alternative(html_content, "text/html")
         
-        # Attach QR code image or data if it exists
+        # Attach QR code card as PNG attachment
+        try:
+            card_png = generate_qr_code_card(member, format='png')
+            email.attach(
+                f'membership_card_{member.member_id}.png',
+                card_png,
+                'image/png'
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Could not attach card image: {str(e)}")
+            # Continue anyway - card is already embedded as data URI
+        
+        # Also attach plain QR code for reference
         if getattr(member, 'qr_code_data', None):
             try:
                 import base64
@@ -136,17 +172,9 @@ def send_qr_code_email(member):
                     'image/png'
                 )
             except Exception as file_error:
-                print(f"Warning: Could not attach QR code data: {str(file_error)}")
-        elif member.qr_code_image:
-            try:
-                with open(member.qr_code_image.path, 'rb') as f:
-                    email.attach(
-                        f'qr_code_{member.member_id}.png',
-                        f.read(),
-                        'image/png'
-                    )
-            except Exception as file_error:
-                print(f"Warning: Could not attach QR code image: {str(file_error)}")
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Could not attach plain QR code: {str(file_error)}")
         
         # Send email
         email.send(fail_silently=False)

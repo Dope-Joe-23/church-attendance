@@ -1,10 +1,65 @@
 from django.db import models
+from django.contrib.auth.models import User
 import qrcode
 from io import BytesIO
 from django.core.files import File
 from PIL import Image
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import secrets
+from datetime import timedelta
+from django.utils import timezone
+
+
+class InvitationCode(models.Model):
+    """Model for managing user registration invitations"""
+    
+    code = models.CharField(max_length=32, unique=True, db_index=True)
+    email = models.EmailField(blank=True, null=True, help_text="If set, code can only be used with this email")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='invitation_codes_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(help_text="Invitation code expires after this date")
+    used = models.BooleanField(default=False)
+    used_by = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_with_code')
+    used_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Invitation ({self.email or 'any'}) - {'Used' if self.used else 'Pending'}"
+    
+    @staticmethod
+    def generate_code():
+        """Generate a unique invitation code"""
+        return secrets.token_urlsafe(24)
+    
+    @classmethod
+    def create_invitation(cls, created_by, email=None, days_valid=7):
+        """Create a new invitation code"""
+        code = cls.generate_code()
+        expires_at = timezone.now() + timedelta(days=days_valid)
+        return cls.objects.create(
+            code=code,
+            email=email,
+            created_by=created_by,
+            expires_at=expires_at
+        )
+    
+    def is_valid(self):
+        """Check if invitation code is still valid"""
+        if self.used:
+            return False
+        if timezone.now() > self.expires_at:
+            return False
+        return True
+    
+    def mark_used(self, user):
+        """Mark invitation as used"""
+        self.used = True
+        self.used_by = user
+        self.used_at = timezone.now()
+        self.save()
 
 
 class Member(models.Model):

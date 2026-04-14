@@ -1,16 +1,184 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric
+from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric, InvitationCode
 from .serializers import (
     MemberSerializer, MemberDetailSerializer, MemberAlertSerializer, 
-    ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer
+    ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer,
+    InvitationCodeSerializer
 )
 from .email_service import send_qr_code_email
 from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class InvitationCodeViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing invitation codes
+    
+    Endpoints:
+    - GET /invitations/ - List all invitation codes (admin only)
+    - POST /invitations/ - Create new invitation code (admin only)
+    - GET /invitations/{id}/ - Get invitation code details (admin only)
+    - DELETE /invitations/{id}/ - Delete invitation code (admin only)
+    - POST /invitations/validate/ - Validate an invitation code
+    """
+    
+    queryset = InvitationCode.objects.all()
+    serializer_class = InvitationCodeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Only authenticated users can see invitation codes, ordered by creation date"""
+        return InvitationCode.objects.all().order_by('-created_at')
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new invitation code.
+        
+        Required fields:
+        - expires_at: ISO format datetime (e.g., "2024-12-31T23:59:59Z")
+        
+        Optional fields:
+        - email: Restrict code to specific email
+        """
+        data = request.data.copy()
+        data['created_by'] = request.user.id
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def perform_create(self, serializer):
+        """Set the created_by field to the current user"""
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=False, methods=['post'])
+    def generate_bulk(self, request):
+        """
+        Generate multiple invitation codes at once.
+        
+        Request body:
+        {
+            "count": 5,
+            "emails": ["user1@example.com", "user2@example.com"],  // optional
+            "expires_at": "2024-12-31T23:59:59Z"
+        }
+        """
+        count = request.data.get('count', 1)
+        emails = request.data.get('emails', [])
+        expires_at_str = request.data.get('expires_at')
+        
+        if not expires_at_str:
+            return Response(
+                {'error': 'expires_at is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if count < 1 or count > 100:
+            return Response(
+                {'error': 'count must be between 1 and 100'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Parse expiry time
+        try:
+            from django.utils.dateparse import parse_datetime
+            expires_at = parse_datetime(expires_at_str)
+            if not expires_at:
+                raise ValueError("Invalid datetime format")
+        except (ValueError, TypeError):
+            return Response(
+                {'error': 'Invalid expires_at format. Use ISO format (e.g., 2024-12-31T23:59:59Z)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate codes
+        codes = []
+        for i in range(count):
+            email = emails[i] if i < len(emails) else None
+            invitation = InvitationCode.objects.create(
+                code=InvitationCode.generate_code(),
+                email=email,
+                created_by=request.user,
+                expires_at=expires_at
+            )
+            codes.append(invitation)
+        
+        serializer = self.get_serializer(codes, many=True)
+        return Response({
+            'count': len(codes),
+            'codes': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['post'])
+    def validate(self, request):
+        """
+        Validate an invitation code without using it.
+        
+        Request body:
+        {
+            "code": "invitation-code-here",
+            "email": "user@example.com"  // optional
+        }
+        
+        Returns validation result.
+        """
+        code = request.data.get('code', '').strip()
+        email = request.data.get('email', '').strip().lower()
+        
+        if not code:
+            return Response(
+                {'error': 'code is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            invitation = InvitationCode.objects.get(code=code)
+        except InvitationCode.DoesNotExist:
+            return Response({
+                'valid': False,
+                'error': 'Invalid invitation code'
+            }, status=status.HTTP_200_OK)
+        
+        # Check if valid
+        if not invitation.is_valid():
+            return Response({
+                'valid': False,
+                'error': 'Invitation code has expired or already been used'
+            }, status=status.HTTP_200_OK)
+        
+        # Check email if provided
+        if invitation.email and email and invitation.email.lower() != email:
+            return Response({
+                'valid': False,
+                'error': f'This invitation code is only valid for {invitation.email}'
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'valid': True,
+            'email': invitation.email,
+            'expires_at': invitation.expires_at
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get all active (unused and not expired) invitation codes"""
+        active_codes = [code for code in InvitationCode.objects.filter(used=False) if code.is_valid()]
+        serializer = self.get_serializer(active_codes, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def used(self, request):
+        """Get all used invitation codes"""
+        used_codes = InvitationCode.objects.filter(used=True)
+        serializer = self.get_serializer(used_codes, many=True)
+        return Response(serializer.data)
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -134,6 +302,108 @@ class MemberViewSet(viewsets.ModelViewSet):
             return Response({
                 'success': False,
                 'message': f'Error sending email: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def send_qr_whatsapp(self, request, pk=None):
+        """
+        Send QR code via WhatsApp to member
+        
+        Optional request fields:
+        - phone_number: Override member's phone number
+        """
+        member = self.get_object()
+        
+        try:
+            from .whatsapp_service import WhatsAppService
+            
+            service = WhatsAppService()
+            
+            if not service.is_enabled():
+                return Response({
+                    'success': False,
+                    'message': 'WhatsApp service not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in environment.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get phone number from request or member
+            phone_number = request.data.get('phone_number') or member.phone
+            
+            if not phone_number:
+                return Response({
+                    'success': False,
+                    'message': f'Member {member.full_name} does not have a phone number'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Send message
+            result = service.send_qr_code(member, phone_number)
+            
+            return Response(result, status=status.HTTP_200_OK if result['success'] else status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error sending WhatsApp message: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
+    def send_qr_whatsapp_bulk(self, request):
+        """
+        Send QR codes via WhatsApp to multiple members
+        
+        Request body:
+        {
+            "member_ids": [1, 2, 3],  // or
+            "filter": "all"  // or "recent", "with_phone"
+        }
+        """
+        try:
+            from .whatsapp_service import WhatsAppService
+            
+            service = WhatsAppService()
+            
+            if not service.is_enabled():
+                return Response({
+                    'success': False,
+                    'message': 'WhatsApp service not configured.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get members
+            member_ids = request.data.get('member_ids')
+            filter_type = request.data.get('filter', 'with_phone')
+            
+            if member_ids:
+                members = Member.objects.filter(id__in=member_ids, is_visitor=False)
+            elif filter_type == 'all':
+                members = Member.objects.filter(is_visitor=False)
+            elif filter_type == 'with_phone':
+                members = Member.objects.filter(is_visitor=False, phone__isnull=False).exclude(phone='')
+            elif filter_type == 'recent':
+                from django.utils import timezone
+                from datetime import timedelta
+                recent_date = timezone.now() - timedelta(days=30)
+                members = Member.objects.filter(
+                    is_visitor=False,
+                    phone__isnull=False,
+                    created_at__gte=recent_date
+                ).exclude(phone='')
+            else:
+                return Response({
+                    'success': False,
+                    'message': f'Unknown filter: {filter_type}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Send messages
+            results = service.send_qr_code_bulk(list(members))
+            
+            return Response({
+                'success': True,
+                **results
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Error sending bulk WhatsApp messages: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
