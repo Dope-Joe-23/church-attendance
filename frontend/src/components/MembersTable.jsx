@@ -39,7 +39,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
       'fiapre_class_2': 'Fiapre Class 2',
       'magazine': 'Magazine',
       'town_centre': 'Town Centre',
-      'newton_estate': 'Newton/Estate',
+      'newtown_estate': 'Newtown/Estate',
       'distance': 'Distance',
     };
     return classes[value] || value || '-';
@@ -58,6 +58,13 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
     setShowQRModal(true);
   };
 
+  // Debug: Log member data to see if marital_status is present
+  React.useEffect(() => {
+    if (members && members.length > 0) {
+      console.log('Members data loaded');
+    }
+  }, [members]);
+
   return (
     <>
       <div className="table-container">
@@ -70,7 +77,6 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
               <th>Email</th>
               <th>Department</th>
               <th>Class</th>
-              <th>Marital Status</th>
               <th>Visitor</th>
               <th>Actions</th>
             </tr>
@@ -86,7 +92,6 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                 <td className="email-col" data-label="Email">{member.email || '-'}</td>
                 <td className="department-col" data-label="Department">{getDepartmentLabel(member.department)}</td>
                 <td className="class-col" data-label="Class">{getClassLabel(member.class_name)}</td>
-                <td className="marital-status-col" data-label="Marital Status">{getMaritalStatusLabel(member.marital_status)}</td>
                 <td className="visitor-col" data-label="Visitor">
                   {member.is_visitor ? (
                     <span className="visitor-badge-small">Visitor</span>

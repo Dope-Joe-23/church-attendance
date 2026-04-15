@@ -35,7 +35,7 @@ const MemberCard = ({ member, onEdit, onDelete }) => {
       'fiapre_class_2': 'Fiapre Class 2',
       'magazine': 'Magazine',
       'town_centre': 'Town Centre',
-      'newton_estate': 'Newton/Estate',
+      'newtown_estate': 'Newtown/Estate',
       'distance': 'Distance',
     };
     return classes[value] || value;

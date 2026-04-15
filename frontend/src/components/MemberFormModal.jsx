@@ -30,7 +30,7 @@ const CLASS_CHOICES = [
   { value: 'fiapre_class_2', label: 'Fiapre Class 2' },
   { value: 'magazine', label: 'Magazine' },
   { value: 'town_centre', label: 'Town Centre' },
-  { value: 'newton_estate', label: 'Newton/Estate' },
+  { value: 'newtown_estate', label: 'Newtown/Estate' },
   { value: 'distance', label: 'Distance' },
 ];
 
