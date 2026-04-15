@@ -45,6 +45,14 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
     return classes[value] || value || '-';
   };
 
+  const getMaritalStatusLabel = (value) => {
+    const statuses = {
+      'single': 'Single',
+      'married': 'Married',
+    };
+    return statuses[value] || value || '-';
+  };
+
   const handleQRClick = (member) => {
     setSelectedMember(member);
     setShowQRModal(true);
@@ -62,6 +70,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
               <th>Email</th>
               <th>Department</th>
               <th>Class</th>
+              <th>Marital Status</th>
               <th>Visitor</th>
               <th>Actions</th>
             </tr>
@@ -77,6 +86,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                 <td className="email-col" data-label="Email">{member.email || '-'}</td>
                 <td className="department-col" data-label="Department">{getDepartmentLabel(member.department)}</td>
                 <td className="class-col" data-label="Class">{getClassLabel(member.class_name)}</td>
+                <td className="marital-status-col" data-label="Marital Status">{getMaritalStatusLabel(member.marital_status)}</td>
                 <td className="visitor-col" data-label="Visitor">
                   {member.is_visitor ? (
                     <span className="visitor-badge-small">Visitor</span>

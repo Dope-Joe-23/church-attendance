@@ -96,7 +96,7 @@ class Member(models.Model):
         ('fiapre_class_2', 'Fiapre Class 2'),
         ('magazine', 'Magazine'),
         ('town_centre', 'Town Centre'),
-        ('newton_estate', 'Newton/Estate'),
+        ('newtown_estate', 'Newtown/Estate'),
         ('distance', 'Distance'),
     ]
     
@@ -109,6 +109,12 @@ class Member(models.Model):
         ('health', 'Health'),
         ('welfare', 'Welfare'),
         ('harvest', 'Harvest'),
+    ]
+
+    # Marital status choices
+    MARITAL_STATUS = [
+        ('single', 'Single'),
+        ('married', 'Married')
     ]
     
     # Attendance Status choices
@@ -130,6 +136,7 @@ class Member(models.Model):
     department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES, blank=True, null=True)
     class_name = models.CharField(max_length=100, choices=CLASS_CHOICES, blank=True, null=True)
     committee = models.CharField(max_length=100, choices=COMMITTEE_CHOICES, blank=True, null=True)
+    marital_status = models.CharField(max_length=20, choices=MARITAL_STATUS, blank=True, null=True)
     is_visitor = models.BooleanField(default=False)
     baptised = models.BooleanField(default=False)
     confirmed = models.BooleanField(default=False)

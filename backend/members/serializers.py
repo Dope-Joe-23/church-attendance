@@ -20,6 +20,7 @@ class MemberSerializer(serializers.ModelSerializer):
             'department',
             'class_name',
             'committee',
+            'marital_status',
             'is_visitor',
             'baptised',
             'confirmed',
