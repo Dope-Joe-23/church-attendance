@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { memberApi } from '../services/api';
+import apiClient from '../services/apiClient';
 import { useMemberStore } from '../context/store';
 import { MembersTable, MemberFormModal } from '../components';
 import '../styles/pages.css';
@@ -33,8 +34,10 @@ const Members = () => {
   const fetchMembers = async () => {
     setIsLoading(true);
     try {
+      // memberApi.getMembers() already handles pagination and returns all members
       const data = await memberApi.getMembers();
-      setMembers(data.results || data);
+      const membersList = data.results || data;
+      setMembers(membersList);
     } catch (error) {
       console.error('Error fetching members:', error);
     } finally {
@@ -165,14 +168,22 @@ const Members = () => {
   };
 
   const filteredMembers = members.filter((member) => {
-    const query = searchQuery.toLowerCase();
+    if (!searchQuery) return true; // Show all if no search query
+    const query = searchQuery.toLowerCase().trim();
     return (
-      member.full_name.toLowerCase().includes(query) ||
-      member.email.toLowerCase().includes(query) ||
-      member.phone.toLowerCase().includes(query) ||
-      member.department.toLowerCase().includes(query)
+      (member.full_name && member.full_name.toLowerCase().includes(query)) ||
+      (member.email && member.email.toLowerCase().includes(query)) ||
+      (member.phone && member.phone.toLowerCase().includes(query)) ||
+      (member.department && member.department.toLowerCase().includes(query))
     );
   });
+
+  // Debug logging
+  React.useEffect(() => {
+    if (members.length > 0) {
+      console.log(`📊 Total members: ${members.length}, Search query: "${searchQuery}", Filtered: ${filteredMembers.length}`);
+    }
+  }, [searchQuery, filteredMembers.length]);
 
   return (
     <div className="members-page">

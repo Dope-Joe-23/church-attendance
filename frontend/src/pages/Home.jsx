@@ -27,6 +27,10 @@ const Home = () => {
         apiClient.get('/members/alerts/unresolved/')
       ]);
 
+      // Get total members - handle pagination by using count from API
+      const membersData = membersRes.data;
+      const totalMembersCount = membersData.count || (membersData.results ? membersData.results.length : 0);
+      
       // Get the latest services for the dashboard
       const servicesList = servicesRes.data.results || servicesRes.data;
       const allServices = Array.isArray(servicesList) ? servicesList : [];
@@ -34,10 +38,6 @@ const Home = () => {
       // Filter to only parent services (not sessions) - parent_service will be null for parents
       const parentServices = allServices.filter(service => service.parent_service === null);
       const latestServices = parentServices.slice(0, 3);
-      
-      // Get total members - membersRes.data.results for paginated API
-      const membersList = membersRes.data.results || membersRes.data;
-      const totalMembersCount = Array.isArray(membersList) ? membersList.length : 0;
 
       setStats({
         totalMembers: totalMembersCount,

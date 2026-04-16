@@ -29,9 +29,22 @@ const CareDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch all members (required)
+      // Fetch all members (fetch all pages if paginated)
       const membersResponse = await apiClient.get('/members/');
-      const membersList = membersResponse.data.results || membersResponse.data;
+      let membersList = membersResponse.data.results || membersResponse.data;
+      
+      // Handle pagination - fetch remaining pages
+      if (membersResponse.data.results && membersResponse.data.next) {
+        let nextUrl = membersResponse.data.next;
+        while (nextUrl) {
+          const url = new URL(nextUrl);
+          const pathAndQuery = url.pathname.substring(4) + url.search; // Remove '/api' from pathname
+          const nextResponse = await apiClient.get(pathAndQuery);
+          membersList = [...membersList, ...(nextResponse.data.results || [])];
+          nextUrl = nextResponse.data.next || null;
+        }
+      }
+      
       const allMembers = membersList.filter(m => !m.is_visitor);
       
       // Fetch metrics (optional - use empty map if fails)
@@ -88,8 +101,9 @@ const CareDashboard = () => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        if (!member.full_name.toLowerCase().includes(query) &&
-            !member.member_id.toLowerCase().includes(query)) {
+        const fullName = member.full_name ? member.full_name.toLowerCase() : '';
+        const memberId = member.member_id ? member.member_id.toLowerCase() : '';
+        if (!fullName.includes(query) && !memberId.includes(query)) {
           return false;
         }
       }

@@ -4,7 +4,27 @@ import apiClient from './apiClient';
 export const memberApi = {
   getMembers: async () => {
     const response = await apiClient.get('/members/');
-    return response.data;
+    const data = response.data;
+    
+    // Handle paginated responses - fetch all pages if needed
+    if (data.results && data.count > data.results.length) {
+      const allResults = [...data.results];
+      let nextUrl = data.next;
+      
+      while (nextUrl) {
+        const url = new URL(nextUrl);
+        const pathAndQuery = url.pathname.substring(4) + url.search;
+        
+        const nextResponse = await apiClient.get(pathAndQuery);
+        const nextData = nextResponse.data;
+        allResults.push(...(nextData.results || []));
+        nextUrl = nextData.next || null;
+      }
+      
+      return { ...data, results: allResults, count: allResults.length };
+    }
+    
+    return data;
   },
 
   getMemberById: async (id) => {
