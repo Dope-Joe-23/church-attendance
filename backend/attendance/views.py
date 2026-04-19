@@ -177,25 +177,32 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             # Get all members who are NOT visitors
             all_members = Member.objects.filter(is_visitor=False)
             
-            # Find members who haven't checked in
+            # Get members already marked for this service
+            already_marked = set(
+                Attendance.objects.filter(service=service).values_list('member_id', flat=True)
+            )
+            
+            # Create attendance records for members not yet marked
             absent_count = 0
             marked_members = []
+            new_attendances = []
             
             for member in all_members:
-                attendance, created = Attendance.objects.get_or_create(
-                    member=member,
-                    service=service,
-                    defaults={
-                        'status': 'absent',
-                        'marked_by': 'manual',
-                    }
-                )
-                if created:
-                    # Update member's absenteeism metrics and alerts
-                    update_absenteeism_alerts(member)
-                    
+                if member.id not in already_marked:
+                    new_attendances.append(
+                        Attendance(
+                            member=member,
+                            service=service,
+                            status='absent',
+                            marked_by='manual'
+                        )
+                    )
                     absent_count += 1
                     marked_members.append(member.full_name)
+            
+            # Bulk create all attendance records at once (much faster)
+            if new_attendances:
+                Attendance.objects.bulk_create(new_attendances, batch_size=100)
             
             return Response({
                 'success': True,

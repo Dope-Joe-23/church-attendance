@@ -423,11 +423,12 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def unresolved(self, request):
-        """Get all unresolved alerts. Always recalculates to ensure fresh data."""
+        """Get all unresolved alerts. Optionally recalculates with ?recalculate=true"""
         try:
-            from members.utils import recalculate_member_alerts
-            # Recalculate alerts before returning to ensure they're based on current data
-            recalculate_member_alerts()
+            # Only recalculate if explicitly requested (to avoid timeouts on every request)
+            if request.query_params.get('recalculate') == 'true':
+                from members.utils import recalculate_member_alerts
+                recalculate_member_alerts()
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
