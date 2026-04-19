@@ -409,7 +409,7 @@ def calculate_absenteeism_metric(member):
     attendance_records = Attendance.objects.filter(
         member=member,
         service__in=last_10_services
-    )
+    ).select_related('service', 'service__parent_service')
     
     total_services = attendance_records.count()
     absent_count = attendance_records.filter(status='absent').count()
