@@ -218,10 +218,17 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = os.getenv(
+# Parse CORS_ALLOWED_ORIGINS from environment, handling both comma-separated and newline-separated values
+cors_origins_raw = os.getenv(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173,http://localhost:5174,http://localhost:3000'
-).split(',')
+)
+# Support both comma-separated and newline-separated origins
+CORS_ALLOWED_ORIGINS = [
+    origin.strip() 
+    for origin in cors_origins_raw.replace('\n', ',').split(',') 
+    if origin.strip()
+]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')  # Allow all in debug mode
