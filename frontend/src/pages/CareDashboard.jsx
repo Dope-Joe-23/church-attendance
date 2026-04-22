@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MemberDetailsModal } from '../components';
+import { MemberDetailsModal, LoadingSpinner } from '../components';
 import store from '../context/store';
 import apiClient from '../services/apiClient';
 import '../styles/care-dashboard-new.css';
@@ -222,7 +222,7 @@ const CareDashboard = () => {
   if (loading) {
     return (
       <div className="care-dashboard-new">
-        <div className="loading">Loading dashboard...</div>
+        <LoadingSpinner message="Loading care dashboard..." />
       </div>
     );
   }

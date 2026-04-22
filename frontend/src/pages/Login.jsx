@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import '../styles/pages.css';
 
 const Login = ({ onLoginSuccess }) => {
@@ -238,7 +239,9 @@ const Login = ({ onLoginSuccess }) => {
             type="submit"
             className="btn btn-primary login-btn"
             disabled={isLoading}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
+            {isLoading && <AiOutlineLoading3Quarters className="spinner-icon-btn" size={18} />}
             {isLoading ? (isLogin ? 'Logging in...' : 'Registering...') : (isLogin ? 'Login' : 'Register')}
           </button>
         </form>

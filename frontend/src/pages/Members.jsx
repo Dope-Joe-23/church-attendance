@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { memberApi } from '../services/api';
 import apiClient from '../services/apiClient';
 import { useMemberStore } from '../context/store';
-import { MembersTable, MemberFormModal } from '../components';
+import { MembersTable, MemberFormModal, LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
 const Members = () => {
@@ -234,7 +234,7 @@ const Members = () => {
       />
 
       {isLoading ? (
-        <p>Loading members...</p>
+        <LoadingSpinner message="Loading members..." />
       ) : (
         <>
           {filteredMembers.length === 0 && searchQuery && (

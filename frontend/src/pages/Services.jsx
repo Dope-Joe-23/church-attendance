@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport } from '../components';
+import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport, LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
 const Services = () => {
@@ -375,7 +375,7 @@ const Services = () => {
       )}
 
       {isLoading ? (
-        <p>Loading services...</p>
+        <LoadingSpinner message="Loading services..." />
       ) : (
         <>
           {filteredServices.length === 0 && searchQuery && (

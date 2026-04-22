@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
-import { AttendanceScanner } from '../components';
+import { AttendanceScanner, LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
 const Scanner = () => {
@@ -73,7 +73,7 @@ const Scanner = () => {
       </div>
 
       {loading ? (
-        <p>Loading services...</p>
+        <LoadingSpinner message="Loading services..." />
       ) : (
         <>
           {/* Service Selection List */}

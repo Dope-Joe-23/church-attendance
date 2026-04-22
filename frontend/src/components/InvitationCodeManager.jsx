@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/apiClient';
+import authService from '../services/authService';
+import { LoadingSpinner } from './index';
 import '../styles/pages.css';
 
 const InvitationCodeManager = () => {
@@ -25,7 +27,10 @@ const InvitationCodeManager = () => {
 
   // Load codes
   useEffect(() => {
-    loadCodes();
+    // Only load codes if user has authentication token
+    if (authService.getToken()) {
+      loadCodes();
+    }
   }, [filterMode]);
 
   const loadCodes = async () => {
@@ -40,10 +45,17 @@ const InvitationCodeManager = () => {
       }
 
       const response = await apiClient.get(endpoint);
-      setCodes(response.data);
+      // Handle both array and paginated responses
+      const codesList = Array.isArray(response.data) ? response.data : (response.data.results || []);
+      setCodes(codesList);
       setError('');
     } catch (err) {
-      setError(`Failed to load codes: ${err.response?.data?.error || err.message}`);
+      const errorMsg = err.response?.status === 401 
+        ? 'Authentication required. Please log in again.' 
+        : `Failed to load codes: ${err.response?.data?.error || err.message}`;
+      setError(errorMsg);
+      setCodes([]); // Set empty array on error
+      console.error('Load codes error:', err);
     } finally {
       setLoading(false);
     }
@@ -340,10 +352,18 @@ const InvitationCodeManager = () => {
           </div>
           <div className="card-body">
             {loading && filterMode === 'all' && (
-              <div className="loading">Loading codes...</div>
+              <div style={{ padding: '40px 0' }}>
+                <LoadingSpinner message="Loading invitation codes..." />
+              </div>
             )}
 
-            {codes.length === 0 ? (
+            {error && (
+              <div className="error-alert" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#fee', color: '#c33', borderRadius: '6px', border: '1px solid #fcc' }}>
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+
+            {!loading && (!Array.isArray(codes) || codes.length === 0) ? (
               <div className="empty-state">
                 <p>No invitation codes found</p>
                 <small>Generate one to get started</small>
@@ -362,7 +382,7 @@ const InvitationCodeManager = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {codes.map((code) => (
+                    {Array.isArray(codes) && codes.map((code) => (
                       <tr key={code.id} className={code.used ? 'used' : ''}>
                         <td className="code-cell">
                           <code>{code.code}</code>

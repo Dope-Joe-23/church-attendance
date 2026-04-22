@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
+import { LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
 const Home = () => {
@@ -93,9 +94,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="dashboard-page">
-        <div className="container">
-          <div className="loading-spinner">Loading dashboard...</div>
-        </div>
+        <LoadingSpinner message="Loading dashboard..." />
       </div>
     );
   }

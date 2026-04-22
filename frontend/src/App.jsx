@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Navigation } from './components';
+import { Sidebar, LoadingSpinner } from './components';
 import ProtectedRoute from './components/ProtectedRoute';
 import {
   Home,
@@ -17,11 +17,17 @@ import authService from './services/authService';
 import './styles/index.css';
 import './styles/components.css';
 import './styles/pages.css';
+import './styles/sidebar.css';
 import './styles/invitation-manager.css';
 
-function App() {
+function AppContent() {
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Determine if we're on an auth page
+  const isAuthPage = ['/login', '/register'].includes(location.pathname);
 
   // Check authentication status on mount and whenever storage changes
   useEffect(() => {
@@ -45,18 +51,25 @@ function App() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="app-loading">
+        <LoadingSpinner message="Initializing app..." />
+      </div>
+    );
   }
 
   return (
-    <Router>
-      <div className="app">
-        <Navigation 
+    <div className="app">
+      {!isAuthPage && (
+        <Sidebar 
           isAuthenticated={isAuthenticated} 
           onLogout={() => setIsAuthenticated(false)}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
         />
-        <main style={{ minHeight: 'calc(100vh - 70px)' }}>
-          <Routes>
+      )}
+      <main style={{ marginLeft: !isAuthPage && isAuthenticated ? (isCollapsed ? '80px' : '280px') : '0', minHeight: '100vh', transition: 'margin-left 0.3s ease' }}>
+        <Routes>
             <Route 
               path="/login" 
               element={<Login onLoginSuccess={() => setIsAuthenticated(true)} />} 
@@ -105,6 +118,13 @@ function App() {
           </Routes>
         </main>
       </div>
+    );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

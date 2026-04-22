@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
-import { AttendanceReport } from '../components';
+import { AttendanceReport, LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
 const Reports = () => {
@@ -74,7 +74,7 @@ const Reports = () => {
       </div>
 
       {loading ? (
-        <p>Loading services...</p>
+        <LoadingSpinner message="Loading services..." />
       ) : (
         <>
           {/* Services Selection Grid */}
