@@ -47,6 +47,17 @@ class ServiceViewSet(viewsets.ModelViewSet):
         service = serializer.save()
         # Sessions will be generated lazily when needed, not upfront
     
+    def perform_destroy(self, instance):
+        """
+        Delete service simply and safely.
+        
+        No dependencies on external systems (Celery/Redis).
+        - Service is deleted immediately
+        - If needed, alerts can be refreshed on next API call
+        - This ensures DELETE always succeeds, regardless of backend availability
+        """
+        instance.delete()
+    
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
         """

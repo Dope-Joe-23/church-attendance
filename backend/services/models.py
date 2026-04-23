@@ -1,6 +1,4 @@
 from django.db import models
-from django.db.models.signals import post_delete
-from django.dispatch import receiver
 
 
 class Service(models.Model):
@@ -48,23 +46,3 @@ class Service(models.Model):
     def __str__(self):
         return f"{self.name} - {self.date} at {self.start_time}"
 
-
-@receiver(post_delete, sender=Service)
-def recalculate_alerts_on_service_delete(sender, instance, **kwargs):
-    """
-    Recalculate member alerts when a service is deleted.
-    This ensures alerts are based on actual attendance data, not phantom services.
-    
-    Runs asynchronously to avoid blocking the DELETE request.
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    try:
-        from services.tasks import recalculate_member_alerts_async
-        logger.info(f"Service deleted: {instance.name}. Queuing async alert recalculation...")
-        # Queue the task asynchronously - don't wait for it to complete
-        recalculate_member_alerts_async.delay()
-        logger.info(f"Alert recalculation task queued successfully")
-    except Exception as e:
-        logger.error(f"Failed to queue alert recalculation after service deletion: {str(e)}", exc_info=True)
