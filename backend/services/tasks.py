@@ -130,3 +130,28 @@ def recalculate_all_alerts(self):
     except Exception as exc:
         logger.error(f"Error in recalculate_all_alerts: {str(exc)}", exc_info=True)
         raise
+
+
+@shared_task(bind=True)
+def recalculate_member_alerts_async(self):
+    """
+    Async task to recalculate member alerts after service deletion.
+    
+    This is called asynchronously to avoid blocking the DELETE request
+    when dealing with large numbers of members.
+    
+    Returns:
+        dict: Summary of recalculation
+    """
+    try:
+        from members.utils import recalculate_member_alerts
+        
+        logger.info("Starting async recalculation of member alerts (triggered by service deletion)...")
+        summary = recalculate_member_alerts()
+        logger.info(f"Alert recalculation complete: {summary}")
+        
+        return summary
+        
+    except Exception as exc:
+        logger.error(f"Error in recalculate_member_alerts_async: {str(exc)}", exc_info=True)
+        raise

@@ -54,14 +54,17 @@ def recalculate_alerts_on_service_delete(sender, instance, **kwargs):
     """
     Recalculate member alerts when a service is deleted.
     This ensures alerts are based on actual attendance data, not phantom services.
+    
+    Runs asynchronously to avoid blocking the DELETE request.
     """
     import logging
     logger = logging.getLogger(__name__)
     
     try:
-        from members.utils import recalculate_member_alerts
-        logger.info(f"Service deleted: {instance.name}. Recalculating member alerts...")
-        summary = recalculate_member_alerts()
-        logger.info(f"Alert recalculation complete. Summary: {summary}")
+        from services.tasks import recalculate_member_alerts_async
+        logger.info(f"Service deleted: {instance.name}. Queuing async alert recalculation...")
+        # Queue the task asynchronously - don't wait for it to complete
+        recalculate_member_alerts_async.delay()
+        logger.info(f"Alert recalculation task queued successfully")
     except Exception as e:
-        logger.error(f"Failed to recalculate alerts after service deletion: {str(e)}", exc_info=True)
+        logger.error(f"Failed to queue alert recalculation after service deletion: {str(e)}", exc_info=True)
