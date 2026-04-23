@@ -22,14 +22,34 @@ const CareDashboard = () => {
 
   // Fetch all members with their metrics and alerts
   useEffect(() => {
+    // First, ensure all metrics are recalculated (creates metrics for members that don't have them)
+    const initializeMetrics = async () => {
+      try {
+        console.log('Initializing absenteeism metrics for all members...');
+        await apiClient.post('/members/absenteeism-metrics/recalculate_all/');
+      } catch (err) {
+        console.warn('Metrics recalculation skipped (might not be needed)', err);
+      }
+    };
+    
+    initializeMetrics();
     fetchAllData();
+    
+    // Auto-refresh every 30 seconds to keep data dynamic
+    const refreshInterval = setInterval(() => {
+      console.log('Auto-refreshing care dashboard...');
+      fetchAllData();
+    }, 30000); // 30 seconds
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
       
-      // Fetch all members (fetch all pages if paginated)
+      // Fetch all members (handle pagination)
       const membersResponse = await apiClient.get('/members/');
       let membersList = membersResponse.data.results || membersResponse.data;
       
@@ -48,29 +68,59 @@ const CareDashboard = () => {
       const allMembers = membersList.filter(m => !m.is_visitor);
       
       // Fetch metrics (optional - use empty map if fails)
+      // IMPORTANT: Paginate through ALL metrics, regardless of count
       let metricsMap = {};
       try {
         const metricsResponse = await apiClient.get('/members/absenteeism-metrics/');
-        const metricsList = metricsResponse.data.results || metricsResponse.data || [];
+        let metricsList = metricsResponse.data.results || metricsResponse.data || [];
+        
+        // Handle pagination - fetch ALL pages until no more results
+        if (metricsResponse.data.results && metricsResponse.data.next) {
+          let nextUrl = metricsResponse.data.next;
+          while (nextUrl) {
+            const url = new URL(nextUrl);
+            const pathAndQuery = url.pathname.substring(4) + url.search;
+            const nextResponse = await apiClient.get(pathAndQuery);
+            metricsList = [...metricsList, ...(nextResponse.data.results || [])];
+            nextUrl = nextResponse.data.next || null;
+          }
+        }
+        
         metricsList.forEach(metric => {
           metricsMap[metric.member] = metric;
         });
+        console.log(`Loaded metrics for ${Object.keys(metricsMap).length} members`);
       } catch (err) {
-        console.warn('Metrics unavailable, using empty map');
+        console.warn('Metrics unavailable, using empty map', err);
       }
       
       // Fetch alerts (optional - use empty map if fails)
+      // IMPORTANT: Paginate through ALL alerts, regardless of count
       let alertsMap = {};
       try {
         const alertsResponse = await apiClient.get('/members/absenteeism-alerts/unresolved/');
-        const alertsList = alertsResponse.data.results || alertsResponse.data || [];
+        let alertsList = alertsResponse.data.results || alertsResponse.data || [];
+        
+        // Handle pagination - fetch ALL pages until no more results
+        if (alertsResponse.data.results && alertsResponse.data.next) {
+          let nextUrl = alertsResponse.data.next;
+          while (nextUrl) {
+            const url = new URL(nextUrl);
+            const pathAndQuery = url.pathname.substring(4) + url.search;
+            const nextResponse = await apiClient.get(pathAndQuery);
+            alertsList = [...alertsList, ...(nextResponse.data.results || [])];
+            nextUrl = nextResponse.data.next || null;
+          }
+        }
+        
         alertsList.forEach(alert => {
           if (!alertsMap[alert.member]) {
             alertsMap[alert.member] = alert;
           }
         });
+        console.log(`Loaded ${Object.keys(alertsMap).length} unresolved alerts`);
       } catch (err) {
-        console.warn('Alerts unavailable, using empty map');
+        console.warn('Alerts unavailable, using empty map', err);
       }
       
       setMembers(allMembers);

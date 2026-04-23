@@ -111,7 +111,7 @@
   border: none;
   color: white;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 99;
   border-radius: 8px;
   padding: 8px 12px;
   transition: all 0.3s ease;
