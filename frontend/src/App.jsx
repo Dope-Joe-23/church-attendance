@@ -68,7 +68,7 @@ function AppContent() {
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
         />
       )}
-      <main style={{ marginLeft: !isAuthPage && isAuthenticated ? (isCollapsed ? '80px' : '280px') : '0', minHeight: '100vh', transition: 'margin-left 0.3s ease' }}>
+      <main className={`app-main ${!isAuthPage && isAuthenticated ? 'with-sidebar' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Routes>
             <Route 
               path="/login" 

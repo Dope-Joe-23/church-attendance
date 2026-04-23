@@ -40,3 +40,36 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Main content area with responsive sidebar margin */
+.app-main {
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+  margin-left: 0;
+}
+
+/* Desktop: Apply margin for sidebar */
+@media (min-width: 769px) {
+  .app-main.with-sidebar {
+    margin-left: 280px;
+  }
+
+  .app-main.with-sidebar.sidebar-collapsed {
+    margin-left: 80px;
+  }
+}
+
+/* Mobile/Tablet: No margin (sidebar is off-screen), add padding for hamburger button */
+@media (max-width: 768px) {
+  .app-main {
+    padding-top: 60px;
+  }
+
+  .app-main.with-sidebar {
+    margin-left: 0;
+  }
+
+  .app-main.with-sidebar.sidebar-collapsed {
+    margin-left: 0;
+  }
+}
