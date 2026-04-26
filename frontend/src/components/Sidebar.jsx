@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import authService from '../services/authService';
-import { MdDashboard, MdPeople, MdEvent, MdQrCode2, MdAssessment, MdFavoriteBorder, MdMenu, MdClose, MdLogout, MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { MdDashboard, MdPeople, MdEvent, MdQrCode2, MdAssessment, MdFavoriteBorder, MdMenu, MdClose, MdLogout } from 'react-icons/md';
 import '../styles/sidebar.css';
 
 const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
 
   const isActive = (path) => {
@@ -16,12 +16,12 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
   };
 
   const toggleMobileSidebar = () => {
-    setIsMobileOpen(!isMobileOpen);
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
-    setIsMobileOpen(false); // Close sidebar on mobile after navigation
+    setIsSidebarOpen(false); // Close sidebar after navigation
   };
 
   const handleLogout = () => {
@@ -66,30 +66,21 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
 
   return (
     <>
-      {/* Mobile hamburger button */}
+      {/* Hamburger button - visible on all screen sizes */}
       <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
-        {isMobileOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
+        {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
       </button>
 
-      {/* Overlay for mobile */}
-      {isMobileOpen && <div className="sidebar-overlay" onClick={toggleMobileSidebar}></div>}
+      {/* Overlay for sidebar */}
+      {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleMobileSidebar}></div>}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         {/* Logo Section */}
         <div className="sidebar-logo">
           <span className="logo-icon">⛪</span>
-          {!isCollapsed && <h1 className="logo-text">Church-In</h1>}
+          <h1 className="logo-text">Church-In</h1>
         </div>
-
-        {/* Collapse Toggle Button (Desktop only) */}
-        <button
-          className="collapse-toggle"
-          onClick={onToggleCollapse}
-          title={isCollapsed ? 'Expand' : 'Collapse'}
-        >
-          {isCollapsed ? <MdChevronRight size={18} /> : <MdChevronLeft size={18} />}
-        </button>
 
         {/* Navigation Menu */}
         {isAuthenticated && (
@@ -109,9 +100,8 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
                         <span className="nav-icon">
                           <IconComponent size={20} />
                         </span>
-                        {!isCollapsed && <span className="nav-label">{item.label}</span>}
-                        {!isCollapsed && item.badge && <span className="nav-badge">{item.badge}</span>}
-                        {isCollapsed && item.badge && <span className="nav-badge-collapsed">{item.badge}</span>}
+                        <span className="nav-label">{item.label}</span>
+                        {item.badge && <span className="nav-badge">{item.badge}</span>}
                       </button>
                     </li>
                   );
@@ -121,17 +111,17 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
         )}
 
         {/* Divider */}
-        {isAuthenticated && !isCollapsed && <div className="sidebar-divider"></div>}
+        {isAuthenticated && <div className="sidebar-divider"></div>}
 
         {/* User Actions */}
         <div className="sidebar-footer">
           {isAuthenticated ? (
             <button className="logout-btn" onClick={handleLogout} title="Logout">
               <MdLogout size={18} />
-              {!isCollapsed && <span>Logout</span>}
+              <span>Logout</span>
             </button>
           ) : (
-            !isCollapsed && location.pathname !== '/login' && location.pathname !== '/register' && (
+            location.pathname !== '/login' && location.pathname !== '/register' && (
               <button className="login-btn" onClick={() => navigate('/login')}>
                 Login
               </button>

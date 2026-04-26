@@ -10,6 +10,10 @@ const Members = () => {
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterVisitorType, setFilterVisitorType] = useState('all'); // all, member, visitor
+  const [filterClass, setFilterClass] = useState('all');
+  const [filterDepartment, setFilterDepartment] = useState('all');
+  const [filterCommittee, setFilterCommittee] = useState('all');
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
@@ -168,14 +172,40 @@ const Members = () => {
   };
 
   const filteredMembers = members.filter((member) => {
-    if (!searchQuery) return true; // Show all if no search query
-    const query = searchQuery.toLowerCase().trim();
-    return (
-      (member.full_name && member.full_name.toLowerCase().includes(query)) ||
-      (member.email && member.email.toLowerCase().includes(query)) ||
-      (member.phone && member.phone.toLowerCase().includes(query)) ||
-      (member.department && member.department.toLowerCase().includes(query))
-    );
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch = (
+        (member.full_name && member.full_name.toLowerCase().includes(query)) ||
+        (member.email && member.email.toLowerCase().includes(query)) ||
+        (member.phone && member.phone.toLowerCase().includes(query)) ||
+        (member.member_id && member.member_id.toLowerCase().includes(query))
+      );
+      if (!matchesSearch) return false;
+    }
+
+    // Visitor/Member filter
+    if (filterVisitorType !== 'all') {
+      if (filterVisitorType === 'member' && member.is_visitor) return false;
+      if (filterVisitorType === 'visitor' && !member.is_visitor) return false;
+    }
+
+    // Class filter
+    if (filterClass !== 'all' && member.class_name !== filterClass) {
+      return false;
+    }
+
+    // Department filter
+    if (filterDepartment !== 'all' && member.department !== filterDepartment) {
+      return false;
+    }
+
+    // Committee filter
+    if (filterCommittee !== 'all' && member.committee !== filterCommittee) {
+      return false;
+    }
+
+    return true;
   });
 
   // Debug logging
@@ -185,23 +215,43 @@ const Members = () => {
     }
   }, [searchQuery, filteredMembers.length]);
 
+  // Get unique filter values
+  const getUniqueClasses = () => {
+    const classes = new Set(members.map(m => m.class_name).filter(Boolean));
+    return Array.from(classes).sort();
+  };
+
+  const getUniqueDepartments = () => {
+    const departments = new Set(members.map(m => m.department).filter(Boolean));
+    return Array.from(departments).sort();
+  };
+
+  const getUniqueCommittees = () => {
+    const committees = new Set(members.map(m => m.committee).filter(Boolean));
+    return Array.from(committees).sort();
+  };
+
   return (
     <div className="members-page">
       <div className="page-header">
         <div className="header-content">
           <h1>Church Members</h1>
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="🔍 Search members by name, email, phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
+        </div>
+      </div>
+
+      {/* Search and Action Bar */}
+      <div className="search-action-bar">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="🔍 Search by name, email, phone or member ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
         </div>
         <button 
-          className="btn btn-primary" 
+          className="btn btn-primary add-member-btn" 
           onClick={() => {
             setEditingId(null);
             setFormError(null);
@@ -223,6 +273,68 @@ const Members = () => {
         </button>
       </div>
 
+      {/* Filters Section */}
+      <div className="filters-section">
+        <div className="filter-group">
+          <label htmlFor="filter-type">Type:</label>
+          <select
+            id="filter-type"
+            value={filterVisitorType}
+            onChange={(e) => setFilterVisitorType(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Members</option>
+            <option value="member">Members Only</option>
+            <option value="visitor">Visitors Only</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="filter-class">Class:</label>
+          <select
+            id="filter-class"
+            value={filterClass}
+            onChange={(e) => setFilterClass(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Classes</option>
+            {getUniqueClasses().map(cls => (
+              <option key={cls} value={cls}>{cls || 'N/A'}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="filter-dept">Department:</label>
+          <select
+            id="filter-dept"
+            value={filterDepartment}
+            onChange={(e) => setFilterDepartment(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Departments</option>
+            {getUniqueDepartments().map(dept => (
+              <option key={dept} value={dept}>{dept || 'N/A'}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="filter-committee">Committee:</label>
+          <select
+            id="filter-committee"
+            value={filterCommittee}
+            onChange={(e) => setFilterCommittee(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Committees</option>
+            {getUniqueCommittees().map(comm => (
+              <option key={comm} value={comm}>{comm || 'N/A'}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <MemberFormModal
         isOpen={showFormModal}
         isEditing={!!editingId}
@@ -237,16 +349,23 @@ const Members = () => {
         <LoadingSpinner message="Loading members..." />
       ) : (
         <>
-          {filteredMembers.length === 0 && searchQuery && (
+          {filteredMembers.length === 0 && (searchQuery || filterVisitorType !== 'all' || filterClass !== 'all' || filterDepartment !== 'all' || filterCommittee !== 'all') && (
             <div className="no-results">
-              <p>No members found matching "{searchQuery}"</p>
+              <p>No members match your search or filter criteria.</p>
             </div>
           )}
-          <MembersTable
-            members={filteredMembers}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          {filteredMembers.length === 0 && !searchQuery && filterVisitorType === 'all' && filterClass === 'all' && filterDepartment === 'all' && filterCommittee === 'all' && (
+            <div className="no-results">
+              <p>No members found. Add a new member to get started.</p>
+            </div>
+          )}
+          <div className="members-table-wrapper">
+            <MembersTable
+              members={filteredMembers}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
         </>
       )}
     </div>

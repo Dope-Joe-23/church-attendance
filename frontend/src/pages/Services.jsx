@@ -248,18 +248,22 @@ const Services = () => {
       <div className="page-header">
         <div className="header-content">
           <h1>Church Services</h1>
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="🔍 Search services by name, location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
+        </div>
+      </div>
+
+      {/* Search and Action Bar */}
+      <div className="search-action-bar">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search services by name, location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
         </div>
         <button 
-          className="btn btn-primary" 
+          className="btn btn-primary add-member-btn" 
           onClick={() => {
             setEditingId(null);
             setFormError(null);
@@ -334,8 +338,8 @@ const Services = () => {
               <AttendanceScanner
                 service={selectedSessionForAttendance}
                 onCheckinSuccess={() => {
-                  setShowAttendanceScanner(false);
-                  setSelectedSessionForAttendance(null);
+                  // Keep the modal open to allow scanning multiple members
+                  // Only close if user explicitly clicks the close button
                 }}
               />
             </div>
