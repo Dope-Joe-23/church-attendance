@@ -192,8 +192,8 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       setMessageType(result.success ? 'success' : 'info');
       setMessage(result.message);
 
-      // Close camera on successful check-in OR if already checked in
-      if (result.success || result.message?.includes('already checked in')) {
+      // Close camera on successful check-in OR if already checked in OR if attendance already taken
+      if (result.success || result.message?.includes('already checked in') || result.message?.includes('Attendance for this service has been taken')) {
         console.log('🎉 Check-in complete - stopping camera immediately');
         stopCamera(); // Stop immediately, don't wait for state update
         setCameraActive(false);

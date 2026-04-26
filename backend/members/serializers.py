@@ -13,6 +13,7 @@ class MemberSerializer(serializers.ModelSerializer):
             'member_id',
             'full_name',
             'date_of_birth',
+            'sex',
             'phone',
             'email',
             'place_of_residence',

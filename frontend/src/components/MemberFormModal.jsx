@@ -44,6 +44,11 @@ const COMMITTEE_CHOICES = [
   { value: 'harvest', label: 'Harvest' },
 ];
 
+const SEX_CHOICES = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+];
+
 const MARITAL_STATUS_CHOICES = [
   { value: 'single', label: 'Single' },
   { value: 'married', label: 'Married' },
@@ -103,6 +108,24 @@ const MemberFormModal = ({
                 }
                 className="input-field"
               />
+            </div>
+
+            <div className="form-group half-width">
+              <label>Sex</label>
+              <select
+                value={formData.sex || ''}
+                onChange={(e) =>
+                  onFormChange({ ...formData, sex: e.target.value })
+                }
+                className="input-field"
+              >
+                <option value="">Select Sex</option>
+                {SEX_CHOICES.map((sex) => (
+                  <option key={sex.value} value={sex.value}>
+                    {sex.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group half-width">

@@ -111,6 +111,12 @@ class Member(models.Model):
         ('harvest', 'Harvest'),
     ]
 
+    # Sex choices
+    SEX_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female')
+    ]
+    
     # Marital status choices
     MARITAL_STATUS = [
         ('single', 'Single'),
@@ -129,6 +135,7 @@ class Member(models.Model):
     member_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=255)
     date_of_birth = models.DateField(blank=True, null=True)
+    sex = models.CharField(max_length=10, choices=SEX_CHOICES, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     place_of_residence = models.CharField(max_length=255, blank=True, null=True)

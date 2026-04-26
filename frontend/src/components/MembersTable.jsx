@@ -26,6 +26,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
             <tr>
               <th>Member ID</th>
               <th>Full Name</th>
+              <th>Sex</th>
               <th>Visitor</th>
               <th>Actions</th>
             </tr>
@@ -37,6 +38,9 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                   <span className="badge-id">{member.member_id}</span>
                 </td>
                 <td className="member-name-col" data-label="Full Name">{member.full_name}</td>
+                <td className="sex-col" data-label="Sex">
+                  {member.sex ? (member.sex === 'male' ? '👨 Male' : '👩 Female') : '—'}
+                </td>
                 <td className="visitor-col" data-label="Visitor">
                   {member.is_visitor ? (
                     <span className="visitor-badge-small">Visitor</span>

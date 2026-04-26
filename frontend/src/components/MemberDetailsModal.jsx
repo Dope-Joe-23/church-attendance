@@ -249,6 +249,10 @@ const MemberDetailsModal = ({
                   <span className="info-value">{member.class_name || 'Not assigned'}</span>
                 </div>
                 <div className="info-row">
+                  <span className="info-label">Sex:</span>
+                  <span className="info-value">{member.sex ? (member.sex === 'male' ? '👨 Male' : '👩 Female') : 'Not specified'}</span>
+                </div>
+                <div className="info-row">
                   <span className="info-label">Committee:</span>
                   <span className="info-value">{member.committee || 'Not assigned'}</span>
                 </div>

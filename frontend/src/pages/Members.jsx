@@ -17,6 +17,7 @@ const Members = () => {
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
+    sex: '',
     phone: '',
     email: '',
     place_of_residence: '',
@@ -66,6 +67,7 @@ const Members = () => {
     const cleanedData = {
       full_name: formData.full_name.trim(),
       date_of_birth: formData.date_of_birth || null,
+      sex: formData.sex || null,
       phone: formData.phone.trim() || null,
       email: formData.email.trim() || null,
       place_of_residence: formData.place_of_residence?.trim() || null,
@@ -122,6 +124,7 @@ const Members = () => {
     setFormData({
       full_name: member.full_name,
       date_of_birth: member.date_of_birth || '',
+      sex: member.sex || '',
       phone: member.phone || '',
       email: member.email || '',
       place_of_residence: member.place_of_residence || '',
@@ -154,6 +157,7 @@ const Members = () => {
     setFormData({
       full_name: '',
       date_of_birth: '',
+      sex: '',
       phone: '',
       email: '',
       place_of_residence: '',

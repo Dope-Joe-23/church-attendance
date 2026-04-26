@@ -175,4 +175,11 @@ export const attendanceApi = {
     });
     return response.data;
   },
+
+  unmarkAttendance: async (serviceId) => {
+    const response = await apiClient.post('/attendance/unmark_attendance/', {
+      service_id: serviceId,
+    });
+    return response.data;
+  },
 };

@@ -30,6 +30,7 @@ const AttendanceReport = ({ service }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [markingAbsent, setMarkingAbsent] = useState(false);
+  const [unmarking, setUnmarking] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
@@ -117,6 +118,32 @@ const AttendanceReport = ({ service }) => {
     }
   };
 
+  const handleUnmarkAttendance = async () => {
+    if (
+      !window.confirm(
+        'Are you sure? This will remove all attendance records (both present and absent) for this service.'
+      )
+    ) {
+      return;
+    }
+
+    setUnmarking(true);
+    setSuccessMessage('');
+    try {
+      const result = await attendanceApi.unmarkAttendance(service.id);
+      setSuccessMessage(result.message);
+      // Refresh attendance data
+      setTimeout(() => {
+        fetchAttendance();
+        setSuccessMessage('');
+      }, 2000);
+    } catch (err) {
+      setSuccessMessage('Error: Failed to unmark attendance');
+    } finally {
+      setUnmarking(false);
+    }
+  };
+
   if (!service) {
     return (
       <div className="report-container">
@@ -151,73 +178,83 @@ const AttendanceReport = ({ service }) => {
             <p>{new Date(attendance.service.date).toLocaleDateString()}</p>
           </div>
 
-          <div className="summary-stats">
-            <div className="stat present">
-              <h4>Present</h4>
-              <p>{attendance.total_present}</p>
-            </div>
-            <div className="stat absent">
-              <h4>Absent</h4>
-              <p>{attendance.total_absent}</p>
-            </div>
-          </div>
-
           {successMessage && (
             <div className="success-message">{successMessage}</div>
           )}
 
-          <button
-            onClick={handleMarkAbsent}
-            disabled={markingAbsent}
-            className="btn btn-warning"
-            style={{ marginBottom: '1.5rem' }}
-          >
-            {markingAbsent ? 'Marking...' : 'Mark Remaining as Absent'}
-          </button>
-
-          <div className="attendance-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Member Name</th>
-                  <th>Contact Information</th>
-                  <th>Group</th>
-                  <th>Status</th>
-                  <th>Check-in Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendance.attendances.map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.member_details.full_name}</td>
-                    <td>
-                      <div className="contact-info">
-                        {record.member_details.email && (
-                          <div className="email">📧 {record.member_details.email}</div>
-                        )}
-                        {record.member_details.phone && (
-                          <div className="phone">📱 {record.member_details.phone}</div>
-                        )}
-                        {!record.member_details.email && !record.member_details.phone && (
-                          <span className="no-contact">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>{CLASS_LABELS[record.member_details.class_name] || record.member_details.class_name || '—'}</td>
-                    <td>
-                      <span className={`status-badge status-${record.status}`}>
-                        {record.status.charAt(0).toUpperCase() +
-                          record.status.slice(1)}
-                      </span>
-                    </td>
-                    <td>
-                      {new Date(record.check_in_time).toLocaleTimeString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Main Statistics Section */}
+          <div className="attendance-stats-section">
+            <h4 className="section-title">📊 Attendance Statistics</h4>
+            <div className="summary-stats">
+              <div className="stat present">
+                <h4>Total Present</h4>
+                <p>{attendance.total_present}</p>
+              </div>
+              <div className="stat absent">
+                <h4>Total Absent</h4>
+                <p>{attendance.total_absent}</p>
+              </div>
+              <div className="stat male-present">
+                <h4>👨 Males Present</h4>
+                <p>{attendance.male_present || 0}</p>
+              </div>
+              <div className="stat female-present">
+                <h4>👩 Females Present</h4>
+                <p>{attendance.female_present || 0}</p>
+              </div>
+            </div>
           </div>
+
+          {/* Class Breakdown Section */}
+          {attendance.class_statistics && Object.keys(attendance.class_statistics).length > 0 && (
+            <div className="class-breakdown-section">
+              <h4 className="section-title">📋 Attendance by Class</h4>
+              <div className="class-table-wrapper">
+                <table className="class-statistics-table">
+                  <thead>
+                    <tr>
+                      <th>Class Name</th>
+                      <th className="text-center">Present</th>
+                      <th className="text-center">Absent</th>
+                      <th className="text-center">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(attendance.class_statistics).map(([className, stats]) => (
+                      <tr key={className}>
+                        <td className="class-name">{CLASS_LABELS[className] || className}</td>
+                        <td className="text-center present-count">{stats.present}</td>
+                        <td className="text-center absent-count">{stats.absent}</td>
+                        <td className="text-center total-count">{stats.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="attendance-actions">
+            <button
+              onClick={handleMarkAbsent}
+              disabled={markingAbsent}
+              className="btn btn-warning"
+              title="Mark all unmarked members as absent"
+            >
+              {markingAbsent ? 'Marking...' : '✅ Mark Remaining as Absent'}
+            </button>
+            <button
+              onClick={handleUnmarkAttendance}
+              disabled={unmarking}
+              className="btn btn-secondary"
+              title="Remove all attendance records and start over"
+            >
+              {unmarking ? 'Unmarking...' : '↩️ Unmark Attendance'}
+            </button>
+          </div>
+
+
         </>
       )}
     </div>
