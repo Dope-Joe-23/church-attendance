@@ -317,6 +317,7 @@ class MemberAbsenteeismMetric(models.Model):
     
     class Meta:
         verbose_name_plural = "Member Absenteeism Metrics"
+        ordering = ['-absenteeism_ratio', '-last_updated']
     
     def __str__(self):
         return f"{self.member.full_name} - {self.absenteeism_ratio:.1%} absent"

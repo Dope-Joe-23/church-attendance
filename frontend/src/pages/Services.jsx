@@ -181,6 +181,19 @@ const Services = () => {
     await fetchServices();
   };
 
+  const handleDeleteSession = async (sessionId) => {
+    try {
+      await serviceApi.deleteService(sessionId);
+      // Remove from sessions list
+      setSessionsList((prevSessions) => prevSessions.filter((s) => s.id !== sessionId));
+      // Refresh services to update counts
+      await fetchServices();
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to delete session');
+    }
+  };
+
   const handleViewReport = async (service) => {
     // For recurring parent services, show sessions modal with report mode
     if (service.is_recurring && !service.parent_service) {
@@ -307,6 +320,7 @@ const Services = () => {
         onAddDate={handleAddDateSubmit}
         addDateError={addDateError}
         onSessionAdded={handleSessionAdded}
+        onDeleteSession={handleDeleteSession}
         mode={modalMode || 'attendance'}
       />
 

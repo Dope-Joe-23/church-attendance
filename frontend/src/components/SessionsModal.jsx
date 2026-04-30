@@ -11,6 +11,7 @@ const SessionsModal = ({
   onAddDate,
   addDateError,
   onSessionAdded,
+  onDeleteSession,
   mode = 'attendance', // 'attendance' or 'report'
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -20,6 +21,7 @@ const SessionsModal = ({
   const [newEndTime, setNewEndTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState(null);
+  const [deletingSessionId, setDeletingSessionId] = useState(null);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -89,6 +91,25 @@ const SessionsModal = ({
     setShowAddForm(!showAddForm);
   };
 
+  const handleDeleteSession = async (sessionId, sessionDate) => {
+    if (!window.confirm(`Are you sure you want to delete this session (${formatDate(sessionDate)})? This will also remove all attendance records for this session.`)) {
+      return;
+    }
+
+    setDeletingSessionId(sessionId);
+    try {
+      await onDeleteSession(sessionId);
+      // Notify parent to refresh sessions
+      if (onSessionAdded) {
+        onSessionAdded(service.id);
+      }
+    } catch (err) {
+      setLocalError(err.message || 'Failed to delete session');
+    } finally {
+      setDeletingSessionId(null);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content sessions-modal" onClick={(e) => e.stopPropagation()}>
@@ -114,7 +135,7 @@ const SessionsModal = ({
                   <th>Date</th>
                   <th>Time</th>
                   <th>Location</th>
-                  <th></th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -133,9 +154,20 @@ const SessionsModal = ({
                       <button
                         className="btn btn-sm btn-success"
                         onClick={() => onSelectSession(session)}
+                        disabled={deletingSessionId === session.id}
                       >
                         {mode === 'report' ? 'Report' : 'Take'}
                       </button>
+                      {onDeleteSession && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteSession(session.id, session.date)}
+                          disabled={deletingSessionId === session.id}
+                          title="Delete this session and all its attendance records"
+                        >
+                          {deletingSessionId === session.id ? '⏳' : '🗑️'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

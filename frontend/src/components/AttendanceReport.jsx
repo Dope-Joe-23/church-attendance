@@ -112,7 +112,8 @@ const AttendanceReport = ({ service }) => {
         setSuccessMessage('');
       }, 2000);
     } catch (err) {
-      setSuccessMessage('Error: Failed to mark members as absent');
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to mark members as absent';
+      setSuccessMessage(`Error: ${errorMsg}`);
     } finally {
       setMarkingAbsent(false);
     }
@@ -138,7 +139,8 @@ const AttendanceReport = ({ service }) => {
         setSuccessMessage('');
       }, 2000);
     } catch (err) {
-      setSuccessMessage('Error: Failed to unmark attendance');
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to unmark attendance';
+      setSuccessMessage(`Error: ${errorMsg}`);
     } finally {
       setUnmarking(false);
     }

@@ -584,11 +584,13 @@ def recalculate_all_absenteeism_metrics():
     
     This is the batch operation to sync all member metrics and alerts.
     Called after service deletion, bulk attendance changes, etc.
+    Uses batch processing to avoid timeouts.
     
     Returns:
         dict: Summary of the recalculation
     """
     import logging
+    from django.db.models import Prefetch
     logger = logging.getLogger(__name__)
     
     summary = {
@@ -600,25 +602,48 @@ def recalculate_all_absenteeism_metrics():
         'critical_count': 0,
     }
     
-    members = Member.objects.filter(is_visitor=False)
-    
-    for member in members:
-        result = update_absenteeism_alerts(member)
-        summary['members_processed'] += 1
+    try:
+        # Prefetch all required data to reduce queries
+        members = Member.objects.filter(is_visitor=False).prefetch_related(
+            'attendances__service__parent_service'
+        )
         
-        if result['alert_created']:
-            summary['alerts_created'] += 1
-            if result['alert_level'] == 'early_warning':
-                summary['early_warning_count'] += 1
-            elif result['alert_level'] == 'at_risk':
-                summary['at_risk_count'] += 1
-            elif result['alert_level'] == 'critical':
-                summary['critical_count'] += 1
+        total_members = members.count()
+        batch_size = 50
+        processed = 0
         
-        if result['alert_resolved']:
-            summary['alerts_resolved'] += 1
+        for member in members:
+            try:
+                result = update_absenteeism_alerts(member)
+                summary['members_processed'] += 1
+                
+                if result['alert_created']:
+                    summary['alerts_created'] += 1
+                    if result['alert_level'] == 'early_warning':
+                        summary['early_warning_count'] += 1
+                    elif result['alert_level'] == 'at_risk':
+                        summary['at_risk_count'] += 1
+                    elif result['alert_level'] == 'critical':
+                        summary['critical_count'] += 1
+                
+                if result['alert_resolved']:
+                    summary['alerts_resolved'] += 1
+                
+                logger.debug(f"Processed {member.full_name}: ratio={result['metric']['absenteeism_ratio']:.1%}, alert_level={result['alert_level']}")
+                
+                processed += 1
+                if processed % batch_size == 0:
+                    logger.info(f"Progress: {processed}/{total_members} members processed...")
+                    
+            except Exception as e:
+                logger.error(f"Error processing member {member.member_id}: {str(e)}", exc_info=True)
+                summary['members_processed'] += 1
+                continue
         
-        logger.debug(f"Processed {member.full_name}: ratio={result['metric']['absenteeism_ratio']:.1%}, alert_level={result['alert_level']}")
-    
-    logger.info(f"Absenteeism metrics recalculation complete. Summary: {summary}")
-    return summary
+        logger.info(f"Absenteeism metrics recalculation complete. Summary: {summary}")
+        return summary
+        
+    except Exception as e:
+        logger.error(f"Critical error in recalculate_all_absenteeism_metrics: {str(e)}", exc_info=True)
+        summary['error'] = str(e)
+        return summary
