@@ -512,23 +512,27 @@ def update_absenteeism_alerts(member):
     metric_data = calculate_absenteeism_metric(member)
     result['metric'] = metric_data
     
-    # Update or create MemberAbsenteeismMetric
-    metric, created = MemberAbsenteeismMetric.objects.get_or_create(member=member)
-    metric.total_services = metric_data['total_services']
-    metric.absent_count = metric_data['absent_count']
-    metric.present_count = metric_data['present_count']
-    metric.weighted_absent = metric_data['weighted_absent']
-    metric.weighted_total = metric_data['weighted_total']
-    metric.absenteeism_ratio = metric_data['absenteeism_ratio']
-    metric.recurring_absent = metric_data['recurring_absent']
-    metric.recurring_present = metric_data['recurring_present']
-    metric.onetime_absent = metric_data['onetime_absent']
-    metric.onetime_present = metric_data['onetime_present']
-    metric.save()
-    
-    # Update member's denormalized ratio field
-    member.current_absenteeism_ratio = metric_data['absenteeism_ratio']
-    member.save()
+    # Update or create MemberAbsenteeismMetric efficiently using update_or_create
+    metric_defaults = {
+        'total_services': metric_data['total_services'],
+        'absent_count': metric_data['absent_count'],
+        'present_count': metric_data['present_count'],
+        'weighted_absent': metric_data['weighted_absent'],
+        'weighted_total': metric_data['weighted_total'],
+        'absenteeism_ratio': metric_data['absenteeism_ratio'],
+        'recurring_absent': metric_data['recurring_absent'],
+        'recurring_present': metric_data['recurring_present'],
+        'onetime_absent': metric_data['onetime_absent'],
+        'onetime_present': metric_data['onetime_present'],
+    }
+    metric, created = MemberAbsenteeismMetric.objects.update_or_create(
+        member=member,
+        defaults=metric_defaults
+    )
+
+    # Update member's denormalized ratio field efficiently to avoid running full Member.save()
+    # (Member.save() may trigger QR generation and other heavy side-effects)
+    Member.objects.filter(pk=member.pk).update(current_absenteeism_ratio=metric_data['absenteeism_ratio'])
     
     # Determine required alert level
     required_alert_level = get_alert_level_for_ratio(metric_data['absenteeism_ratio'])

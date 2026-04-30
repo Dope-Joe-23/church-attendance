@@ -23,17 +23,19 @@ const CareDashboard = () => {
   // Fetch all members with their metrics and alerts
   useEffect(() => {
     // First, ensure all metrics are recalculated (creates metrics for members that don't have them)
-    const initializeMetrics = async () => {
-      try {
-        console.log('Initializing absenteeism metrics for all members...');
-        await apiClient.post('/members/absenteeism-metrics/recalculate_all/');
-      } catch (err) {
-        console.warn('Metrics recalculation skipped (might not be needed)', err);
-      }
-    };
-    
-    initializeMetrics();
-    fetchAllData();
+      const initializeAndFetch = async () => {
+        try {
+          console.log('Initializing absenteeism metrics for all members...');
+          await apiClient.post('/members/absenteeism-metrics/recalculate_all/');
+        } catch (err) {
+          console.warn('Metrics recalculation skipped (might not be needed)', err);
+        } finally {
+          // Fetch data regardless of recalc result; we await to ensure metricsMap is populated
+          await fetchAllData();
+        }
+      };
+
+      initializeAndFetch();
     
     // Do NOT auto-refresh - user requested to stop this
     // Users can manually refresh by using browser refresh or a refresh button
