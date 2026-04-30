@@ -438,46 +438,51 @@ class MemberViewSet(viewsets.ModelViewSet):
             ]
         }
         """
+        """
+        Compute members with 10 consecutive absences based on the last 10 dated sessions.
+
+        Behavior:
+        - Consider only Service instances with a concrete `date` (sessions).
+        - If there are fewer than 10 sessions, return count 0 and empty list.
+        - Otherwise, return members who have an `absent` Attendance for each of the
+          last 10 sessions (i.e., absent across those 10 consecutive sessions).
+        """
         try:
-            from .models import MemberAbsenteeismAlert
-            
-            # Get all unresolved absenteeism alerts with member details
-            alerts = MemberAbsenteeismAlert.objects.filter(
-                is_resolved=False
-            ).select_related('member').order_by('-created_at')
-            
-            members_list = []
-            for alert in alerts:
-                member = alert.member
-                metric = getattr(member, 'absenteeism_metric', None)
-                
-                members_list.append({
-                    'id': member.id,
-                    'member_id': member.member_id,
-                    'full_name': member.full_name,
-                    'alert_level': alert.alert_level,
-                    'absenteeism_ratio': metric.absenteeism_ratio if metric else alert.absenteeism_ratio_at_creation,
-                    'absent_count': metric.absent_count if metric else alert.absent_count_at_creation,
-                    'total_services': metric.total_services if metric else alert.total_services_at_creation,
-                    'email': member.email,
-                    'phone': member.phone,
-                    'last_attendance_date': member.last_attendance_date,
-                })
-            
-            return Response({
-                'count': len(members_list),
-                'members': members_list
-            }, status=status.HTTP_200_OK)
-            
+            from attendance.models import Attendance
+            from services.models import Service
+            from django.db.models import Count
+
+            # Get the last 10 dated sessions
+            last_sessions = list(Service.objects.filter(date__isnull=False).order_by('-date').values_list('id', flat=True)[:10])
+
+            if len(last_sessions) < 10:
+                return Response({'count': 0, 'members': []}, status=status.HTTP_200_OK)
+
+            # Count distinct absent services per member among these sessions
+            member_absent_counts = Attendance.objects.filter(
+                service_id__in=last_sessions,
+                status='absent'
+            ).values('member_id').annotate(absent_services=Count('service_id', distinct=True)).filter(absent_services=10)
+
+            member_ids = [m['member_id'] for m in member_absent_counts]
+
+            members_qs = Member.objects.filter(id__in=member_ids)
+            members_list = [
+                {
+                    'id': m.id,
+                    'member_id': m.member_id,
+                    'full_name': m.full_name,
+                    'email': m.email,
+                    'phone': m.phone,
+                }
+                for m in members_qs
+            ]
+
+            return Response({'count': len(member_ids), 'members': members_list}, status=status.HTTP_200_OK)
+
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error in with_ten_absences: {str(e)}", exc_info=True)
-            return Response({
-                'count': 0,
-                'members': [],
-                'error': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'count': 0, 'members': [], 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class MemberAlertViewSet(viewsets.ModelViewSet):
