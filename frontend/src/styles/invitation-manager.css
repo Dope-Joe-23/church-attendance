@@ -298,10 +298,14 @@
 
 .code-cell code {
   background: #f0f0f0;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 3px;
   font-size: 0.9rem;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow-x: auto;
+  display: inline-block;
+  max-width: 300px;
+  vertical-align: middle;
 }
 
 .copy-btn {

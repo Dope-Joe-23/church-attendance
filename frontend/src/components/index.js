@@ -15,3 +15,5 @@ export { default as QRCodeModal } from './QRCodeModal';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Sidebar } from './Sidebar';
+export { default as AbsenceAlertBadge } from './AbsenceAlertBadge';
+export { default as AbsenceAlertModal } from './AbsenceAlertModal';

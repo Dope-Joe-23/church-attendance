@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { memberApi } from '../services/api';
 import apiClient from '../services/apiClient';
 import { useMemberStore } from '../context/store';
-import { MembersTable, MemberFormModal, LoadingSpinner } from '../components';
+import { MembersTable, MemberFormModal, LoadingSpinner, AbsenceAlertBadge, AbsenceAlertModal } from '../components';
 import '../styles/pages.css';
 
 const Members = () => {
@@ -14,6 +14,7 @@ const Members = () => {
   const [filterClass, setFilterClass] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterCommittee, setFilterCommittee] = useState('all');
+  const [showAbsenceAlert, setShowAbsenceAlert] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
@@ -240,6 +241,7 @@ const Members = () => {
       <div className="page-header">
         <div className="header-content">
           <h1>Church Members</h1>
+          <AbsenceAlertBadge onBadgeClick={() => setShowAbsenceAlert(true)} />
         </div>
       </div>
 
@@ -372,6 +374,12 @@ const Members = () => {
           </div>
         </>
       )}
+
+      {/* Absence Alert Modal */}
+      <AbsenceAlertModal
+        isOpen={showAbsenceAlert}
+        onClose={() => setShowAbsenceAlert(false)}
+      />
     </div>
   );
 };

@@ -307,6 +307,16 @@
   gap: 1rem;
   flex: 1;
   min-width: 300px;
+  align-items: flex-start;
+}
+
+.page-header .header-content h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .page-header .btn {
@@ -3191,5 +3201,577 @@
 
   .modal-message p {
     width: 100%;
+  }
+}
+
+/* ============================================================================ */
+/* ABSENCE ALERT BADGE & MODAL STYLES */
+/* ============================================================================ */
+
+/* Badge Container and Styling */
+.absence-alert-badge-container {
+  display: inline-block;
+  margin-left: auto;
+  animation: badgeSlideIn 0.4s ease-out;
+}
+
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.absence-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: 2px solid #991b1b;
+  border-radius: 50px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.absence-alert-badge::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+.absence-alert-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.absence-alert-badge:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.badge-icon {
+  font-size: 1.2rem;
+  display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.badge-count {
+  font-size: 1.1rem;
+  font-weight: 800;
+  min-width: 1.5rem;
+  text-align: center;
+  display: inline-block;
+}
+
+.badge-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  opacity: 0.95;
+}
+
+/* Absence Alert Modal */
+.absence-alert-modal {
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 2px solid #d1d5db;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.alert-icon {
+  font-size: 1.8rem;
+  animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #1f2937;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+}
+
+/* Alert Controls */
+.alert-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box-small {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+}
+
+.search-input-small {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.search-input-small:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.sort-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Modal Body */
+.absence-alert-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+  background-color: white;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.empty-message {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Members List */
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alert-member-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  align-items: stretch;
+}
+
+.alert-member-card:hover {
+  background-color: white;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.member-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.member-id {
+  font-size: 0.85rem;
+  background-color: #e5e7eb;
+  color: #4b5563;
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.member-details-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.member-details-row:last-of-type {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 150px;
+}
+
+.detail-value {
+  color: #1f2937;
+  text-align: right;
+  flex: 1;
+}
+
+.detail-value.absence-count {
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.detail-value.email-text {
+  word-break: break-all;
+}
+
+.status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  display: inline-block;
+}
+
+.status-badge.status-critical {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.status-at_risk {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.status-inactive {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* View Details Button */
+.btn-view-details {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  align-self: flex-start;
+}
+
+.btn-view-details:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.btn-view-details:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+}
+
+/* Modal Footer */
+.modal-footer {
+  padding: 1.5rem 2rem;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-text strong {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .absence-alert-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    gap: 0.4rem;
+  }
+
+  .badge-icon {
+    font-size: 1rem;
+  }
+
+  .badge-count {
+    font-size: 1rem;
+  }
+
+  .badge-label {
+    display: none;
+  }
+
+  .absence-alert-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+  }
+
+  .modal-title {
+    font-size: 1.2rem;
+  }
+
+  .alert-controls {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .search-box-small {
+    min-width: 100%;
+    flex: 1 0 100%;
+  }
+
+  .sort-select {
+    min-width: 100%;
+    flex: 1 0 100%;
+  }
+
+  .absence-alert-body {
+    padding: 1rem;
+  }
+
+  .alert-member-card {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .member-header {
+    flex-wrap: wrap;
+  }
+
+  .member-details-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-label {
+    min-width: auto;
+    margin-bottom: 0.25rem;
+  }
+
+  .detail-value {
+    text-align: left;
+  }
+
+  .btn-view-details {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .info-text {
+    text-align: center;
+  }
+
+  .btn-secondary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .absence-alert-badge {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .badge-icon {
+    font-size: 0.9rem;
+  }
+
+  .badge-count {
+    font-size: 0.9rem;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .member-name {
+    font-size: 1rem;
+  }
+
+  .member-id {
+    font-size: 0.75rem;
   }
 }

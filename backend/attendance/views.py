@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
 from services.models import Service
@@ -94,6 +95,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             )
             
             if created:
+                # Reset consecutive absences on successful check-in
+                member.consecutive_absences = 0
+                member.last_attendance_date = timezone.now().date()
+                member.save(update_fields=['consecutive_absences', 'last_attendance_date'])
+                
                 # Update member's absenteeism metrics and alerts
                 update_absenteeism_alerts(member)
                 
@@ -272,6 +278,35 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             # Bulk create all attendance records at once (much faster)
             if new_attendances:
                 Attendance.objects.bulk_create(new_attendances, batch_size=100)
+            
+            # Update consecutive_absences for all non-visitors
+            # Get all members that were marked as absent for this service
+            members_to_update = set()
+            for attendance in Attendance.objects.filter(service=service, status='absent'):
+                members_to_update.add(attendance.member_id)
+            
+            # Calculate and update consecutive_absences for each member
+            if members_to_update:
+                from attendance.models import Attendance as AttendanceModel
+                for member_id in members_to_update:
+                    member = Member.objects.get(id=member_id)
+                    
+                    # Get all attendance records for this member, ordered by service date (descending)
+                    attendances = AttendanceModel.objects.filter(
+                        member_id=member_id
+                    ).select_related('service').order_by('-service__date', '-created_at')
+                    
+                    # Calculate consecutive absences from most recent services
+                    consecutive = 0
+                    for attendance in attendances:
+                        if attendance.status == 'absent':
+                            consecutive += 1
+                        else:
+                            break
+                    
+                    # Update the member's consecutive absences
+                    member.consecutive_absences = consecutive
+                    member.save(update_fields=['consecutive_absences'])
             
             return Response({
                 'success': True,

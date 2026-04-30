@@ -66,10 +66,16 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
 
   return (
     <>
-      {/* Hamburger button - visible on all screen sizes */}
-      <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
-        {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
-      </button>
+      {/* Top Navbar - visible on mobile/tablet */}
+      <div className="top-navbar">
+        <div className="navbar-logo">
+          <span className="navbar-logo-icon">⛪</span>
+          <span>Church-In</span>
+        </div>
+        <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
+          {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
+        </button>
+      </div>
 
       {/* Overlay for sidebar */}
       {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleMobileSidebar}></div>}

@@ -312,3 +312,18 @@ class InvitationCodeSerializer(serializers.ModelSerializer):
     def get_is_valid(self, obj):
         """Check if invitation is currently valid"""
         return obj.is_valid()
+    
+    def create(self, validated_data):
+        """Create invitation code with unique code generation"""
+        # Generate a unique code
+        import secrets
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            code = secrets.token_urlsafe(24)
+            # Check if code already exists
+            if not InvitationCode.objects.filter(code=code).exists():
+                validated_data['code'] = code
+                return super().create(validated_data)
+        
+        # If we couldn't generate a unique code after max_attempts, raise an error
+        raise serializers.ValidationError("Failed to generate a unique invitation code. Please try again.")

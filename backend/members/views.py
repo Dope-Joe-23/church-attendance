@@ -406,6 +406,56 @@ class MemberViewSet(viewsets.ModelViewSet):
                 'message': f'Error sending bulk WhatsApp messages: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=['get'])
+    def with_ten_absences(self, request):
+        """
+        Get all members with 10 or more consecutive absences.
+        
+        Returns a list of members with consecutive absences >= 10,
+        ordered by most recent consecutive absence count.
+        
+        Usage: GET /members/with_ten_absences/
+        
+        Response:
+        {
+            "count": 5,
+            "members": [
+                {
+                    "id": 1,
+                    "member_id": "WIS-2026-0001",
+                    "full_name": "John Doe",
+                    "consecutive_absences": 12,
+                    "email": "john@example.com",
+                    "phone": "123-456-7890",
+                    "attendance_status": "critical",
+                    "last_attendance_date": "2026-01-15"
+                },
+                ...
+            ]
+        }
+        """
+        try:
+            # Get members with 10+ consecutive absences, ordered by highest count
+            members = Member.objects.filter(
+                consecutive_absences__gte=10
+            ).order_by('-consecutive_absences').values(
+                'id', 'member_id', 'full_name', 'consecutive_absences',
+                'email', 'phone', 'attendance_status', 'last_attendance_date'
+            )
+            
+            members_list = list(members)
+            
+            return Response({
+                'count': len(members_list),
+                'members': members_list
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error fetching members with 10+ consecutive absences: {str(e)}", exc_info=True)
+            return Response({
+                'error': f'Failed to fetch members: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class MemberAlertViewSet(viewsets.ModelViewSet):
     """
