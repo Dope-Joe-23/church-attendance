@@ -478,13 +478,6 @@ class MemberViewSet(viewsets.ModelViewSet):
                 'members': [],
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Error fetching members with 10+ consecutive absences: {str(e)}", exc_info=True)
-            return Response({
-                'error': f'Failed to fetch members: {str(e)}'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class MemberAlertViewSet(viewsets.ModelViewSet):
