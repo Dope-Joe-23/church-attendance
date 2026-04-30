@@ -26,7 +26,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     - GET /attendance/by-service/{service_id}/ - Get attendance for a service
     """
     
-    queryset = Attendance.objects.all().select_related('member', 'service').order_by('-created_at')
+    queryset = Attendance.objects.all().select_related('member', 'service', 'service__parent_service').order_by('-created_at')
     serializer_class = AttendanceSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['member', 'service', 'status']
@@ -149,7 +149,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to view attendance.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            attendances = Attendance.objects.filter(service=service).select_related('member')
+            attendances = Attendance.objects.filter(service=service).select_related('member', 'service', 'service__parent_service')
             serializer = AttendanceSerializer(attendances, many=True)
             
             # Calculate statistics
