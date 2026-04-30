@@ -35,14 +35,12 @@ const CareDashboard = () => {
     initializeMetrics();
     fetchAllData();
     
-    // Auto-refresh every 30 seconds to keep data dynamic
-    const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing care dashboard...');
-      fetchAllData();
-    }, 30000); // 30 seconds
+    // Do NOT auto-refresh - user requested to stop this
+    // Users can manually refresh by using browser refresh or a refresh button
+    // Auto-refresh can cause janky UI and excessive API calls
     
-    // Cleanup interval on unmount
-    return () => clearInterval(refreshInterval);
+    // Cleanup any intervals on unmount (just in case)
+    return () => {};
   }, []);
 
   const fetchAllData = async () => {
@@ -302,8 +300,21 @@ const CareDashboard = () => {
     <div className="care-dashboard-new">
       {/* Header */}
       <div className="dashboard-header-new">
-        <h1>Member Care & Attendance Dashboard</h1>
-        <p>Comprehensive member attendance tracking with absenteeism metrics</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            <h1>Member Care & Attendance Dashboard</h1>
+            <p>Comprehensive member attendance tracking with absenteeism metrics</p>
+          </div>
+          <button
+            onClick={fetchAllData}
+            disabled={loading}
+            className="btn btn-sm btn-info"
+            title="Refresh dashboard data"
+            style={{ height: 'fit-content', marginBottom: '1rem' }}
+          >
+            {loading ? '⏳ Refreshing...' : '🔄 Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

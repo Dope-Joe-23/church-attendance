@@ -409,10 +409,12 @@ class MemberViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def with_ten_absences(self, request):
         """
-        Get all members with 10 or more consecutive absences.
+        Get all members with unresolved absenteeism alerts (ratio-based).
         
-        Returns a list of members with consecutive absences >= 10,
-        ordered by most recent consecutive absence count.
+        This endpoint returns members with active alerts based on absenteeism ratio:
+        - early_warning: 25-39% absent
+        - at_risk: 40-59% absent
+        - critical: 60%+ absent
         
         Usage: GET /members/with_ten_absences/
         
@@ -424,10 +426,12 @@ class MemberViewSet(viewsets.ModelViewSet):
                     "id": 1,
                     "member_id": "WIS-2026-0001",
                     "full_name": "John Doe",
-                    "consecutive_absences": 12,
+                    "alert_level": "critical",
+                    "absenteeism_ratio": 0.75,
+                    "absent_count": 6,
+                    "total_services": 8,
                     "email": "john@example.com",
                     "phone": "123-456-7890",
-                    "attendance_status": "critical",
                     "last_attendance_date": "2026-01-15"
                 },
                 ...
@@ -435,19 +439,45 @@ class MemberViewSet(viewsets.ModelViewSet):
         }
         """
         try:
-            # Get members with 10+ consecutive absences, ordered by highest count
-            members = Member.objects.filter(
-                consecutive_absences__gte=10
-            ).order_by('-consecutive_absences').values(
-                'id', 'member_id', 'full_name', 'consecutive_absences',
-                'email', 'phone', 'attendance_status', 'last_attendance_date'
-            )
+            from .models import MemberAbsenteeismAlert
             
-            members_list = list(members)
+            # Get all unresolved absenteeism alerts with member details
+            alerts = MemberAbsenteeismAlert.objects.filter(
+                is_resolved=False
+            ).select_related('member').order_by('-created_at')
+            
+            members_list = []
+            for alert in alerts:
+                member = alert.member
+                metric = getattr(member, 'absenteeism_metric', None)
+                
+                members_list.append({
+                    'id': member.id,
+                    'member_id': member.member_id,
+                    'full_name': member.full_name,
+                    'alert_level': alert.alert_level,
+                    'absenteeism_ratio': metric.absenteeism_ratio if metric else alert.absenteeism_ratio_at_creation,
+                    'absent_count': metric.absent_count if metric else alert.absent_count_at_creation,
+                    'total_services': metric.total_services if metric else alert.total_services_at_creation,
+                    'email': member.email,
+                    'phone': member.phone,
+                    'last_attendance_date': member.last_attendance_date,
+                })
             
             return Response({
                 'count': len(members_list),
                 'members': members_list
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in with_ten_absences: {str(e)}", exc_info=True)
+            return Response({
+                'count': 0,
+                'members': [],
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -687,7 +717,7 @@ class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def unresolved(self, request):
-        """Get all unresolved absenteeism alerts"""
+        """Get all unresolved absenteeism alerts with proper pagination"""
         from members.utils import recalculate_all_absenteeism_metrics
         
         # Optionally recalculate metrics if requested
@@ -699,7 +729,15 @@ class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error recalculating absenteeism metrics: {str(e)}")
         
-        alerts = MemberAbsenteeismAlert.objects.filter(is_resolved=False).order_by('-created_at')
+        # Get all unresolved alerts with proper pagination
+        alerts = MemberAbsenteeismAlert.objects.filter(is_resolved=False).select_related('member').order_by('-created_at')
+        
+        # Apply pagination
+        page = self.paginate_queryset(alerts, request)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
         serializer = self.get_serializer(alerts, many=True)
         return Response(serializer.data)
     

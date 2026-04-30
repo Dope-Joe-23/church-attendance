@@ -49,14 +49,30 @@ class ServiceViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         """
-        Delete service simply and safely.
+        Delete service and trigger metric recalculation for affected members.
         
-        No dependencies on external systems (Celery/Redis).
-        - Service is deleted immediately
-        - If needed, alerts can be refreshed on next API call
-        - This ensures DELETE always succeeds, regardless of backend availability
+        This ensures alerts are updated to reflect the new attendance data.
         """
+        # Get all members affected by this service deletion (those who have attendance for it)
+        from attendance.models import Attendance
+        affected_member_ids = Attendance.objects.filter(
+            service=instance
+        ).values_list('member_id', flat=True).distinct()
+        
+        # Delete the service (CASCADE will delete attendance records)
         instance.delete()
+        
+        # Recalculate metrics for affected members
+        if affected_member_ids:
+            from members.utils import update_absenteeism_alerts
+            from members.models import Member
+            
+            for member_id in affected_member_ids:
+                try:
+                    member = Member.objects.get(id=member_id)
+                    update_absenteeism_alerts(member)
+                except Member.DoesNotExist:
+                    pass  # Member might have been deleted
     
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):

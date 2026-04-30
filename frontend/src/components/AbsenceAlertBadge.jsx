@@ -10,12 +10,8 @@ const AbsenceAlertBadge = ({ onBadgeClick }) => {
   useEffect(() => {
     console.log('🔔 AbsenceAlertBadge mounted - fetching initial data');
     fetchConsecutiveAbsences();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchConsecutiveAbsences, 30000);
-    return () => {
-      console.log('🔔 AbsenceAlertBadge unmounted - clearing interval');
-      clearInterval(interval);
-    };
+    // Do NOT auto-refresh - removed per user request to reduce unnecessary API calls
+    // Users can navigate away and back or manually refresh to get latest data
   }, []);
 
   const fetchConsecutiveAbsences = async () => {
@@ -49,10 +45,13 @@ const AbsenceAlertBadge = ({ onBadgeClick }) => {
   };
 
   const handleBadgeClick = () => {
-    console.log('🔔 [DEBUG] Badge clicked');
-    if (onBadgeClick) {
-      onBadgeClick();
-    }
+    console.log('🔔 [DEBUG] Badge clicked - refreshing data');
+    // Refresh data when clicked to ensure latest alerts
+    fetchConsecutiveAbsences().then(() => {
+      if (onBadgeClick) {
+        onBadgeClick();
+      }
+    });
   };
 
   console.log('🔔 [DEBUG] Rendering - alertCount:', alertCount, 'Should show badge:', alertCount > 0);
