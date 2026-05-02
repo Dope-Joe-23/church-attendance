@@ -260,9 +260,28 @@ EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.Em
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+# Use implicit SSL (port 465) when True. Mutually exclusive with STARTTLS/TLS.
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@church.com')
+# Sender used for error emails and other system notifications
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+
+# Email timeout (seconds) to avoid long blocking SMTP operations
+_default_email_timeout = 10
+try:
+    EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', _default_email_timeout))
+except (TypeError, ValueError):
+    EMAIL_TIMEOUT = _default_email_timeout
+
+# Prevent enabling both TLS and SSL at the same time; prefer STARTTLS/TLS
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    import warnings
+    warnings.warn(
+        "Both EMAIL_USE_TLS and EMAIL_USE_SSL are True; disabling EMAIL_USE_SSL and using TLS (STARTTLS)."
+    )
+    EMAIL_USE_SSL = False
 
 # Church Configuration
 CHURCH_NAME = os.getenv('CHURCH_NAME', 'Our Church')

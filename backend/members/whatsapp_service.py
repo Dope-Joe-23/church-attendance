@@ -84,18 +84,28 @@ class WhatsAppService:
             from .qr_card_generator import generate_qr_code_card
             card_data = generate_qr_code_card(member, format='png')
             
+            # Upload QR code to Cloudinary and get URL
+            media_url = self._upload_qr_to_cloudinary(member, card_data)
+            
             # Create message body
             message_body = self._create_message_body(member)
             
-            # Send message via Twilio
-            message = self.client.messages.create(
-                from_=self.whatsapp_from,
-                to=whatsapp_to,
-                body=message_body,
-            )
-            
-            # Optionally, you can send the image separately (if Twilio supports it)
-            # This would require additional API calls or media handling
+            # Send message via Twilio with media
+            if media_url:
+                # media_url from Supabase is already public and absolute
+                message = self.client.messages.create(
+                    from_=self.whatsapp_from,
+                    to=whatsapp_to,
+                    body=message_body,
+                    media_url=[media_url],
+                )
+            else:
+                # Fallback: send without media if upload fails
+                message = self.client.messages.create(
+                    from_=self.whatsapp_from,
+                    to=whatsapp_to,
+                    body=message_body,
+                )
             
             logger.info(f"WhatsApp message sent to {whatsapp_to}, SID: {message.sid}")
             
@@ -157,6 +167,57 @@ class WhatsAppService:
             'total': len(members),
             'results': results
         }
+    
+    @staticmethod
+    def _upload_qr_to_cloudinary(member, card_data):
+        """
+        Upload QR code to Supabase Storage and return public URL
+        
+        Args:
+            member: Member instance
+            card_data: Binary PNG image data
+        
+        Returns:
+            str: Public URL to the image, or None if upload fails
+        """
+        try:
+            from supabase import create_client
+            from io import BytesIO
+            
+            supabase_url = os.getenv('SUPABASE_URL')
+            supabase_key = os.getenv('SUPABASE_ANON_KEY')
+            bucket_name = os.getenv('SUPABASE_BUCKET', 'qr_codes')
+            
+            if not supabase_url or not supabase_key:
+                logger.error("Supabase credentials not configured")
+                return None
+            
+            # Initialize Supabase client
+            supabase = create_client(supabase_url, supabase_key)
+            
+            # Prepare file
+            filename = f"qr_{member.member_id}.png"
+            file_obj = BytesIO(card_data)
+            
+            # Upload to Supabase Storage
+            response = supabase.storage.from_(bucket_name).upload(
+                filename,
+                file_obj,
+                {"contentType": "image/png", "upsert": "true"}
+            )
+            
+            # Get public URL
+            public_url = supabase.storage.from_(bucket_name).get_public_url(filename)
+            
+            logger.info(f"QR code uploaded to Supabase: {public_url}")
+            return public_url
+            
+        except ImportError:
+            logger.error("Supabase client not installed. Install with: pip install supabase")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to upload QR code to Supabase: {str(e)}")
+            return None
     
     @staticmethod
     def _format_phone_number(phone_number):

@@ -89,7 +89,7 @@ def send_qr_code_email(member):
                         <li>Keep your membership card safe - you'll need it for attendance check-in</li>
                         <li>You can print out the card and carry it with you</li>
                         <li>Or take a screenshot and show it on your phone during check-in</li>
-                        <li>Simply present your QR code to be scanned at our services</li>
+                        <li>Simply present your QR code to be scanned during services</li>
                     </ol>
                     
                     <h3 style="color: #2c3e50;">About Your Card:</h3>
@@ -97,7 +97,7 @@ def send_qr_code_email(member):
                         <li><strong>Name:</strong> Your registered name</li>
                         <li><strong>Member ID:</strong> Your unique church identifier</li>
                         <li><strong>Department:</strong> Your ministry assignment</li>
-                        <li><strong>Class:</strong> Your church location/group</li>
+                        <li><strong>Class:</strong> Your bible class</li>
                         <li><strong>QR Code:</strong> Scanned during attendance check-in</li>
                     </ul>
                     
@@ -107,7 +107,7 @@ def send_qr_code_email(member):
                     
                     <p style="color: #666; font-size: 0.9em;">
                         Best regards,<br>
-                        <strong>{context['church_name']} Administration</strong>
+                        <strong>WIS Administration</strong>
                     </p>
                 </div>
             </body>
@@ -128,12 +128,12 @@ def send_qr_code_email(member):
         1. Keep your membership card safe - you'll need it for attendance check-in
         2. You can print out the card and carry it with you
         3. Or take a screenshot and show it on your phone during check-in
-        4. Simply present your QR code to be scanned at our services
+        4. Simply present your QR code to be scanned during services
         
         If you have any questions or need a new QR code, please contact us.
         
         Best regards,
-        {context['church_name']} Administration
+        WIS Administration
         """
         
         # Create email
