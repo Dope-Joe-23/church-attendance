@@ -1,4 +1,5 @@
 import React from 'react';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import '../styles/components.css';
 
 const ServiceFormModal = ({
@@ -9,15 +10,18 @@ const ServiceFormModal = ({
   onSubmit,
   onClose,
   error,
+  isSubmitting = false,
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => {
+      if (!isSubmitting) onClose();
+    }}>
       <div className="modal-content form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{isEditing ? 'Edit Service' : 'Add New Service'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} disabled={isSubmitting}>×</button>
         </div>
 
         <form className="service-form-modal" onSubmit={onSubmit}>
@@ -151,11 +155,18 @@ const ServiceFormModal = ({
               type="button"
               className="btn btn-secondary"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-success">
-              {isEditing ? 'Update' : 'Create'} Service
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+            >
+              {isSubmitting && <AiOutlineLoading3Quarters className="button-spinner" aria-hidden="true" />}
+              {isSubmitting ? `${isEditing ? 'Updating' : 'Creating'} Service...` : `${isEditing ? 'Update' : 'Create'} Service`}
             </button>
           </div>
         </form>

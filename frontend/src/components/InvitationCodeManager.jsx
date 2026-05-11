@@ -160,7 +160,7 @@ const InvitationCodeManager = () => {
     <div className="invitation-manager">
       <div className="manager-header">
         <h1>🎫 Invitation Code Manager</h1>
-        <p>Generate and manage admin user invitation codes</p>
+        <p>Generate single-use registration codes for approved leaders and administrators.</p>
       </div>
 
       {/* Alerts */}
@@ -194,7 +194,7 @@ const InvitationCodeManager = () => {
         {/* Generation Form */}
         <div className="card generation-card">
           <div className="card-header">
-            <h2>Generate Invitation Codes</h2>
+            <h2>Create Codes</h2>
           </div>
           <div className="card-body">
             {/* Mode Toggle */}
@@ -223,11 +223,11 @@ const InvitationCodeManager = () => {
                     type="email"
                     value={singleForm.email}
                     onChange={(e) => setSingleForm({ ...singleForm, email: e.target.value })}
-                    placeholder="restrict@example.com (optional)"
+                    placeholder="person@example.com (optional)"
                     className="form-control"
                   />
                   <small className="form-text text-muted">
-                    If provided, code can only be used with this email
+                    Restrict the code to one email address when needed.
                   </small>
                 </div>
 
@@ -289,7 +289,7 @@ const InvitationCodeManager = () => {
                     rows="5"
                   />
                   <small className="form-text text-muted">
-                    One email per line. Leave empty for unrestricted codes. Max {bulkForm.count} addresses.
+                    Add one email per line, or leave empty for unrestricted codes.
                   </small>
                 </div>
 
@@ -366,7 +366,7 @@ const InvitationCodeManager = () => {
             {!loading && (!Array.isArray(codes) || codes.length === 0) ? (
               <div className="empty-state">
                 <p>No invitation codes found</p>
-                <small>Generate one to get started</small>
+                <small>Create a code when someone needs account access.</small>
               </div>
             ) : (
               <div className="codes-table">
@@ -428,15 +428,14 @@ const InvitationCodeManager = () => {
       {/* Additional Info */}
       <div className="card info-card">
         <div className="card-header">
-          <h3>How It Works</h3>
+          <h3>How Invitations Work</h3>
         </div>
         <div className="card-body">
           <ol className="info-list">
-            <li><strong>Generate codes:</strong> Create one or many invitation codes</li>
-            <li><strong>Share codes:</strong> Send codes to authorized users (via email, WhatsApp, etc.)</li>
-            <li><strong>Users register:</strong> Users enter code + details on registration page</li>
-            <li><strong>Code used:</strong> Code marked as used, user gets account access</li>
-            <li><strong>Track usage:</strong> Monitor which codes were used and by whom</li>
+            <li><strong>Create:</strong> Generate one code or a batch of codes.</li>
+            <li><strong>Share:</strong> Send codes only to approved users.</li>
+            <li><strong>Register:</strong> Users enter the code during registration.</li>
+            <li><strong>Track:</strong> Used codes show who registered and when.</li>
           </ol>
           
           <h4>Tips</h4>

@@ -7,19 +7,26 @@
 }
 
 .manager-header {
-  margin-bottom: 30px;
-  text-align: center;
+  margin-bottom: 20px;
+  text-align: left;
+  padding: 1.25rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
 .manager-header h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 10px;
+  font-size: 1.7rem;
+  color: var(--brand-navy);
+  margin: 0 0 0.35rem 0;
 }
 
 .manager-header p {
-  font-size: 1.1rem;
-  color: #666;
+  font-size: 0.98rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .manager-grid {
@@ -38,7 +45,7 @@
 /* Cards */
 .generation-card,
 .codes-card {
-  border: 1px solid #ddd;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -46,7 +53,7 @@
 }
 
 .card-header {
-  background: #f8f9fa;
+  background: #f8fafc;
   padding: 20px;
   border-bottom: 1px solid #ddd;
   display: flex;
@@ -57,7 +64,7 @@
 .card-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: var(--brand-navy);
 }
 
 .card-header h3 {
@@ -93,12 +100,12 @@
 }
 
 .toggle-btn:hover {
-  color: #2563eb;
+  color: var(--brand-navy);
 }
 
 .toggle-btn.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
+  color: var(--brand-navy);
+  border-bottom-color: var(--brand-yellow);
 }
 
 /* Forms */
@@ -131,8 +138,8 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--brand-navy);
+  box-shadow: 0 0 0 3px rgba(243, 195, 22, 0.24);
 }
 
 .form-text {
@@ -162,7 +169,7 @@
 }
 
 /* Buttons */
-.btn {
+.invitation-manager .btn {
   padding: 12px 24px;
   border: none;
   border-radius: 4px;
@@ -172,18 +179,18 @@
   transition: all 0.3s ease;
 }
 
-.btn-primary {
-  background: #2563eb;
+.invitation-manager .btn-primary {
+  background: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-dark));
   color: white;
   width: 100%;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+.invitation-manager .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--brand-navy-dark), var(--brand-navy));
+  box-shadow: 0 4px 12px rgba(36, 16, 106, 0.3);
 }
 
-.btn-primary:disabled {
+.invitation-manager .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -226,9 +233,9 @@
 }
 
 .filter-btn.active {
-  background: #2563eb;
+  background: var(--brand-navy);
   color: white;
-  border-color: #2563eb;
+  border-color: var(--brand-navy);
 }
 
 /* Badges */
@@ -347,7 +354,7 @@
 
 /* Info Card */
 .info-card {
-  border: 1px solid #ddd;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -428,7 +435,11 @@
   }
 
   .manager-header h1 {
-    font-size: 1.8rem;
+    font-size: 1.45rem;
+  }
+
+  .manager-header {
+    padding: 1rem;
   }
 
   .card-header {

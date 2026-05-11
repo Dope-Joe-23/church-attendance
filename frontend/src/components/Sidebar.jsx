@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import authService from '../services/authService';
 import { MdDashboard, MdPeople, MdEvent, MdQrCode2, MdAssessment, MdFavoriteBorder, MdMenu, MdClose, MdLogout } from 'react-icons/md';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/sidebar.css';
 
 const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) => {
@@ -69,8 +70,9 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
       {/* Top Navbar - visible on mobile/tablet */}
       <div className="top-navbar">
         <div className="navbar-logo">
+          <img className="navbar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
           <span className="navbar-logo-icon">⛪</span>
-          <span>Church-In</span>
+          <span>WIS Sunyani</span>
         </div>
         <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
           {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
@@ -84,8 +86,12 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         {/* Logo Section */}
         <div className="sidebar-logo">
+          <img className="sidebar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
           <span className="logo-icon">⛪</span>
-          <h1 className="logo-text">Church-In</h1>
+          <div className="sidebar-brand-text">
+            <h1 className="logo-text">WIS Sunyani</h1>
+            <p>Attendance System</p>
+          </div>
         </div>
 
         {/* Navigation Menu */}

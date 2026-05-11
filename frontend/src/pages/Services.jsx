@@ -18,6 +18,7 @@ const Services = () => {
   const [addDateError, setAddDateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -61,6 +62,7 @@ const Services = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmittingForm(true);
     try {
       // Prepare data based on recurring status
       const submitData = { ...formData };
@@ -86,12 +88,14 @@ const Services = () => {
       } else {
         await serviceApi.createService(submitData);
       }
-      fetchServices();
+      await fetchServices();
       resetForm();
     } catch (error) {
       console.error('Error saving service:', error);
       const errorMsg = error.response?.data?.name?.[0] || error.response?.data?.detail || error.response?.data || 'Failed to save service';
       setFormError(errorMsg);
+    } finally {
+      setIsSubmittingForm(false);
     }
   };
 
@@ -256,11 +260,20 @@ const Services = () => {
     );
   });
 
+  const parentServicesCount = services.filter((service) => !service.parent_service).length;
+  const sessionCount = services.filter((service) => service.parent_service).length;
+
   return (
     <div className="services-page">
       <div className="page-header">
         <div className="header-content">
-          <h1>Church Services</h1>
+          <span className="page-kicker">Service planning</span>
+          <h1>Services & Sessions</h1>
+          <p>Create recurring service templates, add one-time services, and open attendance or reports from one place.</p>
+          <div className="page-metrics">
+            <span>{parentServicesCount} services</span>
+            <span>{sessionCount} sessions</span>
+          </div>
         </div>
       </div>
 
@@ -269,7 +282,7 @@ const Services = () => {
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search services by name, location..."
+            placeholder="Search by service name, location, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
@@ -293,7 +306,7 @@ const Services = () => {
             setShowFormModal(true);
           }}
         >
-          + Add New Service
+          Add Service
         </button>
       </div>
 
@@ -305,6 +318,7 @@ const Services = () => {
         onSubmit={handleSubmit}
         onClose={resetForm}
         error={formError}
+        isSubmitting={isSubmittingForm}
       />
 
       <SessionsModal

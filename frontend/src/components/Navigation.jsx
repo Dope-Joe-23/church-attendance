@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import authService from '../services/authService';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/components.css';
 
 const Navigation = ({ isAuthenticated, onLogout }) => {
@@ -49,8 +50,9 @@ const Navigation = ({ isAuthenticated, onLogout }) => {
       <div className="navbar-container">
         <div className="navbar-logo">
           <div className="logo-wrapper">
+            <img className="brand-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
             <span className="logo-icon">⛪</span>
-            <h1 className="logo-text">Church-In</h1>
+            <h1 className="logo-text">WIS Sunyani</h1>
           </div>
         </div>
         <ul className="nav-menu">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/pages.css';
 
 const Login = ({ onLoginSuccess }) => {
@@ -97,7 +98,8 @@ const Login = ({ onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>Church Attendance System</h1>
+          <img className="login-logo" src={wisLogo} alt="Wesleyan International Society logo" />
+          <h1>WIS Sunyani</h1>
           <p>{isLogin ? 'Admin Login' : 'User Registration'}</p>
         </div>
 
@@ -237,17 +239,18 @@ const Login = ({ onLoginSuccess }) => {
 
           <button
             type="submit"
-            className="btn btn-primary login-btn"
+            className={`btn btn-primary login-btn ${isLoading ? 'is-loading' : ''}`}
             disabled={isLoading}
+            aria-busy={isLoading}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
-            {isLoading && <AiOutlineLoading3Quarters className="spinner-icon-btn" size={18} />}
+            {isLoading && <AiOutlineLoading3Quarters className="spinner-icon-btn" size={18} aria-hidden="true" />}
             {isLoading ? (isLogin ? 'Logging in...' : 'Registering...') : (isLogin ? 'Login' : 'Register')}
           </button>
         </form>
 
         <div className="login-footer">
-          <p>© 2026 Church Attendance System</p>
+          <p>© 2026 Wesleyan International Society Sunyani</p>
           <p>{isLogin ? 'For admin access, please use your assigned credentials' : 'Create an account to access the system'}</p>
         </div>
       </div>

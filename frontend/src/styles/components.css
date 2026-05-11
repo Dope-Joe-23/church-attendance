@@ -35,9 +35,19 @@
 }
 
 .logo-icon {
+  display: none;
   font-size: 2rem;
   animation: logoBounce 2s ease-in-out infinite;
-  display: inline-block;
+}
+
+.brand-logo-img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-yellow);
+  object-fit: cover;
+  background: white;
+  box-shadow: 0 3px 10px rgba(36, 16, 106, 0.2);
 }
 
 @keyframes logoBounce {
@@ -53,7 +63,7 @@
   margin: 0;
   font-size: 1.8rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-red) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -98,7 +108,7 @@
 /* Login button in navbar */
 .login-btn {
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-navy-dark) 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -111,7 +121,7 @@
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(36, 16, 106, 0.3);
 }
 
 /* Notification Icon Styles */
@@ -3127,9 +3137,214 @@
   justify-content: center;
 }
 
+.managed-service-cards {
+  display: none;
+}
+
+.managed-service-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.9rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.managed-service-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.managed-service-card h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.managed-service-card p {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.managed-service-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.managed-service-meta span {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.managed-service-description {
+  margin-bottom: 0.75rem !important;
+}
+
+.managed-service-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.managed-service-actions .btn {
+  min-height: 36px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.managed-member-cards {
+  display: none;
+}
+
+.managed-member-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.9rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.managed-member-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.managed-member-title {
+  min-width: 0;
+}
+
+.managed-member-title h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.managed-member-title p {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.member-type-pill {
+  flex-shrink: 0;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.member-type-pill.member {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.member-type-pill.visitor {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.managed-member-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.managed-member-meta span {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.managed-member-contact {
+  margin: 0 0 0.75rem 0;
+  color: #64748b;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.managed-member-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.managed-member-actions .btn {
+  min-height: 36px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 768px) {
+  .managed-service-cards {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .managed-member-cards {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .table-container:has(.services-table) {
+    display: none;
+  }
+
+  .table-container:has(.members-table) {
+    display: none;
+  }
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn[aria-busy="true"] {
+  opacity: 0.85;
+  cursor: wait;
+  pointer-events: none;
+}
+
+.btn[aria-busy="true"]:hover,
+.btn[aria-busy="true"]:active {
+  transform: none;
+}
+
+.button-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  color: currentColor;
+  transform-origin: center;
+  animation: buttonSpin 0.8s linear infinite;
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-secondary {

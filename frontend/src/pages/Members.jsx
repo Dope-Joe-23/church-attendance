@@ -9,6 +9,7 @@ const Members = () => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVisitorType, setFilterVisitorType] = useState('all'); // all, member, visitor
   const [filterClass, setFilterClass] = useState('all');
@@ -82,13 +83,14 @@ const Members = () => {
       confirmed: formData.confirmed,
     };
 
+    setIsSubmittingForm(true);
     try {
       if (editingId) {
         await memberApi.updateMember(editingId, cleanedData);
       } else {
         await memberApi.createMember(cleanedData);
       }
-      fetchMembers();
+      await fetchMembers();
       resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
@@ -118,6 +120,8 @@ const Members = () => {
       }
       
       setFormError(errorMsg);
+    } finally {
+      setIsSubmittingForm(false);
     }
   };
 
@@ -240,7 +244,9 @@ const Members = () => {
     <div className="members-page">
       <div className="page-header">
         <div className="header-content">
-          <h1>Church Members</h1>
+          <span className="page-kicker">Member care</span>
+          <h1>Members Directory</h1>
+          <p>Keep contact details, classes, departments, and visitor records ready for attendance and pastoral follow-up.</p>
           <AbsenceAlertBadge onBadgeClick={() => setShowAbsenceAlert(true)} />
         </div>
       </div>
@@ -275,7 +281,7 @@ const Members = () => {
             setShowFormModal(true);
           }}
         >
-          + Add New Member
+          Add Member
         </button>
       </div>
 
@@ -349,6 +355,7 @@ const Members = () => {
         onSubmit={handleSubmit}
         onClose={resetForm}
         error={formError}
+        isSubmitting={isSubmittingForm}
       />
 
       {isLoading ? (

@@ -65,11 +65,20 @@ const Scanner = () => {
     setShowScannerModal(false);
   };
 
+  const totalSessions = groupedServices.reduce((sum, service) => sum + service.sessions.length, 0);
+
   return (
     <div className="scanner-page">
       <div className="page-header">
+        <div className="header-content">
+          <span className="page-kicker">Check-in</span>
         <h1>✨ Attendance Scanner</h1>
-        <p className="scanner-subtitle">Real-time member check-in with QR codes</p>
+        <p className="scanner-subtitle">Choose a service session, then scan member QR codes for quick attendance capture.</p>
+          <div className="page-metrics">
+            <span>{groupedServices.length} services</span>
+            <span>{totalSessions} sessions</span>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -80,7 +89,7 @@ const Scanner = () => {
           <div className="scanner-services-container">
             <div className="services-list-header">
               <h2>Available Services & Sessions</h2>
-              <p>Select a session to start scanning QR codes</p>
+              <p>Select a one-time service or expand a recurring service to choose a session.</p>
             </div>
 
             <div className="search-box" style={{ marginBottom: '2rem' }}>
@@ -98,7 +107,53 @@ const Scanner = () => {
                 <p>No services found. Please create one to start checking in members.</p>
               </div>
             ) : (
-              <table className="services-table">
+              <>
+              <div className="mobile-service-cards">
+                {filteredServices.map((parentService) => (
+                  <div key={parentService.id} className="mobile-service-card">
+                    <button
+                      type="button"
+                      className="mobile-service-card-main"
+                      onClick={() => {
+                        if (!parentService.is_recurring) {
+                          handleServiceSelect(parentService);
+                        } else {
+                          toggleExpandService(parentService.id);
+                        }
+                      }}
+                    >
+                      <span className="mobile-service-title">{parentService.name}</span>
+                      <span className={`service-type ${parentService.is_recurring ? 'recurring' : 'onetime'}`}>
+                        {parentService.is_recurring ? 'Recurring' : 'One-time'}
+                      </span>
+                      <span className="mobile-service-meta">
+                        {parentService.location || 'No location'} · {parentService.date || `${parentService.sessions.length} sessions`}
+                      </span>
+                    </button>
+                    {parentService.is_recurring && (
+                      <div className="mobile-session-list">
+                        {parentService.sessions.length > 0 ? (
+                          parentService.sessions.map((session) => (
+                            <button
+                              key={session.id}
+                              type="button"
+                              className="mobile-session-card"
+                              onClick={() => handleServiceSelect(session)}
+                            >
+                              <span>{session.name}</span>
+                              <small>{session.date || 'No date'} · {session.start_time || 'No time'} · {session.location || 'No location'}</small>
+                            </button>
+                          ))
+                        ) : (
+                          <p className="mobile-empty-sessions">No sessions have been added yet.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <table className="services-table desktop-service-table">
                 <thead>
                   <tr>
                     <th style={{ width: '40px' }}></th>
@@ -214,6 +269,7 @@ const Scanner = () => {
                   ))}
                 </tbody>
               </table>
+              </>
             )}
           </div>
 

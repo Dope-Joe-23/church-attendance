@@ -66,11 +66,20 @@ const Reports = () => {
     setShowReportModal(false);
   };
 
+  const totalSessions = groupedServices.reduce((sum, service) => sum + service.sessions.length, 0);
+
   return (
     <div className="reports-page">
       <div className="page-header">
+        <div className="header-content">
+          <span className="page-kicker">Attendance insight</span>
         <h1>📊 Attendance Reports</h1>
-        <p>View attendance data for church services and sessions</p>
+        <p>Review attendance by service, session, class, and member status so follow-up stays focused.</p>
+          <div className="page-metrics">
+            <span>{groupedServices.length} services</span>
+            <span>{totalSessions} sessions</span>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -81,7 +90,7 @@ const Reports = () => {
           <div className="reports-services-container">
             <div className="services-list-header">
               <h2>Available Services & Sessions</h2>
-              <p>Click on a session to view attendance details</p>
+              <p>Open a service or session to view detailed attendance records.</p>
             </div>
 
             <div className="search-box" style={{ marginBottom: '2rem' }}>
@@ -99,7 +108,53 @@ const Reports = () => {
                 <p>No services found. Create a service to start tracking attendance.</p>
               </div>
             ) : (
-              <table className="services-table">
+              <>
+              <div className="mobile-service-cards">
+                {filteredServices.map((parentService) => (
+                  <div key={parentService.id} className="mobile-service-card">
+                    <button
+                      type="button"
+                      className="mobile-service-card-main"
+                      onClick={() => {
+                        if (!parentService.is_recurring) {
+                          handleServiceSelect(parentService);
+                        } else {
+                          toggleExpandService(parentService.id);
+                        }
+                      }}
+                    >
+                      <span className="mobile-service-title">{parentService.name}</span>
+                      <span className={`service-type ${parentService.is_recurring ? 'recurring' : 'onetime'}`}>
+                        {parentService.is_recurring ? 'Recurring' : 'One-time'}
+                      </span>
+                      <span className="mobile-service-meta">
+                        {parentService.location || 'No location'} · {parentService.date || `${parentService.sessions.length} sessions`}
+                      </span>
+                    </button>
+                    {parentService.is_recurring && (
+                      <div className="mobile-session-list">
+                        {parentService.sessions.length > 0 ? (
+                          parentService.sessions.map((session) => (
+                            <button
+                              key={session.id}
+                              type="button"
+                              className="mobile-session-card"
+                              onClick={() => handleServiceSelect(session)}
+                            >
+                              <span>{session.name}</span>
+                              <small>{session.date || 'No date'} · {session.start_time || 'No time'} · {session.location || 'No location'}</small>
+                            </button>
+                          ))
+                        ) : (
+                          <p className="mobile-empty-sessions">No sessions have been added yet.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <table className="services-table desktop-service-table">
                 <thead>
                   <tr>
                     <th style={{ width: '40px' }}></th>
@@ -215,6 +270,7 @@ const Reports = () => {
                   ))}
                 </tbody>
               </table>
+              </>
             )}
           </div>
 

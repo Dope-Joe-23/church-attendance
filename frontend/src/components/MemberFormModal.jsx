@@ -1,4 +1,5 @@
 import React from 'react';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import '../styles/components.css';
 
 const DEPARTMENT_CHOICES = [
@@ -62,17 +63,20 @@ const MemberFormModal = ({
   onSubmit,
   onClose,
   error,
+  isSubmitting = false,
 }) => {
   if (!isOpen) return null;
 
   const contactMethodMissing = !formData.is_visitor && !formData.email?.trim() && !formData.phone?.trim();
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => {
+      if (!isSubmitting) onClose();
+    }}>
       <div className="modal-content form-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{isEditing ? 'Edit Member' : 'Add New Member'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} disabled={isSubmitting}>×</button>
         </div>
 
         <form className="member-form-modal" onSubmit={onSubmit}>
@@ -312,11 +316,18 @@ const MemberFormModal = ({
               type="button"
               className="btn btn-secondary"
               onClick={onClose}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-success">
-              {isEditing ? 'Update' : 'Create'} Member
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+            >
+              {isSubmitting && <AiOutlineLoading3Quarters className="button-spinner" aria-hidden="true" />}
+              {isSubmitting ? `${isEditing ? 'Updating' : 'Creating'} Member...` : `${isEditing ? 'Update' : 'Create'} Member`}
             </button>
           </div>
         </form>

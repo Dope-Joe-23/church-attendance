@@ -18,8 +18,56 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
     setShowDetailsModal(true);
   };
 
+  const getMemberTypeLabel = (member) => (member.is_visitor ? 'Visitor' : 'Member');
+  const getSexLabel = (member) => {
+    if (!member.sex) return 'Sex not set';
+    return member.sex === 'male' ? 'Male' : 'Female';
+  };
+  const getPrimaryContact = (member) => member.phone || member.email || 'No contact saved';
+
   return (
     <>
+      <div className="managed-member-cards">
+        {members.map((member) => (
+          <article key={member.id} className="managed-member-card">
+            <div className="managed-member-card-header">
+              <div className="managed-member-title">
+                <h3>{member.full_name}</h3>
+                <p>{member.member_id || 'No member ID'}</p>
+              </div>
+              <span className={`member-type-pill ${member.is_visitor ? 'visitor' : 'member'}`}>
+                {getMemberTypeLabel(member)}
+              </span>
+            </div>
+
+            <div className="managed-member-meta">
+              <span>{getSexLabel(member)}</span>
+              <span>{member.class_name || 'No class'}</span>
+              <span>{member.department || 'No department'}</span>
+            </div>
+
+            <p className="managed-member-contact">{getPrimaryContact(member)}</p>
+
+            <div className="managed-member-actions">
+              {member.qr_code_image && (
+                <button className="btn btn-secondary" onClick={() => handleQRClick(member)}>
+                  QR Code
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={() => handleViewDetails(member)}>
+                Details
+              </button>
+              <button className="btn btn-secondary" onClick={() => onEdit(member)}>
+                Edit
+              </button>
+              <button className="btn btn-danger" onClick={() => onDelete(member.id)}>
+                Delete
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+
       <div className="table-container">
         <table className="members-table">
           <thead>

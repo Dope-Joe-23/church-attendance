@@ -7,6 +7,7 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
   const parentServices = services.filter(s => !s.parent_service);
   
   const formatDate = (date) => {
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -15,6 +16,7 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
   };
 
   const formatTime = (time) => {
+    if (!time) return '-';
     return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -24,6 +26,45 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
 
   return (
     <>
+      <div className="managed-service-cards">
+        {parentServices.map((service) => (
+          <article key={service.id} className="managed-service-card">
+            <div className="managed-service-card-header">
+              <div>
+                <h3>{service.name}</h3>
+                <p>{service.location || 'No location set'}</p>
+              </div>
+              <span className={`service-type ${service.is_recurring ? 'recurring' : 'onetime'}`}>
+                {service.is_recurring ? service.recurrence_pattern || 'Recurring' : 'One-time'}
+              </span>
+            </div>
+            <div className="managed-service-meta">
+              <span>{formatDate(service.date)}</span>
+              <span>{formatTime(service.start_time)}</span>
+            </div>
+            {service.description && <p className="managed-service-description">{service.description}</p>}
+            <div className="managed-service-actions">
+              {onSelect && (
+                <button className="btn btn-secondary" onClick={() => onSelect(service)}>
+                  Attendance
+                </button>
+              )}
+              {onReport && (
+                <button className="btn btn-secondary" onClick={() => onReport(service)}>
+                  Report
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={() => onEdit(service)}>
+                Edit
+              </button>
+              <button className="btn btn-danger" onClick={() => onDelete(service.id)}>
+                Delete
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+
       <div className="table-container">
         <table className="services-table">
           <thead>
