@@ -242,13 +242,8 @@ const Members = () => {
 
   return (
     <div className="members-page">
-      <div className="page-header">
-        <div className="header-content">
-          <span className="page-kicker">Member care</span>
-          <h1>Members Directory</h1>
-          <p>Keep contact details, classes, departments, and visitor records ready for attendance and pastoral follow-up.</p>
-          <AbsenceAlertBadge onBadgeClick={() => setShowAbsenceAlert(true)} />
-        </div>
+      <div style={{ marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+        <AbsenceAlertBadge onBadgeClick={() => setShowAbsenceAlert(true)} />
       </div>
 
       {/* Search and Action Bar */}

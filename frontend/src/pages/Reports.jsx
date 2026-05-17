@@ -70,18 +70,6 @@ const Reports = () => {
 
   return (
     <div className="reports-page">
-      <div className="page-header">
-        <div className="header-content">
-          <span className="page-kicker">Attendance insight</span>
-        <h1>📊 Attendance Reports</h1>
-        <p>Review attendance by service, session, class, and member status so follow-up stays focused.</p>
-          <div className="page-metrics">
-            <span>{groupedServices.length} services</span>
-            <span>{totalSessions} sessions</span>
-          </div>
-        </div>
-      </div>
-
       {loading ? (
         <LoadingSpinner message="Loading services..." />
       ) : (

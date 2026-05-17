@@ -301,12 +301,8 @@ const CareDashboard = () => {
   return (
     <div className="care-dashboard-new">
       {/* Header */}
-      <div className="dashboard-header-new">
+      <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <div>
-            <h1>Member Care & Attendance Dashboard</h1>
-            <p>Comprehensive member attendance tracking with absenteeism metrics</p>
-          </div>
           <button
             onClick={fetchAllData}
             disabled={loading}

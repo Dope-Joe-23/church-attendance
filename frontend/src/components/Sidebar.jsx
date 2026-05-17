@@ -12,6 +12,20 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
 
+  const getPageName = () => {
+    const pageNames = {
+      '/dashboard': 'Dashboard',
+      '/': 'Dashboard',
+      '/scanner': 'Attendance',
+      '/members': 'Members',
+      '/services': 'Services',
+      '/reports': 'Reports',
+      '/care': 'Care',
+      '/invitations': 'Invitations',
+    };
+    return pageNames[location.pathname] || 'Church-in';
+  };
+
   const isActive = (path) => {
     return location.pathname === path || (path === '/dashboard' && location.pathname === '/');
   };
@@ -51,7 +65,7 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
 
   const navItems = [
     { path: '/dashboard', icon: MdDashboard, label: 'Dashboard', authenticated: true },
-    { path: '/scanner', icon: MdQrCode2, label: 'Check-in', authenticated: true },
+    { path: '/scanner', icon: MdQrCode2, label: 'Attendance', authenticated: true },
     { path: '/members', icon: MdPeople, label: 'Members', authenticated: true },
     { path: '/services', icon: MdEvent, label: 'Services', authenticated: true },
     { path: '/reports', icon: MdAssessment, label: 'Reports', authenticated: true },
@@ -72,7 +86,7 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
         <div className="navbar-logo">
           <img className="navbar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
           <span className="navbar-logo-icon">⛪</span>
-          <span>WIS Sunyani</span>
+          <span className="navbar-page-name">{getPageName()}</span>
         </div>
         <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
           {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}

@@ -99,17 +99,20 @@ export const useAttendanceStore = create((set) => ({
 export const useNotificationStore = create((set) => ({
   notifications: [],
 
-  showNotification: (message, type = 'info') => {
+  showNotification: (message, type = 'info', autoDismiss = true) => {
     const id = Date.now();
     set((state) => ({
       notifications: [...state.notifications, { id, message, type }],
     }));
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-      set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== id),
-      }));
-    }, 3000);
+    // Auto-remove after 3 seconds only if autoDismiss is true
+    if (autoDismiss) {
+      setTimeout(() => {
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        }));
+      }, 3000);
+    }
+    return id;
   },
 
   removeNotification: (id) =>

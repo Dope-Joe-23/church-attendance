@@ -69,18 +69,6 @@ const Scanner = () => {
 
   return (
     <div className="scanner-page">
-      <div className="page-header">
-        <div className="header-content">
-          <span className="page-kicker">Check-in</span>
-        <h1>✨ Attendance Scanner</h1>
-        <p className="scanner-subtitle">Choose a service session, then scan member QR codes for quick attendance capture.</p>
-          <div className="page-metrics">
-            <span>{groupedServices.length} services</span>
-            <span>{totalSessions} sessions</span>
-          </div>
-        </div>
-      </div>
-
       {loading ? (
         <LoadingSpinner message="Loading services..." />
       ) : (

@@ -101,22 +101,7 @@ const Home = () => {
 
   return (
     <div className="dashboard-page">
-      <div className="container">
-        {/* Header */}
-        <div className="dashboard-header">
-          <div className="header-content">
-            <h1>Dashboard</h1>
-            <p>Welcome back! Here's what's happening with your church.</p>
-          </div>
-          <div className="header-date">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </div>
-        </div>
+      <div className="container" style={{ paddingTop: '1rem' }}>
 
         {/* Stats Cards */}
         <div className="stats-grid">

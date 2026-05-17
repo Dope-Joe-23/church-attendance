@@ -265,17 +265,6 @@ const Services = () => {
 
   return (
     <div className="services-page">
-      <div className="page-header">
-        <div className="header-content">
-          <span className="page-kicker">Service planning</span>
-          <h1>Services & Sessions</h1>
-          <p>Create recurring service templates, add one-time services, and open attendance or reports from one place.</p>
-          <div className="page-metrics">
-            <span>{parentServicesCount} services</span>
-            <span>{sessionCount} sessions</span>
-          </div>
-        </div>
-      </div>
 
       {/* Search and Action Bar */}
       <div className="search-action-bar">

@@ -17,3 +17,4 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Sidebar } from './Sidebar';
 export { default as AbsenceAlertBadge } from './AbsenceAlertBadge';
 export { default as AbsenceAlertModal } from './AbsenceAlertModal';
+export { default as NotificationRenderer } from './NotificationRenderer';

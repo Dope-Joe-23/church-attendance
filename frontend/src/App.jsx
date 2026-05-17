@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Sidebar, LoadingSpinner } from './components';
+import { Sidebar, LoadingSpinner, NotificationRenderer } from './components';
 import ProtectedRoute from './components/ProtectedRoute';
 import {
   Home,
@@ -14,6 +14,7 @@ import {
 } from './pages';
 import InvitationCodesPage from './pages/InvitationCodes';
 import authService from './services/authService';
+import { useInternetStatus } from './hooks/useInternetStatus';
 import './styles/index.css';
 import './styles/components.css';
 import './styles/pages.css';
@@ -25,6 +26,9 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Monitor internet connectivity
+  useInternetStatus();
 
   // Determine if we're on an auth page
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
@@ -60,6 +64,7 @@ function AppContent() {
 
   return (
     <div className="app">
+      <NotificationRenderer />
       {!isAuthPage && (
         <Sidebar 
           isAuthenticated={isAuthenticated} 
