@@ -8,6 +8,23 @@ const SCAN_INTERVAL_MS = 100; // Check for QR codes up to 10 times per second
 const MAX_SCAN_WIDTH = 640; // Downscale frames before decoding for faster scans
 const DUPLICATE_SCAN_WINDOW_MS = 1500;
 
+const formatServiceDate = (date) => {
+  if (!date) return 'No date set';
+
+  return new Date(date).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const formatServiceTime = (time) => {
+  if (!time) return null;
+
+  return time.slice(0, 5);
+};
+
 const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -23,6 +40,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
+  const [checkinCount, setCheckinCount] = useState(0);
 
   function resetInactivityTimeout() {
     if (inactivityTimeoutRef.current) {
@@ -204,6 +222,10 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         onCheckinSuccess(result.attendance);
       }
 
+      if (result.success) {
+        setCheckinCount((count) => count + 1);
+      }
+
       if (result.success || result.message?.includes('already checked in')) {
         resetInactivityTimeout();
       }
@@ -255,6 +277,10 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       if (result.success && onCheckinSuccess) {
         onCheckinSuccess(result.attendance);
       }
+
+      if (result.success) {
+        setCheckinCount((count) => count + 1);
+      }
     } catch (error) {
       setMessage(error.response?.data?.message || 'Check-in failed');
       setMessageType('error');
@@ -288,6 +314,10 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const serviceTime = [formatServiceTime(service?.start_time), formatServiceTime(service?.end_time)]
+    .filter(Boolean)
+    .join(' - ');
+
   return (
     <div className="scanner-container">
       <div className="scanner-content">
@@ -298,10 +328,20 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         )}
 
         {service && (
-          <div className="service-info-panel">
-            <p>
-              <strong>Date:</strong> {new Date(service.date).toLocaleDateString()}
-            </p>
+          <div className="scanner-dashboard">
+            <div className="scanner-service-summary">
+              <span className="scanner-eyebrow">{service.parent_service ? 'Session' : 'Service'}</span>
+              <h3>{service.name}</h3>
+              <div className="scanner-service-meta">
+                <span>{formatServiceDate(service.date)}</span>
+                {serviceTime && <span>{serviceTime}</span>}
+                {service.location && <span>{service.location}</span>}
+              </div>
+            </div>
+            <div className="scanner-count-panel" aria-label="Successful check-ins this session">
+              <span>{checkinCount}</span>
+              <small>Checked in</small>
+            </div>
           </div>
         )}
 
@@ -310,38 +350,40 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         <div className="camera-container">
           {cameraActive ? (
             <>
-              <video
-                ref={attachVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="video-stream"
-                style={{
-                  width: '100%',
-                  maxWidth: '500px',
-                  borderRadius: '8px',
-                  border: '2px solid #007bff',
-                }}
-              />
+              <div className="scanner-camera-frame">
+                <div className="scanner-live-pill">Live</div>
+                <video
+                  ref={attachVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="video-stream"
+                />
+                <div className="scanner-corners" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
               <canvas ref={canvasRef} style={{ display: 'none' }} />
               <button
-                className="btn btn-secondary"
+                className="btn scanner-stop-btn"
                 onClick={handleStopCamera}
-                style={{ marginTop: '15px' }}
               >
                 Stop Camera
               </button>
             </>
           ) : (
-            <button className="btn btn-primary" onClick={handleStartCamera} disabled={!service}>
+            <button className="btn scanner-start-btn" onClick={handleStartCamera} disabled={!service}>
               Start Camera
             </button>
           )}
         </div>
 
         <div className="manual-input">
-          <label>
-            Or enter member ID manually:
+          <label className="manual-input-label">
+            <span>Manual check-in</span>
             <input
               type="text"
               value={scannedValue}
@@ -351,7 +393,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
               className="input-field"
             />
           </label>
-          <button className="btn btn-success" onClick={handleManualScan} disabled={!service}>
+          <button className="btn scanner-manual-btn" onClick={handleManualScan} disabled={!service}>
             Check In
           </button>
         </div>

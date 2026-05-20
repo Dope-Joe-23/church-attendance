@@ -3,8 +3,24 @@ import { serviceApi } from '../services/api';
 import { AttendanceScanner, LoadingSpinner } from '../components';
 import '../styles/pages.css';
 
+const formatServiceDate = (date) => {
+  if (!date) return 'No date set';
+
+  return new Date(date).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const formatServiceTime = (time) => {
+  if (!time) return null;
+
+  return time.slice(0, 5);
+};
+
 const Scanner = () => {
-  const [services, setServices] = useState([]);
   const [groupedServices, setGroupedServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [showScannerModal, setShowScannerModal] = useState(false);
@@ -34,7 +50,6 @@ const Scanner = () => {
         }));
         
         setGroupedServices(grouped);
-        setServices(servicesList);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -65,7 +80,11 @@ const Scanner = () => {
     setShowScannerModal(false);
   };
 
-  const totalSessions = groupedServices.reduce((sum, service) => sum + service.sessions.length, 0);
+  const selectedServiceTime = selectedService
+    ? [formatServiceTime(selectedService.start_time), formatServiceTime(selectedService.end_time)]
+        .filter(Boolean)
+        .join(' - ')
+    : '';
 
   return (
     <div className="scanner-page">
@@ -265,9 +284,17 @@ const Scanner = () => {
           {showScannerModal && selectedService && (
             <div className="modal-overlay" onClick={handleCloseModal}>
               <div className="modal-content scanner-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                  <div className="modal-header-content">
+                <div className="modal-header scanner-modal-header">
+                  <div className="modal-header-content scanner-modal-title-block">
+                    <span className="scanner-modal-kicker">
+                      {selectedService.parent_service ? 'Session check-in' : 'Service check-in'}
+                    </span>
                     <h2>{selectedService.name}</h2>
+                    <div className="scanner-modal-meta">
+                      <span>{formatServiceDate(selectedService.date)}</span>
+                      {selectedServiceTime && <span>{selectedServiceTime}</span>}
+                      {selectedService.location && <span>{selectedService.location}</span>}
+                    </div>
                     {selectedService.location && (
                       <p className="modal-subtext">📍 {selectedService.location}</p>
                     )}
