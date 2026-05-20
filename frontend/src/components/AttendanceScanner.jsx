@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 import { attendanceApi } from '../services/api';
 import '../styles/components.css';
@@ -15,6 +15,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const scanningFrameRef = useRef(null);
   const lastScanAttemptRef = useRef(0);
   const processingScanRef = useRef(false);
+  const cameraStartRequestedRef = useRef(false);
   const inactivityTimeoutRef = useRef(null);
   const lastScannedRef = useRef(null);
 
@@ -116,6 +117,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        cameraStartRequestedRef.current = false;
         console.log('Camera started, stream active');
 
         videoRef.current.onloadedmetadata = () => {
@@ -135,6 +137,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       }
     } catch (error) {
       console.error('Camera error:', error);
+      cameraStartRequestedRef.current = false;
       setMessage(`Camera error: ${error.message}`);
       setMessageType('error');
       setCameraActive(false);
@@ -150,6 +153,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     }
 
     processingScanRef.current = false;
+    cameraStartRequestedRef.current = false;
     lastScanAttemptRef.current = 0;
 
     if (inactivityTimeoutRef.current) {
@@ -264,6 +268,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   };
 
   const handleStartCamera = () => {
+    cameraStartRequestedRef.current = true;
     setCameraActive(true);
   };
 
@@ -272,13 +277,16 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     setCameraActive(false);
   };
 
-  const attachVideoRef = (node) => {
+  const attachVideoRef = useCallback((node) => {
     videoRef.current = node;
 
-    if (node && cameraActive && !node.srcObject) {
+    if (node && cameraStartRequestedRef.current && !node.srcObject) {
       startCamera();
     }
-  };
+    // Keep this callback stable so React does not detach/reattach the video ref
+    // during message updates after each scan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="scanner-container">

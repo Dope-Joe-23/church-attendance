@@ -5,15 +5,28 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import transaction
 import logging
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
-from .tasks import update_member_absenteeism_alerts_async
+from .tasks import schedule_member_absenteeism_update
 from services.models import Service
 from members.models import Member
 
 logger = logging.getLogger(__name__)
+
+
+def serialize_checkin_attendance(attendance):
+    """Small check-in response payload; avoids sending nested QR image data."""
+    return {
+        'id': attendance.id,
+        'member': attendance.member_id,
+        'member_id': attendance.member.member_id,
+        'member_name': attendance.member.full_name,
+        'service': attendance.service_id,
+        'status': attendance.status,
+        'check_in_time': attendance.check_in_time,
+        'created_at': attendance.created_at,
+    }
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -104,29 +117,20 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 member.last_attendance_date = timezone.now().date()
                 member.save(update_fields=['consecutive_absences', 'last_attendance_date'])
                 
-                # Update heavier absenteeism metrics and alerts in the background
+                # Update heavier absenteeism metrics and alerts off the request path
                 # so QR check-in responses stay fast at the door.
-                def queue_absenteeism_update():
-                    try:
-                        update_member_absenteeism_alerts_async.delay(member.id)
-                    except Exception:
-                        logger.exception(
-                            "Failed to queue absenteeism alert update for member %s",
-                            member.id,
-                        )
-
-                transaction.on_commit(queue_absenteeism_update)
+                schedule_member_absenteeism_update(member.id)
                 
                 return Response({
                     'success': True,
                     'message': f'{member.full_name} checked in successfully',
-                    'attendance': AttendanceSerializer(attendance).data
+                    'attendance': serialize_checkin_attendance(attendance)
                 }, status=status.HTTP_201_CREATED)
             else:
                 return Response({
                     'success': False,
                     'message': f'{member.full_name} is already checked in for this service',
-                    'attendance': AttendanceSerializer(attendance).data
+                    'attendance': serialize_checkin_attendance(attendance)
                 }, status=status.HTTP_200_OK)
         
         except Member.DoesNotExist:
