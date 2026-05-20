@@ -24,13 +24,15 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const [scannedValue, setScannedValue] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
+  const [memberName, setMemberName] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [checkinCount, setCheckinCount] = useState(0);
   const [manualCheckinLoading, setManualCheckinLoading] = useState(false);
 
-  function showScanAlert(nextMessage, nextType) {
+  function showScanAlert(nextMessage, nextType, nextMemberName = '') {
     setMessage(nextMessage);
     setMessageType(nextType);
+    setMemberName(nextMemberName);
 
     if (alertTimeoutRef.current) {
       clearTimeout(alertTimeoutRef.current);
@@ -40,6 +42,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       alertTimeoutRef.current = setTimeout(() => {
         setMessage('');
         setMessageType('');
+        setMemberName('');
         alertTimeoutRef.current = null;
       }, ALERT_AUTO_DISMISS_MS);
     }
@@ -220,7 +223,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       const result = await attendanceApi.checkInMember(memberID, service.id);
 
       console.log('Check-in result:', result);
-      showScanAlert(result.message, result.success ? 'success' : 'error');
+      showScanAlert(result.message, result.success ? 'success' : 'error', result.member_name || '');
 
       if (result.success && onCheckinSuccess) {
         onCheckinSuccess(result.attendance);
@@ -271,7 +274,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     setManualCheckinLoading(true);
     try {
       const result = await attendanceApi.checkInMember(scannedValue, service.id);
-      showScanAlert(result.message, result.success ? 'success' : 'error');
+      showScanAlert(result.message, result.success ? 'success' : 'error', result.member_name || '');
       setScannedValue('');
 
       if (result.success && onCheckinSuccess) {
@@ -331,7 +334,15 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
             </div>
             <div className="scanner-toast-copy">
               <strong>{messageType === 'success' ? 'Check-in complete' : messageType === 'error' ? 'Check-in issue' : 'Scanner update'}</strong>
-              <p>{message}</p>
+              <p>
+                {memberName ? (
+                  <>
+                    <strong style={{ fontWeight: 700, color: 'inherit' }}>{memberName}</strong> {message.replace(memberName, '').trim()}
+                  </>
+                ) : (
+                  message
+                )}
+              </p>
             </div>
             {messageType === 'success' && (
               <div className="scanner-toast-count" aria-label={`${checkinCount} successful check-ins`}>

@@ -124,12 +124,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 return Response({
                     'success': True,
                     'message': f'{member.full_name} checked in successfully',
+                    'member_name': member.full_name,
                     'attendance': serialize_checkin_attendance(attendance)
                 }, status=status.HTTP_201_CREATED)
             else:
                 return Response({
                     'success': False,
                     'message': f'{member.full_name} is already checked in for this service',
+                    'member_name': member.full_name,
                     'attendance': serialize_checkin_attendance(attendance)
                 }, status=status.HTTP_200_OK)
         
