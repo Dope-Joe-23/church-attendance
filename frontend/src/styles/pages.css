@@ -2221,6 +2221,11 @@
   font-weight: 700;
 }
 
+.modal-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .modal-header-content h2 {
   margin: 0 0 0.75rem 0;
   color: white;
@@ -3338,7 +3343,9 @@
 
 .scanner-modal-title-block {
   min-width: 0;
+  flex: 1;
   display: grid;
+  grid-template-columns: auto;
   gap: 0.45rem;
 }
 

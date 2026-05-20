@@ -119,7 +119,7 @@ const Reports = () => {
                         {parentService.location || 'No location'} · {parentService.date || `${parentService.sessions.length} sessions`}
                       </span>
                     </button>
-                    {parentService.is_recurring && (
+                    {parentService.is_recurring && expandedService === parentService.id && (
                       <div className="mobile-session-list">
                         {parentService.sessions.length > 0 ? (
                           parentService.sessions.map((session) => (
