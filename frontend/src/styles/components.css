@@ -2179,6 +2179,62 @@
   color: #666;
 }
 
+/* Mobile sessions table adjustments */
+@media (max-width: 768px) {
+  .sessions-modal {
+    max-width: 95vw;
+  }
+
+  .sessions-table {
+    font-size: 0.85rem;
+  }
+
+  .sessions-table th {
+    padding: 0.6rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .session-row {
+    display: table-row;
+  }
+
+  .session-date-cell,
+  .session-time-cell,
+  .session-location-cell {
+    padding: 0.6rem 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  .session-action-cell {
+    padding: 0.6rem 0.4rem;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .session-icon-action {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+  }
+
+  .session-icon-action svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sessions-modal {
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .session-action-cell {
+    flex-direction: row;
+  }
+}
+
 /* Small button variant */
 .btn-sm {
   padding: 0.4rem 0.8rem;
