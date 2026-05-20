@@ -5,11 +5,15 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import transaction
+import logging
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
+from .tasks import update_member_absenteeism_alerts_async
 from services.models import Service
 from members.models import Member
-from members.utils import update_absenteeism_alerts
+
+logger = logging.getLogger(__name__)
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -100,8 +104,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 member.last_attendance_date = timezone.now().date()
                 member.save(update_fields=['consecutive_absences', 'last_attendance_date'])
                 
-                # Update member's absenteeism metrics and alerts
-                update_absenteeism_alerts(member)
+                # Update heavier absenteeism metrics and alerts in the background
+                # so QR check-in responses stay fast at the door.
+                def queue_absenteeism_update():
+                    try:
+                        update_member_absenteeism_alerts_async.delay(member.id)
+                    except Exception:
+                        logger.exception(
+                            "Failed to queue absenteeism alert update for member %s",
+                            member.id,
+                        )
+
+                transaction.on_commit(queue_absenteeism_update)
                 
                 return Response({
                     'success': True,
