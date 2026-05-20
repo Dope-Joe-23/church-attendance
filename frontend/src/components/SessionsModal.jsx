@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FaChartBar, FaClipboardCheck, FaSpinner, FaTrash } from 'react-icons/fa';
 import '../styles/components.css';
 
 const SessionsModal = ({
@@ -65,7 +66,7 @@ const SessionsModal = ({
       if (onSessionAdded) {
         onSessionAdded(service.id);
       }
-    } catch (err) {
+    } catch {
       setLocalError(addDateError || 'Failed to create session');
     } finally {
       setIsSubmitting(false);
@@ -152,20 +153,23 @@ const SessionsModal = ({
                     </td>
                     <td className="session-action-cell">
                       <button
-                        className="btn btn-sm btn-success"
+                        className="session-icon-action session-icon-action-primary"
                         onClick={() => onSelectSession(session)}
                         disabled={deletingSessionId === session.id}
+                        title={mode === 'report' ? 'View report' : 'Take attendance'}
+                        aria-label={mode === 'report' ? 'View report' : 'Take attendance'}
                       >
-                        {mode === 'report' ? 'Report' : 'Take'}
+                        {mode === 'report' ? <FaChartBar /> : <FaClipboardCheck />}
                       </button>
                       {onDeleteSession && (
                         <button
-                          className="btn btn-sm btn-danger"
+                          className="session-icon-action session-icon-action-danger"
                           onClick={() => handleDeleteSession(session.id, session.date)}
                           disabled={deletingSessionId === session.id}
                           title="Delete this session and all its attendance records"
+                          aria-label="Delete session"
                         >
-                          {deletingSessionId === session.id ? '⏳' : '🗑️'}
+                          {deletingSessionId === session.id ? <FaSpinner className="button-spinner" /> : <FaTrash />}
                         </button>
                       )}
                     </td>

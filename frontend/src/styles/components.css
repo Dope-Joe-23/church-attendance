@@ -4213,13 +4213,12 @@
 }
 
 .scanner-toast {
-  position: absolute;
-  top: 0.85rem;
-  left: 50%;
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
   z-index: 8;
-  width: min(calc(100% - 1.5rem), 620px);
+  width: min(calc(100vw - 2.5rem), 430px);
   min-height: 72px;
-  transform: translateX(-50%);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.75rem;
@@ -4307,11 +4306,11 @@
 @keyframes scannerToastIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -12px);
+    transform: translateX(18px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateX(0);
   }
 }
 
@@ -4333,7 +4332,9 @@
   }
 
   .scanner-toast {
-    top: 0.65rem;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: min(calc(100vw - 1.5rem), 420px);
     grid-template-columns: auto minmax(0, 1fr);
   }
 
@@ -4345,6 +4346,64 @@
     justify-content: center;
     gap: 0.4rem;
   }
+}
+
+.session-action-cell {
+  gap: 0.4rem;
+}
+
+.session-icon-action {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: white;
+  color: var(--brand-navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  vertical-align: middle;
+}
+
+.session-icon-action svg {
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.session-icon-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+.session-icon-action-primary {
+  background: #f8fafc;
+  border-color: rgba(36, 16, 106, 0.18);
+}
+
+.session-icon-action-primary:hover:not(:disabled) {
+  background: var(--brand-navy);
+  color: white;
+}
+
+.session-icon-action-danger {
+  color: var(--brand-red);
+  border-color: rgba(181, 31, 45, 0.18);
+}
+
+.session-icon-action-danger:hover:not(:disabled) {
+  background: var(--brand-red);
+  color: white;
+}
+
+.session-icon-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Shared professional modal polish for component-owned modals */

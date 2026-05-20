@@ -9,23 +9,6 @@ const MAX_SCAN_WIDTH = 640; // Downscale frames before decoding for faster scans
 const DUPLICATE_SCAN_WINDOW_MS = 1500;
 const ALERT_AUTO_DISMISS_MS = 2800;
 
-const formatServiceDate = (date) => {
-  if (!date) return 'No date set';
-
-  return new Date(date).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
-const formatServiceTime = (time) => {
-  if (!time) return null;
-
-  return time.slice(0, 5);
-};
-
 const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -43,6 +26,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const [messageType, setMessageType] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [checkinCount, setCheckinCount] = useState(0);
+  const [manualCheckinLoading, setManualCheckinLoading] = useState(false);
 
   function showScanAlert(nextMessage, nextType) {
     setMessage(nextMessage);
@@ -284,6 +268,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       return;
     }
 
+    setManualCheckinLoading(true);
     try {
       const result = await attendanceApi.checkInMember(scannedValue, service.id);
       showScanAlert(result.message, result.success ? 'success' : 'error');
@@ -298,6 +283,8 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       }
     } catch (error) {
       showScanAlert(error.response?.data?.message || 'Check-in failed', 'error');
+    } finally {
+      setManualCheckinLoading(false);
     }
   };
 
@@ -328,28 +315,12 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const serviceTime = [formatServiceTime(service?.start_time), formatServiceTime(service?.end_time)]
-    .filter(Boolean)
-    .join(' - ');
-
   return (
     <div className="scanner-container">
       <div className="scanner-content">
         {!service && (
           <div className="message message-warning" style={{ marginBottom: '20px' }}>
             Please select a service first before scanning
-          </div>
-        )}
-
-        {service && (
-          <div className="scanner-service-summary">
-            <span className="scanner-eyebrow">{service.parent_service ? 'Session' : 'Service'}</span>
-            <h3>{service.name}</h3>
-            <div className="scanner-service-meta">
-              <span>{formatServiceDate(service.date)}</span>
-              {serviceTime && <span>{serviceTime}</span>}
-              {service.location && <span>{service.location}</span>}
-            </div>
           </div>
         )}
 
@@ -417,8 +388,14 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
               className="input-field"
             />
           </label>
-          <button className="btn scanner-manual-btn" onClick={handleManualScan} disabled={!service}>
-            Check In
+          <button
+            className="btn scanner-manual-btn"
+            onClick={handleManualScan}
+            disabled={!service || manualCheckinLoading}
+            aria-busy={manualCheckinLoading}
+          >
+            {manualCheckinLoading && <span className="button-spinner" aria-hidden="true"></span>}
+            {manualCheckinLoading ? 'Checking...' : 'Check In'}
           </button>
         </div>
       </div>
