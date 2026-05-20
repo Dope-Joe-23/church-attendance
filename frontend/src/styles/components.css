@@ -4003,24 +4003,14 @@
   margin: 0;
   display: grid;
   gap: 0.9rem;
+  position: relative;
 }
 
-.scanner-dashboard {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px;
-  gap: 0.9rem;
-  align-items: stretch;
-}
-
-.scanner-service-summary,
-.scanner-count-panel {
+.scanner-service-summary {
   border: 1px solid rgba(36, 16, 106, 0.12);
   border-radius: 8px;
   background: white;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-}
-
-.scanner-service-summary {
   padding: 1rem;
 }
 
@@ -4061,31 +4051,6 @@
   color: #475569;
   font-size: 0.8rem;
   font-weight: 700;
-}
-
-.scanner-count-panel {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--brand-navy);
-  border-bottom: 4px solid var(--brand-yellow);
-}
-
-.scanner-count-panel span {
-  font-size: 2.6rem;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.scanner-count-panel small {
-  margin-top: 0.35rem;
-  color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .camera-container {
@@ -4247,19 +4212,112 @@
   border-radius: 8px;
 }
 
+.scanner-toast {
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  z-index: 8;
+  width: min(calc(100% - 1.5rem), 620px);
+  min-height: 72px;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(36, 16, 106, 0.12);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(10px);
+  animation: scannerToastIn 0.22s ease-out;
+}
+
+.scanner-toast-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.scanner-toast-success .scanner-toast-icon {
+  background: var(--success-600);
+}
+
+.scanner-toast-error .scanner-toast-icon {
+  background: var(--brand-red);
+}
+
+.scanner-toast-info .scanner-toast-icon,
+.scanner-toast-warning .scanner-toast-icon {
+  background: var(--brand-navy);
+}
+
+.scanner-toast-copy {
+  min-width: 0;
+}
+
+.scanner-toast-copy strong {
+  display: block;
+  color: #111827;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.scanner-toast-copy p {
+  margin: 0.2rem 0 0;
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.scanner-toast-count {
+  min-width: 76px;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: var(--brand-navy);
+  color: white;
+  text-align: center;
+  border-bottom: 3px solid var(--brand-yellow);
+}
+
+.scanner-toast-count span {
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.scanner-toast-count small {
+  display: block;
+  margin-top: 0.15rem;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@keyframes scannerToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 @media (max-width: 768px) {
-  .scanner-dashboard,
   .manual-input {
     grid-template-columns: 1fr;
-  }
-
-  .scanner-count-panel {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .scanner-count-panel span {
-    font-size: 2.2rem;
   }
 
   .camera-container {
@@ -4272,6 +4330,20 @@
 
   .scanner-manual-btn {
     width: 100%;
+  }
+
+  .scanner-toast {
+    top: 0.65rem;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .scanner-toast-count {
+    grid-column: 1 / -1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.4rem;
   }
 }
 

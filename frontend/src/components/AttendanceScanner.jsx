@@ -7,6 +7,7 @@ const INACTIVITY_TIMEOUT_MS = 30 * 1000; // 30 seconds
 const SCAN_INTERVAL_MS = 100; // Check for QR codes up to 10 times per second
 const MAX_SCAN_WIDTH = 640; // Downscale frames before decoding for faster scans
 const DUPLICATE_SCAN_WINDOW_MS = 1500;
+const ALERT_AUTO_DISMISS_MS = 2800;
 
 const formatServiceDate = (date) => {
   if (!date) return 'No date set';
@@ -34,6 +35,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const processingScanRef = useRef(false);
   const cameraStartRequestedRef = useRef(false);
   const inactivityTimeoutRef = useRef(null);
+  const alertTimeoutRef = useRef(null);
   const lastScannedRef = useRef(null);
 
   const [scannedValue, setScannedValue] = useState('');
@@ -41,6 +43,23 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
   const [messageType, setMessageType] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [checkinCount, setCheckinCount] = useState(0);
+
+  function showScanAlert(nextMessage, nextType) {
+    setMessage(nextMessage);
+    setMessageType(nextType);
+
+    if (alertTimeoutRef.current) {
+      clearTimeout(alertTimeoutRef.current);
+    }
+
+    if (nextType === 'success' || nextType === 'error') {
+      alertTimeoutRef.current = setTimeout(() => {
+        setMessage('');
+        setMessageType('');
+        alertTimeoutRef.current = null;
+      }, ALERT_AUTO_DISMISS_MS);
+    }
+  }
 
   function resetInactivityTimeout() {
     if (inactivityTimeoutRef.current) {
@@ -149,15 +168,14 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
           lastScanAttemptRef.current = 0;
           scanningFrameRef.current = requestAnimationFrame(scanLoop);
           resetInactivityTimeout();
-          setMessage('Camera ready - point at QR code');
-          setMessageType('success');
+          setMessage('');
+          setMessageType('');
         };
       }
     } catch (error) {
       console.error('Camera error:', error);
       cameraStartRequestedRef.current = false;
-      setMessage(`Camera error: ${error.message}`);
-      setMessageType('error');
+      showScanAlert(`Camera error: ${error.message}`, 'error');
       setCameraActive(false);
     }
   }
@@ -179,6 +197,11 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       inactivityTimeoutRef.current = null;
     }
 
+    if (alertTimeoutRef.current) {
+      clearTimeout(alertTimeoutRef.current);
+      alertTimeoutRef.current = null;
+    }
+
     if (videoRef.current?.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
       console.log(`Stopping ${tracks.length} tracks...`);
@@ -194,16 +217,14 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
 
     if (!service) {
       const errorMsg = 'Please select a service first';
-      setMessage(errorMsg);
-      setMessageType('error');
+      showScanAlert(errorMsg, 'error');
       console.warn(errorMsg);
       return;
     }
 
     if (service.is_recurring && !service.parent_service && !service.date) {
       const errorMsg = `"${service.name}" is a recurring service template. Please select a specific session/date to check in.`;
-      setMessage(errorMsg);
-      setMessageType('error');
+      showScanAlert(errorMsg, 'error');
       stopCamera();
       setCameraActive(false);
       console.warn(errorMsg);
@@ -215,8 +236,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
       const result = await attendanceApi.checkInMember(memberID, service.id);
 
       console.log('Check-in result:', result);
-      setMessageType(result.success ? 'success' : 'info');
-      setMessage(result.message);
+      showScanAlert(result.message, result.success ? 'success' : 'error');
 
       if (result.success && onCheckinSuccess) {
         onCheckinSuccess(result.attendance);
@@ -238,8 +258,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
     } catch (error) {
       console.error('Check-in error:', error);
       const errorMsg = error.response?.data?.message || error.message || 'Check-in failed';
-      setMessage(errorMsg);
-      setMessageType('error');
+      showScanAlert(errorMsg, 'error');
     }
   }
 
@@ -251,27 +270,23 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
 
   const handleManualScan = async () => {
     if (!scannedValue.trim()) {
-      setMessage('Please enter a member ID');
-      setMessageType('error');
+      showScanAlert('Please enter a member ID', 'error');
       return;
     }
 
     if (!service) {
-      setMessage('Please select a service first');
-      setMessageType('error');
+      showScanAlert('Please select a service first', 'error');
       return;
     }
 
     if (service.is_recurring && !service.parent_service && !service.date) {
-      setMessage(`"${service.name}" is a recurring service template. Please select a specific session/date to check in.`);
-      setMessageType('error');
+      showScanAlert(`"${service.name}" is a recurring service template. Please select a specific session/date to check in.`, 'error');
       return;
     }
 
     try {
       const result = await attendanceApi.checkInMember(scannedValue, service.id);
-      setMessageType(result.success ? 'success' : 'info');
-      setMessage(result.message);
+      showScanAlert(result.message, result.success ? 'success' : 'error');
       setScannedValue('');
 
       if (result.success && onCheckinSuccess) {
@@ -282,8 +297,7 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         setCheckinCount((count) => count + 1);
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Check-in failed');
-      setMessageType('error');
+      showScanAlert(error.response?.data?.message || 'Check-in failed', 'error');
     }
   };
 
@@ -328,24 +342,34 @@ const AttendanceScanner = ({ service, onCheckinSuccess }) => {
         )}
 
         {service && (
-          <div className="scanner-dashboard">
-            <div className="scanner-service-summary">
-              <span className="scanner-eyebrow">{service.parent_service ? 'Session' : 'Service'}</span>
-              <h3>{service.name}</h3>
-              <div className="scanner-service-meta">
-                <span>{formatServiceDate(service.date)}</span>
-                {serviceTime && <span>{serviceTime}</span>}
-                {service.location && <span>{service.location}</span>}
-              </div>
-            </div>
-            <div className="scanner-count-panel" aria-label="Successful check-ins this session">
-              <span>{checkinCount}</span>
-              <small>Checked in</small>
+          <div className="scanner-service-summary">
+            <span className="scanner-eyebrow">{service.parent_service ? 'Session' : 'Service'}</span>
+            <h3>{service.name}</h3>
+            <div className="scanner-service-meta">
+              <span>{formatServiceDate(service.date)}</span>
+              {serviceTime && <span>{serviceTime}</span>}
+              {service.location && <span>{service.location}</span>}
             </div>
           </div>
         )}
 
-        {message && <div className={`message message-${messageType}`}>{message}</div>}
+        {(messageType === 'success' || messageType === 'error') && message && (
+          <div className={`scanner-toast scanner-toast-${messageType}`} role="status" aria-live="polite">
+            <div className="scanner-toast-icon" aria-hidden="true">
+              {messageType === 'success' ? 'OK' : messageType === 'error' ? '!' : 'i'}
+            </div>
+            <div className="scanner-toast-copy">
+              <strong>{messageType === 'success' ? 'Check-in complete' : messageType === 'error' ? 'Check-in issue' : 'Scanner update'}</strong>
+              <p>{message}</p>
+            </div>
+            {messageType === 'success' && (
+              <div className="scanner-toast-count" aria-label={`${checkinCount} successful check-ins`}>
+                <span>{checkinCount}</span>
+                <small>Today</small>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="camera-container">
           {cameraActive ? (
