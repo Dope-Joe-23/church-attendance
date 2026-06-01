@@ -342,13 +342,15 @@ const CareDashboard = () => {
       {/* Controls */}
       <div className="dashboard-controls">
         <div className="search-section">
-          <input
-            type="text"
-            placeholder="Search by name or member ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search by name or member ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
         </div>
 
         <div className="filter-section">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { serviceApi } from '../services/api';
-import { AttendanceScanner, LoadingSpinner } from '../components';
+import { serviceApi, memberApi } from '../services/api';
+import { AttendanceScanner, LoadingSpinner, MembersTable, MemberFormModal } from '../components';
 import '../styles/pages.css';
 
 const formatServiceDate = (date) => {
@@ -27,10 +27,47 @@ const Scanner = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedService, setExpandedService] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formError, setFormError] = useState(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    date_of_birth: '',
+    sex: '',
+    phone: '',
+    email: '',
+    place_of_residence: '',
+    profession: '',
+    department: '',
+    class_name: '',
+    committee: '',
+    marital_status: '',
+    is_visitor: false,
+    baptised: false,
+    confirmed: false,
+  });
 
   useEffect(() => {
     fetchServices();
+    fetchMembers();
   }, []);
+
+  const fetchMembers = async () => {
+    setMembersLoading(true);
+    try {
+      const data = await memberApi.getMembers();
+      const membersList = data.results || data;
+      setMembers(membersList);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
 
   const fetchServices = async () => {
     setLoading(true);
@@ -79,6 +116,132 @@ const Scanner = () => {
   const handleCloseModal = () => {
     setShowScannerModal(false);
   };
+
+  const handleEdit = (member) => {
+    setFormData({
+      full_name: member.full_name,
+      date_of_birth: member.date_of_birth || '',
+      sex: member.sex || '',
+      phone: member.phone || '',
+      email: member.email || '',
+      place_of_residence: member.place_of_residence || '',
+      profession: member.profession || '',
+      department: member.department || '',
+      class_name: member.class_name || '',
+      committee: member.committee || '',
+      marital_status: member.marital_status || '',
+      is_visitor: member.is_visitor || false,
+      baptised: member.baptised || false,
+      confirmed: member.confirmed || false,
+    });
+    setEditingId(member.id);
+    setFormError(null);
+    setShowFormModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm('Are you sure you want to delete this member?')) {
+      try {
+        await memberApi.deleteMember(id);
+        fetchMembers();
+      } catch (error) {
+        console.error('Error deleting member:', error);
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      full_name: '',
+      date_of_birth: '',
+      sex: '',
+      phone: '',
+      email: '',
+      place_of_residence: '',
+      profession: '',
+      department: '',
+      class_name: '',
+      committee: '',
+      marital_status: '',
+      is_visitor: false,
+      baptised: false,
+      confirmed: false,
+    });
+    setEditingId(null);
+    setFormError(null);
+    setShowFormModal(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.full_name.trim()) {
+      setFormError('Full name is required');
+      return;
+    }
+    
+    if (!formData.is_visitor && !formData.email.trim() && !formData.phone.trim()) {
+      setFormError('Non-visitor members must have at least one contact method (email or phone)');
+      return;
+    }
+
+    const cleanedData = {
+      full_name: formData.full_name.trim(),
+      date_of_birth: formData.date_of_birth || null,
+      sex: formData.sex || null,
+      phone: formData.phone.trim() || null,
+      email: formData.email.trim() || null,
+      place_of_residence: formData.place_of_residence?.trim() || null,
+      profession: formData.profession?.trim() || null,
+      department: formData.department || null,
+      class_name: formData.class_name || null,
+      committee: formData.committee || null,
+      marital_status: formData.marital_status || null,
+      is_visitor: formData.is_visitor,
+      baptised: formData.baptised,
+      confirmed: formData.confirmed,
+    };
+
+    setIsSubmittingForm(true);
+    try {
+      if (editingId) {
+        await memberApi.updateMember(editingId, cleanedData);
+      } else {
+        await memberApi.createMember(cleanedData);
+      }
+      await fetchMembers();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving member:', error);
+      const errorData = error.response?.data;
+      let errorMsg = 'Failed to save member';
+      if (typeof errorData === 'string') {
+        errorMsg = errorData;
+      } else if (errorData?.detail) {
+        errorMsg = errorData.detail;
+      } else if (errorData?.non_field_errors) {
+        errorMsg = Array.isArray(errorData.non_field_errors) ? errorData.non_field_errors[0] : errorData.non_field_errors;
+      } else if (typeof errorData === 'object') {
+        for (const [field, messages] of Object.entries(errorData)) {
+          if (Array.isArray(messages)) { errorMsg = messages[0]; break; }
+          if (typeof messages === 'string') { errorMsg = messages; break; }
+        }
+      }
+      setFormError(errorMsg);
+    } finally {
+      setIsSubmittingForm(false);
+    }
+  };
+
+  const filteredMembers = members.filter((member) => {
+    if (!memberSearch.trim()) return true;
+    const query = memberSearch.toLowerCase().trim();
+    return (
+      (member.full_name && member.full_name.toLowerCase().includes(query)) ||
+      (member.email && member.email.toLowerCase().includes(query)) ||
+      (member.phone && member.phone.toLowerCase().includes(query)) ||
+      (member.member_id && member.member_id.toLowerCase().includes(query))
+    );
+  });
 
   const selectedServiceTime = selectedService
     ? [formatServiceTime(selectedService.start_time), formatServiceTime(selectedService.end_time)]
@@ -170,7 +333,6 @@ const Scanner = () => {
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Type</th>
-                    <th style={{ width: '100px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -222,19 +384,7 @@ const Scanner = () => {
                             {parentService.is_recurring ? '🔄 Recurring' : '📅 One-time'}
                           </span>
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
-                          {!parentService.is_recurring && (
-                            <button
-                              className="btn-select"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleServiceSelect(parentService);
-                              }}
-                            >
-                              Select
-                            </button>
-                          )}
-                        </td>
+                        <td></td>
                       </tr>
 
                       {/* Session Rows (expanded) */}
@@ -259,17 +409,7 @@ const Scanner = () => {
                             <td>
                               <span className="service-type session">📅 Session</span>
                             </td>
-                            <td>
-                              <button
-                                className="btn-select"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceSelect(session);
-                                }}
-                              >
-                                Select
-                              </button>
-                            </td>
+                            <td></td>
                           </tr>
                         ))}
                     </React.Fragment>
@@ -309,6 +449,58 @@ const Scanner = () => {
           )}
         </>
       )}
+
+      {/* Members Directory Section */}
+      <div className="scanner-members-section" style={{ marginTop: '2rem' }}>
+        <div className="scanner-services-container">
+          <div className="services-list-header">
+            <h2>Member Directory</h2>
+            <p>Search and view church members.</p>
+          </div>
+
+          <div className="search-action-bar" style={{ marginBottom: '1.5rem' }}>
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="🔍 Search by name, email, phone or member ID..."
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
+
+          {membersLoading ? (
+            <LoadingSpinner message="Loading members..." />
+          ) : (
+            <>
+              {filteredMembers.length === 0 && memberSearch && (
+                <div className="no-results">
+                  <p>No members match your search criteria.</p>
+                </div>
+              )}
+              <div className="members-table-wrapper">
+                <MembersTable
+                  members={filteredMembers}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <MemberFormModal
+        isOpen={showFormModal}
+        isEditing={!!editingId}
+        formData={formData}
+        onFormChange={setFormData}
+        onSubmit={handleSubmit}
+        onClose={resetForm}
+        error={formError}
+        isSubmitting={isSubmittingForm}
+      />
     </div>
   );
 };

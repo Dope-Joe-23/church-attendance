@@ -72,9 +72,9 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
               <th>Service Name</th>
               <th>Date</th>
               <th>Time</th>
-              <th>Location</th>
+              <th className="service-location-col">Location</th>
               <th>Recurring</th>
-              <th>Description</th>
+              <th className="service-description-col">Description</th>
               <th>Actions</th>
             </tr>
           </thead>

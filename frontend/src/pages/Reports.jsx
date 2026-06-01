@@ -152,7 +152,7 @@ const Reports = () => {
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Type</th>
-                    <th style={{ width: '100px' }}>Action</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -204,19 +204,7 @@ const Reports = () => {
                             {parentService.is_recurring ? '🔄 Recurring' : '📅 One-time'}
                           </span>
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
-                          {!parentService.is_recurring && (
-                            <button
-                              className="btn-select"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleServiceSelect(parentService);
-                              }}
-                            >
-                              Select
-                            </button>
-                          )}
-                        </td>
+                        <td></td>
                       </tr>
 
                       {/* Session Rows (expanded) */}
@@ -241,17 +229,7 @@ const Reports = () => {
                             <td>
                               <span className="service-type session">📅 Session</span>
                             </td>
-                            <td>
-                              <button
-                                className="btn-select"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceSelect(session);
-                                }}
-                              >
-                                Select
-                              </button>
-                            </td>
+                            <td></td>
                           </tr>
                         ))}
                     </React.Fragment>
