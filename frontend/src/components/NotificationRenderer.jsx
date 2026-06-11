@@ -1,15 +1,17 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useNotificationStore } from '../context/store';
 import '../styles/notifications.css';
 
 /**
- * NotificationRenderer component displays all notifications from the store
- * Handles displaying success, error, info, and warning messages
+ * NotificationRenderer component displays all notifications from the store.
+ * Uses createPortal to render directly into document.body so notifications
+ * always sit above all other content regardless of parent stacking contexts.
  */
 const NotificationRenderer = () => {
   const notifications = useNotificationStore((state) => state.notifications);
 
-  return (
+  return createPortal(
     <div className="notifications-container">
       {notifications.map((notification) => (
         <div
@@ -23,7 +25,8 @@ const NotificationRenderer = () => {
           </div>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 };
 

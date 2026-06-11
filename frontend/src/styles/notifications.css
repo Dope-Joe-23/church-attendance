@@ -84,10 +84,17 @@
   word-break: break-word;
 }
 
+/* Tablet and below — push notifications below the fixed top-navbar */
+@media (max-width: 1023px) {
+  .notifications-container {
+    top: 100px;
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 480px) {
   .notifications-container {
-    top: 10px;
+    top: 100px;
     right: 10px;
     left: 10px;
     max-width: calc(100% - 20px);

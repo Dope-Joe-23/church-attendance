@@ -65,7 +65,7 @@ function AppContent() {
   return (
     <div className="app">
       <NotificationRenderer />
-      {!isAuthPage && (
+      {!isAuthPage && isAuthenticated && (
         <Sidebar 
           isAuthenticated={isAuthenticated} 
           onLogout={() => setIsAuthenticated(false)}
