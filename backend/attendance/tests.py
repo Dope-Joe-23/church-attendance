@@ -155,3 +155,49 @@ class PublicCheckInSubmitTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Attendance for this service has been taken', resp.data['message'])
+
+    def test_checkin_by_last_four_digits(self):
+        """Members can type only the last 4 digits of their ID (e.g. 0001)."""
+        resp = self.client.post(
+            '/api/public/checkin/',
+            {'token': self.token, 'member_id': '0001'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(resp.data['success'])
+        self.assertEqual(resp.data['member_name'], 'Test Member')
+
+    def test_checkin_by_full_id_still_works(self):
+        """Entering the full ID keeps working alongside the 4-digit shortcut."""
+        resp = self.client.post(
+            '/api/public/checkin/',
+            {'token': self.token, 'member_id': 'wis-2026-0001'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(resp.data['success'])
+
+    def test_checkin_by_last_four_collision_rejected(self):
+        """When two members share the same last-4 digits, ask for the full ID."""
+        from members.models import Member
+
+        Member.objects.create(
+            member_id='WIS-2025-0001',
+            full_name='Other Member',
+            is_visitor=False,
+        )
+        resp = self.client.post(
+            '/api/public/checkin/',
+            {'token': self.token, 'member_id': '0001'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Multiple members', resp.data['error'])
+
+    def test_checkin_by_last_four_no_match(self):
+        resp = self.client.post(
+            '/api/public/checkin/',
+            {'token': self.token, 'member_id': '9999'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

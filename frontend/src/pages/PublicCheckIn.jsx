@@ -180,24 +180,26 @@ const PublicCheckIn = () => {
 
                   {!result?.success && (
                     <form onSubmit={handleSubmit}>
-                      <label htmlFor="checkin-member-id">Your Member ID</label>
+                      <label htmlFor="checkin-member-id">Last 4 digits of your Member ID</label>
                       <input
                         id="checkin-member-id"
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={4}
                         className="checkin-id-input"
-                        placeholder="e.g. WIS-2026-0001"
+                        placeholder="e.g. 0001"
                         value={memberId}
-                        onChange={(e) => setMemberId(e.target.value)}
+                        onChange={(e) => setMemberId(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         disabled={submitting}
-                        autoCapitalize="characters"
                         autoComplete="off"
                         autoFocus
                       />
-                      <button type="submit" className="checkin-submit-btn" disabled={submitting || !memberId.trim()}>
+                      <button type="submit" className="checkin-submit-btn" disabled={submitting || memberId.length < 4}>
                         {submitting ? 'Checking in…' : '✓ Check In'}
                       </button>
                       <p className="checkin-form-hint">
-                        Your Member ID is printed on your membership card and in your QR email.
+                        The last 4 digits of your Member ID are printed on your membership card (e.g. 0001).
                       </p>
                     </form>
                   )}

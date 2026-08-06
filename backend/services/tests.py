@@ -22,7 +22,8 @@ class ServiceCheckinQRTests(APITestCase):
     def test_checkin_qr_requires_authentication(self):
         self.client.force_authenticate(user=None)
         resp = self.client.get(f'/api/services/{self.service.id}/checkin_qr/')
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        # DRF returns 401 (NotAuthenticated) when JWT/Session auth is configured
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_checkin_qr_returns_url_and_image(self):
         resp = self.client.get(f'/api/services/{self.service.id}/checkin_qr/')

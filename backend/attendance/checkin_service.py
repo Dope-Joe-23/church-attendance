@@ -82,6 +82,46 @@ def checkin_window_status(service):
     return True, 'Check-in is open.', open_dt, close_dt
 
 
+def resolve_member(member_id):
+    """
+    Resolve a member by their full ID, or by the last 4 digits of their ID.
+
+    Member IDs look like WIS-2026-0001, so typing "0001" is enough. Full IDs
+    keep working too. Returns (member, error_response) — one of them is None.
+    """
+    member_id = (member_id or '').strip()
+    if not member_id:
+        return None, Response(
+            {'valid': False, 'success': False, 'error': 'Please enter your member ID.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # 1) Exact full-ID match first (full IDs still work, case-insensitive)
+    try:
+        return Member.objects.get(member_id__iexact=member_id), None
+    except Member.DoesNotExist:
+        pass
+
+    # 2) Last-4-digits shortcut: "0001" matches WIS-2026-0001
+    matches = Member.objects.filter(
+        member_id__iendswith=member_id,
+        is_visitor=False,  # visitors are blocked from check-in anyway
+    )
+    count = matches.count()
+    if count == 1:
+        return matches.first(), None
+    if count > 1:
+        return None, Response(
+            {'valid': False, 'success': False, 'error': 'Multiple members share this number. Please enter your full Member ID (e.g. WIS-2026-0001).'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return None, Response(
+        {'valid': False, 'success': False, 'error': f'No member found with ID "{member_id}". Please check your ID and try again.'},
+        status=status.HTTP_404_NOT_FOUND
+    )
+
+
 def perform_checkin(member, service):
     """
     Core check-in logic shared by the authenticated scanner and public self check-in.
@@ -241,21 +281,9 @@ class PublicCheckinView(APIView):
         if error:
             return error
 
-        member_id = (request.data.get('member_id') or '').strip()
-        if not member_id:
-            return Response(
-                {'valid': False, 'success': False, 'error': 'Please enter your member ID.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # Case-insensitive lookup so members typing lowercase IDs still work
-            member = Member.objects.get(member_id__iexact=member_id)
-        except Member.DoesNotExist:
-            return Response(
-                {'valid': False, 'success': False, 'error': f'No member found with ID "{member_id}". Please check your ID and try again.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        member, error = resolve_member(request.data.get('member_id'))
+        if error:
+            return error
 
         if is_template_service(service):
             return Response(
