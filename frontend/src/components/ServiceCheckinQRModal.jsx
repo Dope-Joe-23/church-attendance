@@ -206,12 +206,20 @@ const ServiceCheckinQRModal = ({ isOpen, service, onClose }) => {
             <div className="checkin-qr-display">
               <img src={qr.qr_code_image} alt="Self check-in QR code" className="checkin-qr-image" />
 
-              <div className="checkin-qr-url-box">
-                <code>{qr.checkin_url}</code>
-                <button type="button" className="checkin-copy-btn" onClick={handleCopy}>
-                  {copied ? '✓ Copied' : 'Copy'}
-                </button>
-              </div>
+              {qr.checkin_url.includes('localhost') || qr.checkin_url.includes('127.0.0.1') ? (
+                <div className="checkin-alert checkin-alert-error">
+                  <strong>⚠️ Wrong link!</strong> This QR points at <code>localhost</code> — it
+                  won't work for members. Set the <code>FRONTEND_URL</code> environment variable on
+                  the backend to your production site, then reopen this modal to regenerate the QR.
+                </div>
+              ) : (
+                <div className="checkin-qr-url-box">
+                  <code>{qr.checkin_url}</code>
+                  <button type="button" className="checkin-copy-btn" onClick={handleCopy}>
+                    {copied ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+              )}
 
               <p className="checkin-qr-hint">
                 Print this QR and post it at the church entrance. Members scan it with their phone

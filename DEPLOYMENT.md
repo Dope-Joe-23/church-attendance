@@ -282,6 +282,7 @@ server {
    DB_HOST=<your-postgres-addon-host>
    DB_PORT=<your-postgres-addon-port>
    CORS_ALLOWED_ORIGINS=https://<your-front-end>.vercel.app
+   FRONTEND_URL=https://<your-front-end>.vercel.app   # REQUIRED — used to build the self check-in QR links members scan; if unset it defaults to http://localhost:5173 and printed QRs will point at localhost!
    CELERY_BROKER_URL=redis://<render-redis-host>:6379/0   # if using Redis
    ```
    Render also offers Postgres and Redis as managed add-ons—provision those and wire the connection strings into the environment variables.

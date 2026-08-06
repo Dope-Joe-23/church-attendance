@@ -289,6 +289,13 @@ CHURCH_NAME = os.getenv('CHURCH_NAME', 'Our Church')
 # Self Check-In Configuration
 # FRONTEND_URL is used for generating the QR code URL that members scan
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+# Never let the development default leak into production QRs silently
+if not DEBUG and ('localhost' in FRONTEND_URL or '127.0.0.1' in FRONTEND_URL):
+    print(
+        'WARNING: FRONTEND_URL is still the development default. Set FRONTEND_URL to your '
+        'production frontend URL (e.g. https://your-app.vercel.app) so self check-in QRs '
+        'point at the live site.'
+    )
 # Grace period before the session start time (minutes) — check-in opens early
 CHECKIN_GRACE_BEFORE_MINUTES = int(os.getenv('CHECKIN_GRACE_BEFORE_MINUTES', '30'))
 # Grace period after the session end time (minutes) — check-in stays open late
