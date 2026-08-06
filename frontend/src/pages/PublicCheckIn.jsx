@@ -30,6 +30,8 @@ const PublicCheckIn = () => {
   const [memberId, setMemberId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [memberMatch, setMemberMatch] = useState(null); // { full_name, member_id } | { error }
+  const [lookingUp, setLookingUp] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +60,31 @@ const PublicCheckIn = () => {
     };
   }, [token]);
 
+  // Pre-check-in confirmation: as soon as 4 digits are typed, look up the member
+  // and show "Is this you?" so nobody checks in the wrong person.
+  useEffect(() => {
+    if (!info || memberId.length !== 4) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLookingUp(true);
+      setMemberMatch(null);
+      try {
+        const data = await publicCheckinApi.getInfo(token, memberId);
+        if (!cancelled) {
+          setMemberMatch(data.member_match || { error: 'No member found with this number.' });
+        }
+      } catch {
+        if (!cancelled) setMemberMatch({ error: 'Could not verify member. Please try again.' });
+      } finally {
+        if (!cancelled) setLookingUp(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [memberId, token, info]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!memberId.trim()) return;
@@ -72,6 +99,7 @@ const PublicCheckIn = () => {
           message: data.message || 'Attendance recorded successfully.',
         });
         setMemberId('');
+        setMemberMatch(null);
       } else {
         setResult({
           success: false,
@@ -96,6 +124,8 @@ const PublicCheckIn = () => {
 
   const service = info?.service || null;
   const showForm = info && info.valid && info.checkin_open && !info.attendance_taken;
+  const memberFound = !!memberMatch?.full_name;
+  const canSubmit = memberId.length === 4 && memberFound && !lookingUp && !submitting;
 
   return (
     <div className="public-checkin-page">
@@ -190,13 +220,41 @@ const PublicCheckIn = () => {
                         className="checkin-id-input"
                         placeholder="e.g. 0001"
                         value={memberId}
-                        onChange={(e) => setMemberId(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        onChange={(e) => {
+                          const next = e.target.value.replace(/\D/g, '').slice(0, 4);
+                          setMemberId(next);
+                          if (next.length !== 4) setMemberMatch(null);
+                        }}
                         disabled={submitting}
                         autoComplete="off"
                         autoFocus
                       />
-                      <button type="submit" className="checkin-submit-btn" disabled={submitting || memberId.length < 4}>
-                        {submitting ? 'Checking in…' : '✓ Check In'}
+
+                      {lookingUp && (
+                        <p className="checkin-form-hint" style={{ marginTop: '0.5rem' }}>
+                          Looking up member…
+                        </p>
+                      )}
+
+                      {!lookingUp && memberMatch?.full_name && (
+                        <div className="checkin-confirm">
+                          <div className="checkin-confirm-avatar">👤</div>
+                          <div className="checkin-confirm-text">
+                            <p className="checkin-confirm-question">Is this you?</p>
+                            <p className="checkin-confirm-name">{memberMatch.full_name}</p>
+                            <p className="checkin-confirm-note">Not you? Edit the number above.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {!lookingUp && memberMatch?.error && memberId.length === 4 && (
+                        <div className="checkin-alert checkin-alert-error" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                          {memberMatch.error}
+                        </div>
+                      )}
+
+                      <button type="submit" className="checkin-submit-btn" disabled={!canSubmit}>
+                        {submitting ? 'Checking in…' : memberFound ? "✓ Yes, Check Me In" : '✓ Check In'}
                       </button>
                       <p className="checkin-form-hint">
                         The last 4 digits of your Member ID are printed on your membership card (e.g. 0001).
@@ -205,7 +263,14 @@ const PublicCheckIn = () => {
                   )}
 
                   {result?.success && (
-                    <button type="button" className="checkin-another-btn" onClick={() => setResult(null)}>
+                    <button
+                      type="button"
+                      className="checkin-another-btn"
+                      onClick={() => {
+                        setResult(null);
+                        setMemberMatch(null);
+                      }}
+                    >
                       Check in another member
                     </button>
                   )}

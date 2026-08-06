@@ -255,6 +255,22 @@ class PublicCheckinView(APIView):
             marked_by__in=['manual', 'auto']
         ).exists()
 
+        # Optional pre-check-in confirmation: resolve the member typing their ID
+        # so the page can show "Is this you?" before the member submits.
+        member_match = None
+        member_id = (request.query_params.get('member_id') or '').strip()
+        if member_id:
+            member, resolve_error = resolve_member(member_id)
+            if member is not None:
+                member_match = {
+                    'full_name': member.full_name,
+                    'member_id': member.member_id,
+                }
+            else:
+                member_match = {
+                    'error': resolve_error.data.get('error', 'Unable to find member.')
+                }
+
         return Response({
             'valid': True,
             'service': {
@@ -274,6 +290,7 @@ class PublicCheckinView(APIView):
                 else None
             ),
             'attendance_taken': attendance_taken,
+            'member_match': member_match,
         })
 
     def post(self, request):

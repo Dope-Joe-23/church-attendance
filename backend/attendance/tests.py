@@ -56,6 +56,27 @@ class PublicCheckInInfoTests(APITestCase):
         resp = self.client.get(f'/api/public/checkin/?token={token}')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_get_info_with_member_id_returns_confirmation(self):
+        Member.objects.create(
+            member_id='WIS-2026-0001',
+            full_name='Test Member',
+            is_visitor=False,
+        )
+        resp = self.client.get(f'/api/public/checkin/?token={self.token}&member_id=0001')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['member_match']['full_name'], 'Test Member')
+        self.assertEqual(resp.data['member_match']['member_id'], 'WIS-2026-0001')
+
+    def test_get_info_with_member_id_no_match(self):
+        resp = self.client.get(f'/api/public/checkin/?token={self.token}&member_id=9999')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn('error', resp.data['member_match'])
+
+    def test_get_info_without_member_id_has_no_match(self):
+        resp = self.client.get(f'/api/public/checkin/?token={self.token}')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIsNone(resp.data['member_match'])
+
 
 class PublicCheckInSubmitTests(APITestCase):
     """POST /api/public/checkin/"""

@@ -224,6 +224,58 @@
   text-align: center;
 }
 
+/* "Is this you?" confirmation panel */
+.checkin-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: linear-gradient(135deg, #eef2ff, #fbf9ff);
+  border: 1.5px solid var(--brand-navy, #24106a);
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  margin-top: 0.9rem;
+  animation: checkin-card-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.checkin-confirm-avatar {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background: var(--brand-navy, #24106a);
+  border-radius: 50%;
+  color: #fff;
+}
+
+.checkin-confirm-text {
+  min-width: 0;
+}
+
+.checkin-confirm-question {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-500, #6b7280);
+}
+
+.checkin-confirm-name {
+  margin: 0.1rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+}
+
+.checkin-confirm-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--gray-500, #6b7280);
+}
+
 .checkin-alert {
   border-radius: 12px;
   padding: 1rem 1.1rem;
