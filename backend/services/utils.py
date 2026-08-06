@@ -336,3 +336,38 @@ def update_service_instances(parent_service, **kwargs):
         parent_service.save(update_fields=updated_fields)
     
     return len(updated_fields)
+
+def build_checkin_qr(service):
+    """
+    Build the self check-in QR for a service/session.
+
+    Lazily creates/uses the service check-in token and encodes the public
+    check-in URL (FRONTEND_URL/checkin/<token>) as a base64 PNG.
+
+    Returns:
+        (checkin_url, qr_base64)
+    """
+    import base64
+    from io import BytesIO
+
+    import qrcode
+    from django.conf import settings
+
+    token = service.get_or_create_checkin_token()
+    checkin_url = f"{settings.FRONTEND_URL.rstrip('/')}/checkin/{token}"
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(checkin_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color='black', back_color='white')
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+
+    return checkin_url, base64.b64encode(buf.getvalue()).decode('utf-8')
+

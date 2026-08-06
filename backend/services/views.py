@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import date, timedelta
 from .models import Service
 from .serializers import ServiceSerializer, ServiceDetailSerializer
-from .utils import auto_mark_absent, generate_sessions_until, get_sessions_for_range, create_service_instance
+from .utils import auto_mark_absent, generate_sessions_until, get_sessions_for_range, create_service_instance, build_checkin_qr
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
@@ -29,6 +30,15 @@ class ServiceViewSet(viewsets.ModelViewSet):
     
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
+    
+    def get_permissions(self):
+        """
+        Self check-in QR endpoints expose the check-in token, so they are
+        restricted to authenticated admin users only.
+        """
+        if self.action in ('checkin_qr', 'rotate_checkin_token'):
+            return [IsAuthenticated()]
+        return super().get_permissions()
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -221,3 +231,54 @@ class ServiceViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+    @action(detail=True, methods=['get'])
+    def checkin_qr(self, request, pk=None):
+        """
+        Get the self check-in QR code for a service/session.
+
+        Generates the check-in token lazily on first request and returns
+        the QR code (base64 PNG) encoding the public check-in URL members scan.
+        """
+        service = self.get_object()
+        if service.is_recurring and service.parent_service is None and service.date is None:
+            return Response(
+                {'error': f'"{service.name}" is a recurring service template. Select a specific session to generate its check-in QR.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            checkin_url, qr_base64 = build_checkin_qr(service)
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to generate check-in QR: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        return Response({
+            'service_id': service.id,
+            'service_name': service.name,
+            'service_date': service.date,
+            'checkin_url': checkin_url,
+            'qr_code_image': f'data:image/png;base64,{qr_base64}',
+            'qr_code_base64': qr_base64,
+        })
+
+    @action(detail=True, methods=['post'])
+    def rotate_checkin_token(self, request, pk=None):
+        """
+        Rotate a service self check-in token, invalidating old printed QRs.
+        """
+        service = self.get_object()
+        service.rotate_checkin_token()
+        try:
+            checkin_url, qr_base64 = build_checkin_qr(service)
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to regenerate check-in QR: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        return Response({
+            'message': 'Check-in QR code regenerated. Old printed QRs are no longer valid.',
+            'service_id': service.id,
+            'checkin_url': checkin_url,
+            'qr_code_image': f'data:image/png;base64,{qr_base64}',
+            'qr_code_base64': qr_base64,
+        })

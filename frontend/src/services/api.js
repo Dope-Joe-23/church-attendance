@@ -126,6 +126,16 @@ export const serviceApi = {
     });
     return response.data;
   },
+
+  getServiceCheckinQR: async (id) => {
+    const response = await apiClient.get(`/services/${id}/checkin_qr/`);
+    return response.data;
+  },
+
+  rotateServiceCheckinToken: async (id) => {
+    const response = await apiClient.post(`/services/${id}/rotate_checkin_token/`);
+    return response.data;
+  },
 };
 
 // Attendance API calls
@@ -179,6 +189,25 @@ export const attendanceApi = {
   unmarkAttendance: async (serviceId) => {
     const response = await apiClient.post('/attendance/unmark_attendance/', {
       service_id: serviceId,
+    });
+    return response.data;
+  },
+};
+
+// Public (no-account) self check-in API calls
+// Used by members scanning a printed QR code — no login required.
+export const publicCheckinApi = {
+  getInfo: async (token) => {
+    const response = await apiClient.get('/public/checkin/', {
+      params: { token },
+    });
+    return response.data;
+  },
+
+  checkIn: async (token, memberId) => {
+    const response = await apiClient.post('/public/checkin/', {
+      token,
+      member_id: memberId,
     });
     return response.data;
   },

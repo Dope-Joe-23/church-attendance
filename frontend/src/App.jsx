@@ -11,6 +11,7 @@ import {
   Scanner,
   Reports,
   CareDashboard,
+  PublicCheckIn,
 } from './pages';
 import InvitationCodesPage from './pages/InvitationCodes';
 import authService from './services/authService';
@@ -20,6 +21,7 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/sidebar.css';
 import './styles/invitation-manager.css';
+import './styles/checkin.css';
 
 function AppContent() {
   const location = useLocation();
@@ -30,8 +32,10 @@ function AppContent() {
   // Monitor internet connectivity
   useInternetStatus();
 
-  // Determine if we're on an auth page
-  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  // Determine if we're on an auth page or a public page (no sidebar)
+  const isAuthPage =
+    ['/login', '/register'].includes(location.pathname) ||
+    location.pathname.startsWith('/checkin');
 
   // Check authentication status on mount and whenever storage changes
   useEffect(() => {
@@ -119,6 +123,7 @@ function AppContent() {
               path="/invitations"
               element={<ProtectedRoute element={<InvitationCodesPage />} />}
             />
+            <Route path="/checkin/:token" element={<PublicCheckIn />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

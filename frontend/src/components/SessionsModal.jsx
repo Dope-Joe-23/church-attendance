@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaChartBar, FaClipboardCheck, FaSpinner, FaTrash } from 'react-icons/fa';
+import { FaChartBar, FaClipboardCheck, FaQrcode, FaSpinner, FaTrash } from 'react-icons/fa';
 import '../styles/components.css';
 
 const SessionsModal = ({
@@ -13,6 +13,7 @@ const SessionsModal = ({
   addDateError,
   onSessionAdded,
   onDeleteSession,
+  onCheckinQR,
   mode = 'attendance', // 'attendance' or 'report'
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -161,6 +162,17 @@ const SessionsModal = ({
                       >
                         {mode === 'report' ? <FaChartBar /> : <FaClipboardCheck />}
                       </button>
+                      {onCheckinQR && (
+                        <button
+                          className="session-icon-action session-icon-action-info"
+                          onClick={() => onCheckinQR(session)}
+                          disabled={deletingSessionId === session.id}
+                          title="Self check-in QR code for this session"
+                          aria-label="Self check-in QR code"
+                        >
+                          <FaQrcode />
+                        </button>
+                      )}
                       {onDeleteSession && (
                         <button
                           className="session-icon-action session-icon-action-danger"

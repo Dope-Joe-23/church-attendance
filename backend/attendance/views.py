@@ -4,29 +4,15 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 import logging
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
-from .tasks import schedule_member_absenteeism_update
+from .checkin_service import perform_checkin
 from services.models import Service
 from members.models import Member
 
 logger = logging.getLogger(__name__)
 
-
-def serialize_checkin_attendance(attendance):
-    """Small check-in response payload; avoids sending nested QR image data."""
-    return {
-        'id': attendance.id,
-        'member': attendance.member_id,
-        'member_id': attendance.member.member_id,
-        'member_name': attendance.member.full_name,
-        'service': attendance.service_id,
-        'status': attendance.status,
-        'check_in_time': attendance.check_in_time,
-        'created_at': attendance.created_at,
-    }
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -71,70 +57,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         try:
             member = Member.objects.get(member_id=member_id)
             service = Service.objects.get(id=service_id)
-            
-            # Prevent attendance on parent recurring services (template/label only)
-            # Parent recurring services have: is_recurring=True, parent_service=None, date=None
-            if service.is_recurring and service.parent_service is None and service.date is None:
-                return Response({
-                    'success': False,
-                    'message': f'"{service.name}" is a recurring service template. Please select a specific session/date to check in.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Check if member is a visitor - visitors cannot check in for attendance
-            if member.is_visitor:
-                return Response({
-                    'success': False,
-                    'message': f'{member.full_name} is listed as a visitor and is not tracked in attendance.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Check if attendance for this service has already been marked (manually or automatically)
-            # This prevents check-ins after attendance marking has been finalized
-            manual_attendance_exists = Attendance.objects.filter(
-                service=service,
-                marked_by__in=['manual', 'auto']
-            ).exists()
-            
-            if manual_attendance_exists:
-                return Response({
-                    'success': False,
-                    'message': 'Attendance for this service has been taken',
-                    'attendance': None
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Check if already checked in
-            attendance, created = Attendance.objects.get_or_create(
-                member=member,
-                service=service,
-                defaults={
-                    'status': 'present',
-                    'marked_by': 'check_in',
-                }
-            )
-            
-            if created:
-                # Reset consecutive absences on successful check-in
-                member.consecutive_absences = 0
-                member.last_attendance_date = timezone.now().date()
-                member.save(update_fields=['consecutive_absences', 'last_attendance_date'])
-                
-                # Update heavier absenteeism metrics and alerts off the request path
-                # so QR check-in responses stay fast at the door.
-                schedule_member_absenteeism_update(member.id)
-                
-                return Response({
-                    'success': True,
-                    'message': f'{member.full_name} checked in successfully',
-                    'member_name': member.full_name,
-                    'attendance': serialize_checkin_attendance(attendance)
-                }, status=status.HTTP_201_CREATED)
-            else:
-                return Response({
-                    'success': False,
-                    'message': f'{member.full_name} is already checked in for this service',
-                    'member_name': member.full_name,
-                    'attendance': serialize_checkin_attendance(attendance)
-                }, status=status.HTTP_200_OK)
-        
         except Member.DoesNotExist:
             return Response({
                 'success': False,
@@ -145,6 +67,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 'success': False,
                 'message': f'Service with ID {service_id} not found'
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        _, http_status, payload = perform_checkin(member, service)
+        return Response(payload, status=http_status)
     
     @action(detail=False, methods=['get'])
     def by_service(self, request):

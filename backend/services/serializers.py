@@ -25,5 +25,19 @@ class ServiceSerializer(serializers.ModelSerializer):
 class ServiceDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
-        fields = '__all__'
+        fields = [
+            'id',
+            'name',
+            'date',
+            'start_time',
+            'end_time',
+            'description',
+            'location',
+            'is_recurring',
+            'recurrence_pattern',
+            'parent_service',
+            'generated_until',
+            'created_at',
+            'updated_at',
+        ]
         read_only_fields = ['id', 'created_at', 'updated_at']

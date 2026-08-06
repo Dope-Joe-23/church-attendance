@@ -149,7 +149,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Accra'
 
 USE_I18N = True
 
@@ -285,6 +285,15 @@ if EMAIL_USE_TLS and EMAIL_USE_SSL:
 
 # Church Configuration
 CHURCH_NAME = os.getenv('CHURCH_NAME', 'Our Church')
+
+# Self Check-In Configuration
+# FRONTEND_URL is used for generating the QR code URL that members scan
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+# Grace period before the session start time (minutes) — check-in opens early
+CHECKIN_GRACE_BEFORE_MINUTES = int(os.getenv('CHECKIN_GRACE_BEFORE_MINUTES', '30'))
+# Grace period after the session end time (minutes) — check-in stays open late
+CHECKIN_GRACE_AFTER_MINUTES = int(os.getenv('CHECKIN_GRACE_AFTER_MINUTES', '15'))
+
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
@@ -294,6 +303,14 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+# Public check-in throttle rates
+# These are per-IP rate limits for the unauthenticated self check-in endpoints
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    # Generous defaults: members often check in from shared church Wi-Fi
+    'public_checkin': os.getenv('PUBLIC_CHECKIN_RATE', '120/min'),
+    'public_checkin_info': os.getenv('PUBLIC_CHECKIN_INFO_RATE', '240/min'),
+}
 
 # Celery Connection Settings for production resilience
 # Set to True in development/testing to execute tasks synchronously

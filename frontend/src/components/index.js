@@ -12,6 +12,7 @@ export { default as AttendanceScanner } from './AttendanceScanner';
 export { default as AttendanceReport } from './AttendanceReport';
 export { default as Navigation } from './Navigation';
 export { default as QRCodeModal } from './QRCodeModal';
+export { default as ServiceCheckinQRModal } from './ServiceCheckinQRModal';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as Sidebar } from './Sidebar';

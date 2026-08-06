@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport, LoadingSpinner } from '../components';
+import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport, LoadingSpinner, ServiceCheckinQRModal } from '../components';
 import '../styles/pages.css';
 
 const Services = () => {
@@ -13,6 +13,8 @@ const Services = () => {
   const [selectedServiceForSessions, setSelectedServiceForSessions] = useState(null);
   const [selectedSessionForAttendance, setSelectedSessionForAttendance] = useState(null);
   const [selectedSessionForReport, setSelectedSessionForReport] = useState(null);
+  const [showCheckinQRModal, setShowCheckinQRModal] = useState(false);
+  const [selectedServiceForQR, setSelectedServiceForQR] = useState(null);
   const [sessionsList, setSessionsList] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [addDateError, setAddDateError] = useState(null);
@@ -198,6 +200,34 @@ const Services = () => {
     }
   };
 
+  const handleViewCheckinQR = async (service) => {
+    // Recurring templates have no date — open the sessions list so the admin picks a session
+    if (service.is_recurring && !service.parent_service) {
+      setSelectedServiceForSessions(service);
+      setModalMode('checkin_qr');
+      setSessionsLoading(true);
+      try {
+        const instances = services.filter((s) => s.parent_service === service.id);
+        setSessionsList(instances);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+      } finally {
+        setSessionsLoading(false);
+      }
+      setShowSessionsModal(true);
+    } else {
+      setSelectedServiceForQR(service);
+      setShowCheckinQRModal(true);
+    }
+  };
+
+  const handleCheckinQRSession = (session) => {
+    setShowSessionsModal(false);
+    setModalMode(null);
+    setSelectedServiceForQR(session);
+    setShowCheckinQRModal(true);
+  };
+
   const handleViewReport = async (service) => {
     // For recurring parent services, show sessions modal with report mode
     if (service.is_recurring && !service.parent_service) {
@@ -324,7 +354,18 @@ const Services = () => {
         addDateError={addDateError}
         onSessionAdded={handleSessionAdded}
         onDeleteSession={handleDeleteSession}
+        onCheckinQR={handleCheckinQRSession}
         mode={modalMode || 'attendance'}
+      />
+
+      {/* Self Check-in QR Modal */}
+      <ServiceCheckinQRModal
+        isOpen={showCheckinQRModal}
+        service={selectedServiceForQR}
+        onClose={() => {
+          setShowCheckinQRModal(false);
+          setSelectedServiceForQR(null);
+        }}
       />
 
       {/* Scanner Modal */}
@@ -410,6 +451,7 @@ const Services = () => {
             onDelete={handleDelete}
             onSelect={handleViewSessions}
             onReport={handleViewReport}
+            onCheckinQR={handleViewCheckinQR}
           />
         </>
       )}

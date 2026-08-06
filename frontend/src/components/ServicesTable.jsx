@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { serviceApi } from '../services/api';
+import React from 'react';
 import '../styles/components.css';
 
-const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
+const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport, onCheckinQR }) => {
   // Filter to only show parent services (not session instances)
   const parentServices = services.filter(s => !s.parent_service);
   
@@ -52,6 +51,11 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
               {onReport && (
                 <button className="btn btn-secondary" onClick={() => onReport(service)}>
                   Report
+                </button>
+              )}
+              {onCheckinQR && (
+                <button className="btn btn-secondary" onClick={() => onCheckinQR(service)}>
+                  Check-in QR
                 </button>
               )}
               <button className="btn btn-secondary" onClick={() => onEdit(service)}>
@@ -131,6 +135,15 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport }) => {
                         title="View Report"
                       >
                         📊
+                      </button>
+                    )}
+                    {onCheckinQR && (
+                      <button
+                        className="btn-icon checkin-qr-icon"
+                        onClick={() => onCheckinQR(service)}
+                        title="Self Check-in QR Code"
+                      >
+                        📲
                       </button>
                     )}
                     <button
