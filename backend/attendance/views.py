@@ -137,7 +137,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             attendances = Attendance.objects.filter(service=service)\
                 .select_related('member', 'service', 'service__parent_service')\
                 .only(
-                    'id', 'check_in_time', 'status', 'is_auto_marked', 'notes', 'created_at',
+                    'id', 'member', 'check_in_time', 'status', 'is_auto_marked', 'notes', 'created_at',
                     'member__id', 'member__member_id', 'member__full_name',
                     'member__sex', 'member__department', 'member__class_name',
                     'member__phone', 'member__email', 'member__date_of_birth',
