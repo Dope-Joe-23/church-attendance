@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/components.css';
 
 const DEPARTMENT_CHOICES = [
@@ -399,47 +398,56 @@ const MemberFormModal = ({
                     <span>QR code requires internet to generate</span>
                   </div>
                 </div>
-                <p className="qr-link-text">
-                  {window.location.origin}/register-member
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-primary print-qr-btn"
-                  onClick={() => {
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.origin + '/register-member')}`;
-                    const printWindow = window.open('', '_blank', 'width=400,height=500');
-                    printWindow.document.write(`
-                      <!DOCTYPE html>
-                      <html>
-                      <head>
-                        <title>Registration QR Code</title>
-                        <style>
-                          body { font-family: Arial, sans-serif; text-align: center; padding: 30px; margin: 0; }
-                          h2 { margin-bottom: 5px; color: #333; }
-                          .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
-                          img { width: 250px; height: 250px; border: 2px solid #ddd; border-radius: 8px; }
-                          .url { font-family: monospace; font-size: 13px; color: #6366f1; margin-top: 15px; word-break: break-all; }
-                          .footer { margin-top: 20px; color: #999; font-size: 12px; }
-                          @media print {
-                            body { padding: 20px; }
-                            .no-print { display: none; }
-                          }
-                        </style>
-                      </head>
-                      <body>
-                        <h2><img src="${wisLogo}" style="height:28px;vertical-align:middle;margin-right:6px;" />Scan to Register</h2>
-                        <p class="subtitle">Wesleyan International Society — Sunyani</p>
-                        <img src="${qrUrl}" alt="Registration QR Code" onload="setTimeout(()=>window.print(), 500)" />
-                        <p class="url">${window.location.origin}/register-member</p>
-                        <p class="footer">Scan this code with your phone camera to register as a member</p>
-                      </body>
-                      </html>
-                    `);
-                    printWindow.document.close();
-                  }}
-                >
-                  🖨️ Print QR Code
-                </button>
+                <div className="qr-buttons">
+                  <button
+                    type="button"
+                    className="btn btn-primary print-qr-btn"
+                    onClick={() => {
+                      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.origin + '/register-member')}`;
+                      const printWindow = window.open('', '_blank', 'width=400,height=500');
+                      printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                          <title>Registration QR Code</title>
+                          <style>
+                            body { font-family: Arial, sans-serif; text-align: center; padding: 30px; margin: 0; }
+                            h2 { margin-bottom: 5px; color: #333; }
+                            .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+                            img { width: 250px; height: 250px; border: 2px solid #ddd; border-radius: 8px; }
+                            .footer { margin-top: 20px; color: #999; font-size: 12px; }
+                            @media print { body { padding: 20px; } }
+                          </style>
+                        </head>
+                        <body>
+                          <h2>Scan to Register</h2>
+                          <p class="subtitle">Wesleyan International Society — Sunyani</p>
+                          <img src="${qrUrl}" alt="Registration QR Code" onload="setTimeout(()=>window.print(), 500)" />
+                          <p class="footer">Scan this code with your phone camera to register as a member</p>
+                        </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
+                    }}
+                  >
+                    🖨️ Print QR Code
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary download-qr-btn"
+                    onClick={() => {
+                      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.origin + '/register-member')}`;
+                      const link = document.createElement('a');
+                      link.href = qrUrl;
+                      link.download = 'registration_qr_code.png';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    ⬇️ Download PNG
+                  </button>
+                </div>
               </div>
             </details>
           </div>

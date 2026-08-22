@@ -309,7 +309,7 @@
   letter-spacing: 0.1em;
 }
 
-/* Success QR Card */
+/* Success Membership Card */
 
 .success-qr-card {
   background: #fff;
@@ -344,39 +344,27 @@
   color: #6b7280;
 }
 
-.success-qr-display {
-  position: relative;
-  display: inline-block;
+.success-card-display {
+  display: flex;
+  justify-content: center;
   margin-bottom: 1.25rem;
 }
 
-.success-qr-image {
-  width: 200px;
-  height: 200px;
+.success-membership-card {
+  width: 100%;
+  max-width: 350px;
+  height: auto;
   border: 3px solid #e5e7eb;
   border-radius: 12px;
-  padding: 8px;
-  background: #fff;
   display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.success-qr-overlay {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(36, 16, 106, 0.92);
-  color: #f3c316;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-}
-
-.qr-overlay-id {
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-family: monospace;
+.card-loading {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .success-qr-actions {

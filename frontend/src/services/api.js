@@ -57,6 +57,18 @@ export const memberApi = {
     const response = await apiClient.get(`/members/${id}/qr_code/`);
     return response.data;
   },
+
+  getMembershipCardData: async (id) => {
+    const response = await apiClient.get(`/members/${id}/membership_card_data/`);
+    return response.data;
+  },
+
+  downloadMembershipCard: async (id) => {
+    const response = await apiClient.get(`/members/${id}/membership_card/`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 // Service API calls

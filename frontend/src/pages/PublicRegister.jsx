@@ -135,15 +135,53 @@ const PublicRegister = () => {
     setFieldErrors((prev) => ({ ...prev, email: validateEmail(fullEmail) }));
   };
 
-  // Download QR code as PNG
-  const downloadQR = () => {
-    if (!result?.data?.member?.qr_code_data) return;
+  // Download styled membership card
+  const [cardDataUri, setCardDataUri] = useState(null);
+  const [loadingCard, setLoadingCard] = useState(false);
+
+  const fetchMembershipCard = async (memberId) => {
+    setLoadingCard(true);
+    try {
+      const resp = await apiClient.get(`/members/${memberId}/membership_card_data/`);
+      setCardDataUri(resp.data.card_data_uri);
+    } catch (err) {
+      console.error('Failed to load membership card:', err);
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
+  const downloadCard = () => {
+    const dataUri = cardDataUri;
+    if (!dataUri) return;
     const link = document.createElement('a');
-    link.href = `data:image/png;base64,${result.data.member.qr_code_data}`;
-    link.download = `qr_code_${result.data.member.member_id}.png`;
+    link.href = dataUri;
+    link.download = `membership_card_${result.data.member.member_id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const printCard = () => {
+    if (!cardDataUri) return;
+    const printWindow = window.open('', '_blank', 'width=650,height=950');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Membership Card - ${result.data.member.member_id}</title>
+        <style>
+          body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: #fff; }
+          img { max-width: 100%; height: auto; }
+          @media print { body { padding: 10px; } }
+        </style>
+      </head>
+      <body>
+        <img src="${cardDataUri}" onload="setTimeout(()=>window.print(), 400)" />
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleSubmit = async (e) => {
@@ -195,13 +233,20 @@ const PublicRegister = () => {
   if (result?.success) {
     const memberName = result.data.member.full_name;
     const memberId = result.data.member.member_id;
-    const qrData = result.data.member.qr_code_data;
+    const memberPk = result.data.member.id;
+
+    // Fetch membership card on first render
+    React.useEffect(() => {
+      if (memberPk && !cardDataUri && !loadingCard) {
+        fetchMembershipCard(memberPk);
+      }
+    }, [memberPk]);
 
     return (
       <div className="public-register-page">
         <div className="register-card">
           <div className="register-card-header success-header">
-            <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '18px', verticalAlign: 'middle', marginRight: '6px', borderRadius: '3px'}} /> WIS Sunyani</span>
+            <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '14px', verticalAlign: 'middle', marginRight: '4px', borderRadius: '2px'}} /> WIS Sunyani</span>
             <div className="success-checkmark">✅</div>
             <h1>Welcome, {memberName}!</h1>
             <p>You have been successfully registered</p>
@@ -213,79 +258,53 @@ const PublicRegister = () => {
               <span className="member-id-value">{memberId}</span>
             </div>
 
-            {/* Personal QR Code Card */}
-            {qrData && (
-              <div className="success-qr-card">
-                <div className="success-qr-header">
-                  <span className="qr-icon">📱</span>
-                  <div>
-                    <h3>Your Personal QR Code</h3>
-                    <p>Show this at church for check-in</p>
-                  </div>
-                </div>
-
-                <div className="success-qr-display">
-                  <img
-                    src={`data:image/png;base64,${qrData}`}
-                    alt={`${memberName}'s QR Code`}
-                    className="success-qr-image"
-                    id="member-qr-img"
-                  />
-                  <div className="success-qr-overlay">
-                    <span className="qr-overlay-id">{memberId}</span>
-                  </div>
-                </div>
-
-                <div className="success-qr-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary download-qr-btn"
-                    onClick={downloadQR}
-                  >
-                    ⬇️ Download QR Code
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary download-qr-btn"
-                    onClick={() => {
-                      const qrUrl = `data:image/png;base64,${qrData}`;
-                      const printWindow = window.open('', '_blank', 'width=400,height=550');
-                      printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                          <title>Membership Card - ${memberId}</title>
-                          <style>
-                            body { font-family: Arial, sans-serif; text-align: center; padding: 30px; margin: 0; }
-                            h2 { margin: 0 0 5px; color: #333; font-size: 18px; }
-                            .subtitle { color: #666; margin-bottom: 15px; font-size: 13px; }
-                            .qr-container { display: inline-block; padding: 15px; border: 2px solid #e5e7eb; border-radius: 12px; background: #fff; }
-                            img { width: 220px; height: 220px; display: block; }
-                            .id-badge { margin-top: 15px; font-size: 22px; font-weight: 800; color: #4f46e5; letter-spacing: 0.1em; font-family: monospace; }
-                            .name { margin: 5px 0 0; color: #374151; font-size: 14px; }
-                            .footer { margin-top: 20px; color: #999; font-size: 11px; }
-                            @media print { body { padding: 20px; } }
-                          </style>
-                        </head>
-                        <body>
-                          <div class="qr-container">
-                            <img src="${qrUrl}" />
-                          </div>
-                          <div class="id-badge">${memberId}</div>
-                          <p class="name">${memberName}</p>
-                          <p class="subtitle"><img src="${wisLogo}" style="height:20px;vertical-align:middle;margin-right:4px;border-radius:3px;" />Wesleyan International Society — Sunyani</p>
-                          <p class="footer">Present this QR code at church for attendance check-in</p>
-                        </body>
-                        </html>
-                      `);
-                      printWindow.document.close();
-                    }}
-                  >
-                    🖨️ Print Card
-                  </button>
+            {/* Styled Membership Card */}
+            <div className="success-qr-card">
+              <div className="success-qr-header">
+                <span className="qr-icon">🪪</span>
+                <div>
+                  <h3>Your Membership Card</h3>
+                  <p>Show this at church for check-in</p>
                 </div>
               </div>
-            )}
+
+              <div className="success-card-display">
+                {loadingCard ? (
+                  <div className="card-loading">
+                    <p>Generating your membership card...</p>
+                  </div>
+                ) : cardDataUri ? (
+                  <img
+                    src={cardDataUri}
+                    alt={`${memberName}'s Membership Card`}
+                    className="success-membership-card"
+                  />
+                ) : (
+                  <div className="card-loading">
+                    <p>Card unavailable. You can still check in with your Member ID.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="success-qr-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary download-qr-btn"
+                  onClick={downloadCard}
+                  disabled={!cardDataUri}
+                >
+                  ⬇️ Download Card
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary download-qr-btn"
+                  onClick={printCard}
+                  disabled={!cardDataUri}
+                >
+                  🖨️ Print Card
+                </button>
+              </div>
+            </div>
 
             <p className="success-note">
               📌 <strong>Save your Member ID:</strong> {memberId}<br/>
@@ -310,7 +329,8 @@ const PublicRegister = () => {
   return (
     <div className="public-register-page">
       <div className="register-card">
-        <div className="register-card-header">              <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '18px', verticalAlign: 'middle', marginRight: '6px', borderRadius: '3px'}} /> WIS Sunyani</span>
+        <div className="register-card-header">
+              <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '14px', verticalAlign: 'middle', marginRight: '4px', borderRadius: '2px'}} /> WIS Sunyani</span>
               <h1>Member Registration</h1>
           <p>Fill in your details to join the church database</p>
         </div>

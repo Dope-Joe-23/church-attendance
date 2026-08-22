@@ -132,7 +132,7 @@ const PublicCheckIn = () => {
     <div className="public-checkin-page">
       <div className="checkin-card">
         <div className="checkin-card-header">
-          <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '18px', verticalAlign: 'middle', marginRight: '6px', borderRadius: '3px'}} /> {info?.church_name || 'Church'}</span>
+          <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '14px', verticalAlign: 'middle', marginRight: '4px', borderRadius: '2px'}} /> {info?.church_name || 'Church'}</span>
           <h1>Self Check-In</h1>
           <p>Scan &amp; check in — no account needed</p>
         </div>

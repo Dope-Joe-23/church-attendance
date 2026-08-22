@@ -276,6 +276,44 @@ class MemberViewSet(viewsets.ModelViewSet):
             status=status.HTTP_404_NOT_FOUND
         )
 
+    @action(detail=True, methods=['get'])
+    def membership_card(self, request, pk=None):
+        """Generate and return a styled membership card PNG with member details and QR code."""
+        from .qr_card_generator import generate_qr_code_card, get_card_as_base64
+        from django.http import HttpResponse
+        member = self.get_object()
+        try:
+            card_png = generate_qr_code_card(member, format='png')
+            return HttpResponse(card_png, content_type='image/png',
+                                headers={
+                                    'Content-Disposition': f'attachment; filename="membership_card_{member.member_id}.png"'
+                                })
+        except Exception as e:
+            logger.error(f"Error generating membership card: {str(e)}")
+            return Response(
+                {'error': f'Failed to generate card: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['get'])
+    def membership_card_data(self, request, pk=None):
+        """Return styled membership card as base64 data URI for embedding."""
+        from .qr_card_generator import get_card_as_data_uri
+        member = self.get_object()
+        try:
+            card_data_uri = get_card_as_data_uri(member, format='png')
+            return Response({
+                'card_data_uri': card_data_uri,
+                'member_id': member.member_id,
+                'member_name': member.full_name
+            })
+        except Exception as e:
+            logger.error(f"Error generating membership card data: {str(e)}")
+            return Response(
+                {'error': f'Failed to generate card: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     @action(detail=True, methods=['post'])
     def send_qr_email(self, request, pk=None):
         """Send QR code email to member"""
