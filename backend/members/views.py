@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric, InvitationCode
 from .serializers import (
-    MemberSerializer, MemberDetailSerializer, MemberAlertSerializer, 
+    MemberSerializer, MemberListSerializer, MemberDetailSerializer, MemberAlertSerializer, 
     ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer,
     InvitationCodeSerializer
 )
@@ -197,12 +197,12 @@ class MemberViewSet(viewsets.ModelViewSet):
     """
     
     queryset = Member.objects.all()
-    serializer_class = MemberSerializer
+    serializer_class = MemberListSerializer
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return MemberDetailSerializer
-        return MemberSerializer
+        return MemberListSerializer
     
     def create(self, request, *args, **kwargs):
         """

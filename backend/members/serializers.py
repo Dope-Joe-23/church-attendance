@@ -113,28 +113,139 @@ class MemberSerializer(serializers.ModelSerializer):
         return member
 
 
+class MemberListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list/create/update views.
+    Excludes qr_code_data (large base64 blobs) to prevent
+    UTF-8 decode crashes on Python 3.14 / psycopg3."""
+    qr_code_image = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Member
+        fields = [
+            'id',
+            'member_id',
+            'full_name',
+            'date_of_birth',
+            'sex',
+            'phone',
+            'email',
+            'place_of_residence',
+            'profession',
+            'department',
+            'class_name',
+            'committee',
+            'marital_status',
+            'is_visitor',
+            'baptised',
+            'confirmed',
+            'qr_code_image',
+            'consecutive_absences',
+            'last_attendance_date',
+            'attendance_status',
+            'engagement_score',
+            'last_contact_date',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'member_id', 'qr_code_image', 'created_at', 'updated_at', 
+                           'consecutive_absences', 'last_attendance_date', 'attendance_status', 
+                           'engagement_score', 'last_contact_date']
+    
+    def get_qr_code_image(self, obj):
+        """Return file URL for QR image. Never accesses qr_code_data."""
+        if obj.qr_code_image:
+            return obj.qr_code_image.url
+        return None
+    
+    def validate_full_name(self, value):
+        """Validate that full_name is not empty"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Full name is required and cannot be empty.")
+        return value.strip()
+    
+    def validate_email(self, value):
+        """Validate email - must be a Gmail address and check uniqueness"""
+        if value:
+            value = value.lower().strip()
+            if not value.endswith('@gmail.com'):
+                raise serializers.ValidationError(
+                    "Only Gmail addresses are accepted. Please use a @gmail.com address."
+                )
+            existing = Member.objects.filter(email=value, is_visitor=False).exclude(
+                pk=self.instance.pk if self.instance else None
+            )
+            if existing.exists():
+                raise serializers.ValidationError("A non-visitor member with this email already exists.")
+        return value
+    
+    def validate_phone(self, value):
+        """Validate phone number - must be exactly 10 digits"""
+        if value:
+            value = value.strip()
+            digits_only = re.sub(r'\D', '', value)
+            if len(digits_only) != 10:
+                raise serializers.ValidationError(
+                    "Phone number must be exactly 10 digits. "
+                    f"You entered {len(digits_only)} digit(s)."
+                )
+            return digits_only
+        return value
+    
+    def validate(self, data):
+        """Validate overall member data"""
+        email = data.get('email')
+        phone = data.get('phone')
+        is_visitor = data.get('is_visitor', False)
+        
+        email_provided = email and str(email).strip()
+        phone_provided = phone and str(phone).strip()
+        
+        if not email_provided and not phone_provided:
+            if not is_visitor:
+                raise serializers.ValidationError({
+                    'non_field_errors': [
+                        "At least one contact method (email or phone) is required for non-visitor members."
+                    ]
+                })
+        return data
+    
+    def create(self, validated_data):
+        """Create member and trigger QR code generation"""
+        member = Member.objects.create(**validated_data)
+        return member
+
+
+
+
 class MemberDetailSerializer(serializers.ModelSerializer):
     alerts = serializers.SerializerMethodField()
     absenteeism_alerts = serializers.SerializerMethodField()
     absenteeism_metric = serializers.SerializerMethodField()
     recent_contacts = serializers.SerializerMethodField()
     attendance_history = serializers.SerializerMethodField()
-    # Override qr_code_image to return base64 data (or URL if data unavailable)
+    # Override qr_code_image to return file URL (not base64 data)
     qr_code_image = serializers.SerializerMethodField()
     
     class Meta:
         model = Member
-        fields = '__all__'
-        read_only_fields = ['id', 'member_id', 'qr_code_image', 'qr_code_data', 'created_at', 'updated_at',
+        fields = [
+            'id', 'member_id', 'full_name', 'date_of_birth', 'sex',
+            'phone', 'email', 'place_of_residence', 'profession',
+            'department', 'class_name', 'committee', 'marital_status',
+            'is_visitor', 'baptised', 'confirmed', 'qr_code_image',
+            'consecutive_absences', 'last_attendance_date', 'attendance_status',
+            'engagement_score', 'last_contact_date', 'current_absenteeism_ratio',
+            'pastoral_notes', 'created_at', 'updated_at',
+            'alerts', 'absenteeism_alerts', 'absenteeism_metric',
+            'recent_contacts', 'attendance_history',
+        ]
+        read_only_fields = ['id', 'member_id', 'qr_code_image', 'created_at', 'updated_at',
                            'consecutive_absences', 'last_attendance_date', 'attendance_status',
                            'engagement_score', 'last_contact_date', 'current_absenteeism_ratio']
     
     def get_qr_code_image(self, obj):
-        """Return base64 QR code data if available, otherwise return URL.
-        This avoids CORS/CORB issues when displaying images from different origins."""
-        if obj.qr_code_data:
-            return f"data:image/png;base64,{obj.qr_code_data}"
-        elif obj.qr_code_image:
+        """Return file URL for QR image. Never accesses qr_code_data."""
+        if obj.qr_code_image:
             return obj.qr_code_image.url
         return None
     
