@@ -114,9 +114,9 @@ class MemberSerializer(serializers.ModelSerializer):
 
 
 class MemberListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list/create/update views.
-    Excludes qr_code_data (large base64 blobs) to prevent
-    UTF-8 decode crashes on Python 3.14 / psycopg3."""
+    """Serializer for list/create/update views.
+    Returns qr_code_data as a data URI for display. Falls back to
+    file URL if base64 data is unavailable."""
     qr_code_image = serializers.SerializerMethodField()
     
     class Meta:
@@ -152,8 +152,10 @@ class MemberListSerializer(serializers.ModelSerializer):
                            'engagement_score', 'last_contact_date']
     
     def get_qr_code_image(self, obj):
-        """Return file URL for QR image. Never accesses qr_code_data."""
-        if obj.qr_code_image:
+        """Return base64 QR code data as data URI, or file URL as fallback."""
+        if obj.qr_code_data:
+            return f"data:image/png;base64,{obj.qr_code_data}"
+        elif obj.qr_code_image:
             return obj.qr_code_image.url
         return None
     
@@ -223,7 +225,7 @@ class MemberDetailSerializer(serializers.ModelSerializer):
     absenteeism_metric = serializers.SerializerMethodField()
     recent_contacts = serializers.SerializerMethodField()
     attendance_history = serializers.SerializerMethodField()
-    # Override qr_code_image to return file URL (not base64 data)
+    # Override qr_code_image to return base64 data (or URL if data unavailable)
     qr_code_image = serializers.SerializerMethodField()
     
     class Meta:
@@ -244,8 +246,10 @@ class MemberDetailSerializer(serializers.ModelSerializer):
                            'engagement_score', 'last_contact_date', 'current_absenteeism_ratio']
     
     def get_qr_code_image(self, obj):
-        """Return file URL for QR image. Never accesses qr_code_data."""
-        if obj.qr_code_image:
+        """Return base64 QR code data as data URI, or file URL as fallback."""
+        if obj.qr_code_data:
+            return f"data:image/png;base64,{obj.qr_code_data}"
+        elif obj.qr_code_image:
             return obj.qr_code_image.url
         return None
     

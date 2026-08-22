@@ -135,7 +135,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             
             # --- Serializer data (with .only() to exclude qr_code_data) ---
             attendances = Attendance.objects.filter(service=service)\
-                .select_related('service', 'service__parent_service')\
+                .select_related('member', 'service', 'service__parent_service')\
                 .only(
                     'id', 'check_in_time', 'status', 'is_auto_marked', 'notes', 'created_at',
                     'member__id', 'member__member_id', 'member__full_name',
