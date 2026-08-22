@@ -96,60 +96,103 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to view attendance.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # --- Statistics via aggregation queries (no .only() on these paths) ---
-            # These use fresh querysets to avoid touching qr_code_data, which
-            # can cause UTF-8 decode errors on Python 3.14 / psycopg3.
-            from django.db.models import Count
-            base_att = Attendance.objects.filter(service=service)
+            # --- ALL queries use raw SQL to avoid qr_code_data crashes ---
+            # The ORM keeps finding paths to read qr_code_data even with
+            # .only() and select_related, so we bypass it entirely.
+            from django.db import connection
+            from django.utils.dateformat import format as date_format
             
-            status_counts = dict(
-                base_att.values_list('status').annotate(c=Count('id')).values_list('status', 'c')
-            )
-            total_present = status_counts.get('present', 0)
-            total_absent = status_counts.get('absent', 0)
-            total_late = status_counts.get('late', 0)
-            
-            # Sex-based statistics for present members
-            sex_counts = dict(
-                base_att.filter(status='present')
-                .values_list('member__sex').annotate(c=Count('id'))
-                .values_list('member__sex', 'c')
-            )
-            male_present = sex_counts.get('male', 0)
-            female_present = sex_counts.get('female', 0)
-            
-            # Attendance by class (single GROUP BY query)
-            class_agg = (
-                base_att.filter(member__class_name__isnull=False)
-                .values('member__class_name', 'status')
-                .annotate(c=Count('id'))
-            )
-            class_stats = {}
-            for row in class_agg:
-                cname = row['member__class_name']
-                if cname not in class_stats:
-                    class_stats[cname] = {'present': 0, 'absent': 0, 'total': 0}
-                class_stats[cname][row['status']] = row['c']
-                class_stats[cname]['total'] += row['c']
-            class_stats = dict(sorted(class_stats.items()))
-            
-            # --- Serializer data (with .only() to exclude qr_code_data) ---
-            attendances = Attendance.objects.filter(service=service)\
-                .select_related('member', 'service', 'service__parent_service')\
-                .only(
-                    'id', 'member', 'check_in_time', 'status', 'is_auto_marked', 'notes', 'created_at',
-                    'member__id', 'member__member_id', 'member__full_name',
-                    'member__sex', 'member__department', 'member__class_name',
-                    'member__phone', 'member__email', 'member__date_of_birth',
-                    'member__place_of_residence', 'member__profession',
-                    'member__committee', 'member__marital_status',
-                    'member__is_visitor', 'member__baptised', 'member__confirmed',
-                    'member__attendance_status', 'member__engagement_score',
-                    'member__last_attendance_date', 'member__consecutive_absences',
-                    'service__id', 'service__name', 'service__date', 'service__start_time',
-                    'service__is_recurring', 'service__parent_service',
+            with connection.cursor() as cursor:
+                # Statistics
+                cursor.execute(
+                    "SELECT status, COUNT(*) FROM attendance_attendance "
+                    "WHERE service_id = %s GROUP BY status", [service.id]
                 )
-            serializer = AttendanceSerializer(attendances, many=True)
+                status_counts = dict(cursor.fetchall())
+                total_present = status_counts.get('present', 0)
+                total_absent = status_counts.get('absent', 0)
+                total_late = status_counts.get('late', 0)
+                
+                # Sex-based stats
+                cursor.execute(
+                    "SELECT m.sex, COUNT(*) FROM attendance_attendance a "
+                    "JOIN members_member m ON a.member_id = m.id "
+                    "WHERE a.service_id = %s AND a.status = 'present' "
+                    "GROUP BY m.sex", [service.id]
+                )
+                sex_counts = dict(cursor.fetchall())
+                male_present = sex_counts.get('male', 0)
+                female_present = sex_counts.get('female', 0)
+                
+                # Class stats
+                cursor.execute(
+                    "SELECT m.class_name, a.status, COUNT(*) "
+                    "FROM attendance_attendance a "
+                    "JOIN members_member m ON a.member_id = m.id "
+                    "WHERE a.service_id = %s AND m.class_name IS NOT NULL AND m.class_name != '' "
+                    "GROUP BY m.class_name, a.status", [service.id]
+                )
+                class_stats = {}
+                for cname, status, count in cursor.fetchall():
+                    if cname not in class_stats:
+                        class_stats[cname] = {'present': 0, 'absent': 0, 'total': 0}
+                    class_stats[cname][status] = count
+                    class_stats[cname]['total'] += count
+                class_stats = dict(sorted(class_stats.items()))
+                
+                # Attendance records with member data (NEVER reads qr_code_data)
+                cursor.execute(
+                    "SELECT a.id, a.check_in_time, a.status, a.is_auto_marked, "
+                    "a.notes, a.created_at, a.member_id, "
+                    "m.id, m.member_id, m.full_name, m.sex, m.department, "
+                    "m.class_name, m.phone, m.email, m.date_of_birth, "
+                    "m.place_of_residence, m.profession, m.committee, "
+                    "m.marital_status, m.is_visitor, m.baptised, m.confirmed, "
+                    "m.attendance_status, m.engagement_score, "
+                    "m.last_attendance_date, m.consecutive_absences "
+                    "FROM attendance_attendance a "
+                    "JOIN members_member m ON a.member_id = m.id "
+                    "WHERE a.service_id = %s "
+                    "ORDER BY a.created_at DESC", [service.id]
+                )
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+            
+            attendances = []
+            for row in rows:
+                r = dict(zip(columns, row))
+                attendances.append({
+                    'id': r['id'],
+                    'member': r['member_id'],
+                    'service': service.id,
+                    'check_in_time': r['check_in_time'].isoformat() if r['check_in_time'] else None,
+                    'status': r['status'],
+                    'is_auto_marked': r['is_auto_marked'],
+                    'notes': r['notes'] or '',
+                    'created_at': r['created_at'].isoformat() if r['created_at'] else None,
+                    'member_details': {
+                        'id': r['id'],
+                        'member_id': r['member_id'],
+                        'full_name': r['full_name'],
+                        'sex': r['sex'],
+                        'department': r['department'],
+                        'class_name': r['class_name'],
+                        'phone': r['phone'],
+                        'email': r['email'],
+                        'date_of_birth': r['date_of_birth'].isoformat() if r['date_of_birth'] else None,
+                        'place_of_residence': r['place_of_residence'],
+                        'profession': r['profession'],
+                        'committee': r['committee'],
+                        'marital_status': r['marital_status'],
+                        'is_visitor': r['is_visitor'],
+                        'baptised': r['baptised'],
+                        'confirmed': r['confirmed'],
+                        'attendance_status': r['attendance_status'],
+                        'engagement_score': r['engagement_score'],
+                        'last_attendance_date': r['last_attendance_date'].isoformat() if r['last_attendance_date'] else None,
+                        'consecutive_absences': r['consecutive_absences'],
+                    },
+                })
             
             return Response({
                 'service': {
@@ -158,7 +201,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'date': service.date,
                     'start_time': service.start_time
                 },
-                'attendances': serializer.data,
+                'attendances': attendances,
                 'total_present': total_present,
                 'total_absent': total_absent,
                 'total_late': total_late,
