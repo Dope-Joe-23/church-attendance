@@ -78,6 +78,22 @@ const PublicRegister = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
+  // Download styled membership card
+  const [cardDataUri, setCardDataUri] = useState(null);
+  const [loadingCard, setLoadingCard] = useState(false);
+
+  // Fetch membership card after successful registration (hook at top level)
+  const memberPk = result?.success ? result.data.member.id : null;
+  React.useEffect(() => {
+    if (memberPk && !cardDataUri && !loadingCard) {
+      setLoadingCard(true);
+      apiClient.get(`/members/${memberPk}/membership_card_data/`)
+        .then((resp) => setCardDataUri(resp.data.card_data_uri))
+        .catch((err) => console.error('Failed to load membership card:', err))
+        .finally(() => setLoadingCard(false));
+    }
+  }, [memberPk]);
+
   // --- Field-level validation ---
   const validatePhone = (value) => {
     if (!value || !value.trim()) return 'Phone number is required';
@@ -135,21 +151,7 @@ const PublicRegister = () => {
     setFieldErrors((prev) => ({ ...prev, email: validateEmail(fullEmail) }));
   };
 
-  // Download styled membership card
-  const [cardDataUri, setCardDataUri] = useState(null);
-  const [loadingCard, setLoadingCard] = useState(false);
 
-  const fetchMembershipCard = async (memberId) => {
-    setLoadingCard(true);
-    try {
-      const resp = await apiClient.get(`/members/${memberId}/membership_card_data/`);
-      setCardDataUri(resp.data.card_data_uri);
-    } catch (err) {
-      console.error('Failed to load membership card:', err);
-    } finally {
-      setLoadingCard(false);
-    }
-  };
 
   const downloadCard = () => {
     const dataUri = cardDataUri;
@@ -233,14 +235,6 @@ const PublicRegister = () => {
   if (result?.success) {
     const memberName = result.data.member.full_name;
     const memberId = result.data.member.member_id;
-    const memberPk = result.data.member.id;
-
-    // Fetch membership card on first render
-    React.useEffect(() => {
-      if (memberPk && !cardDataUri && !loadingCard) {
-        fetchMembershipCard(memberPk);
-      }
-    }, [memberPk]);
 
     return (
       <div className="public-register-page">
@@ -313,7 +307,7 @@ const PublicRegister = () => {
 
             <button
               className="btn btn-primary register-another-btn"
-              onClick={() => setResult(null)}
+              onClick={() => { setResult(null); setCardDataUri(null); }}
             >
               Register Another Member
             </button>
