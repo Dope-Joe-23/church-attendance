@@ -1672,6 +1672,18 @@
   font-size: 0.9rem;
 }
 
+.field-error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
 .success-message {
   background-color: #dcfce7;
   border: 1px solid #bbf7d0;
@@ -1684,6 +1696,135 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* Email suffix input for @gmail.com */
+.email-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.email-input-wrapper:focus-within {
+  border-color: var(--brand-navy, #24106a);
+  box-shadow: 0 0 0 3px rgba(36, 16, 106, 0.12);
+}
+
+.email-input-wrapper.input-error {
+  border-color: var(--brand-red, #b51f2d);
+  box-shadow: 0 0 0 3px rgba(181, 31, 45, 0.1);
+}
+
+.email-input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.email-suffix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  color: var(--brand-navy, #24106a);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-left: 1.5px solid #e0d8f5;
+}
+
+/* Registration QR Code Section in Member Form Modal */
+.registration-qr-section {
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.qr-details {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qr-summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #f9fafb;
+  user-select: none;
+}
+
+.qr-summary:hover {
+  background: #f3f4f6;
+}
+
+.qr-content {
+  padding: 1rem;
+  text-align: center;
+  background: #fff;
+}
+
+.qr-description {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.qr-code-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.registration-qr-image {
+  width: 160px;
+  height: 160px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.qr-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 160px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.qr-link-text {
+  font-size: 0.75rem;
+  color: #6366f1;
+  font-family: monospace;
+  word-break: break-all;
+  margin: 0 0 0.75rem;
+}
+
+.print-qr-btn {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--brand-navy, #24106a), var(--brand-navy-dark, #130847));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.print-qr-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(36, 16, 106, 0.35);
 }
 
 .error {

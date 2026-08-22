@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/components.css';
 
 const DEPARTMENT_CHOICES = [
@@ -65,6 +66,63 @@ const MemberFormModal = ({
   error,
   isSubmitting = false,
 }) => {
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Validate phone: exactly 10 digits
+  const validatePhone = (value) => {
+    if (!value || !value.trim()) return '';
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      return `Phone must be exactly 10 digits (${digits.length} entered)`;
+    }
+    return '';
+  };
+
+  // Extract username part from email (strip @gmail.com)
+  const getEmailUsername = (email) => {
+    if (!email) return '';
+    return email.replace(/@gmail\.com$/i, '');
+  };
+
+  // Build full email from username
+  const buildEmail = (username) => {
+    if (!username || !username.trim()) return '';
+    return username.trim().toLowerCase() + '@gmail.com';
+  };
+
+  // Validate email: must end with @gmail.com
+  const validateEmail = (value) => {
+    if (!value || !value.trim()) return '';
+    if (!value.toLowerCase().endsWith('@gmail.com')) {
+      return 'Only Gmail addresses are accepted';
+    }
+    return '';
+  };
+
+  // Validate on change
+  const handlePhoneChange = (e) => {
+    const val = e.target.value;
+    onFormChange({ ...formData, phone: val });
+    setFieldErrors(prev => ({ ...prev, phone: validatePhone(val) }));
+  };
+
+  const handleEmailChange = (e) => {
+    const username = e.target.value.replace(/@gmail\.com$/i, '').replace(/@/g, '');
+    const fullEmail = buildEmail(username);
+    onFormChange({ ...formData, email: fullEmail });
+    setFieldErrors(prev => ({ ...prev, email: validateEmail(fullEmail) }));
+  };
+
+  // Validate all on submit
+  const handleSubmitWithValidation = (e) => {
+    e.preventDefault();
+    const phoneErr = validatePhone(formData.phone);
+    const emailErr = validateEmail(formData.email);
+    setFieldErrors({ phone: phoneErr, email: emailErr });
+    if (phoneErr || emailErr) return;
+    onSubmit(e);
+  };
+
   if (!isOpen) return null;
 
   const contactMethodMissing = !formData.is_visitor && !formData.email?.trim() && !formData.phone?.trim();
@@ -79,7 +137,7 @@ const MemberFormModal = ({
           <button className="modal-close" onClick={onClose} disabled={isSubmitting}>×</button>
         </div>
 
-        <form className="member-form-modal" onSubmit={onSubmit}>
+        <form className="member-form-modal" onSubmit={handleSubmitWithValidation}>
           {error && <div className="form-error">{error}</div>}
           {contactMethodMissing && (
             <div className="form-warning">
@@ -133,29 +191,35 @@ const MemberFormModal = ({
             </div>
 
             <div className="form-group half-width">
-              <label>Contact</label>
+              <label>Contact *</label>
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) =>
-                  onFormChange({ ...formData, phone: e.target.value })
-                }
-                className="input-field"
-                placeholder="Enter phone number"
+                onChange={handlePhoneChange}
+                className={`input-field ${fieldErrors.phone ? 'input-error' : ''}`}
+                placeholder="10-digit phone number"
+                maxLength={12}
               />
+              {fieldErrors.phone && (
+                <span className="field-error">{fieldErrors.phone}</span>
+              )}
             </div>
 
             <div className="form-group half-width">
-              <label>Email Address</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  onFormChange({ ...formData, email: e.target.value })
-                }
-                className="input-field"
-                placeholder="Enter email address"
-              />
+              <label>Email Address *</label>
+              <div className="email-input-wrapper">
+                <input
+                  type="text"
+                  value={getEmailUsername(formData.email)}
+                  onChange={handleEmailChange}
+                  className={`input-field email-input ${fieldErrors.email ? 'input-error' : ''}`}
+                  placeholder="yourname"
+                />
+                <span className="email-suffix">@gmail.com</span>
+              </div>
+              {fieldErrors.email && (
+                <span className="field-error">{fieldErrors.email}</span>
+              )}
             </div>
 
             <div className="form-group half-width">
@@ -309,6 +373,75 @@ const MemberFormModal = ({
                 </label>
               </div>
             )}
+          </div>
+
+          {/* QR Code for Public Registration */}
+          <div className="registration-qr-section">
+            <details className="qr-details">
+              <summary className="qr-summary">
+                📱 Public Registration QR Code
+              </summary>
+              <div className="qr-content">
+                <p className="qr-description">
+                  Print this QR code and display it at church. Members can scan it to register themselves.
+                </p>
+                <div className="qr-code-wrapper">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/register-member')}`}
+                    alt="Registration QR Code"
+                    className="registration-qr-image"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="qr-fallback" style={{ display: 'none' }}>
+                    <span>QR code requires internet to generate</span>
+                  </div>
+                </div>
+                <p className="qr-link-text">
+                  {window.location.origin}/register-member
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary print-qr-btn"
+                  onClick={() => {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.origin + '/register-member')}`;
+                    const printWindow = window.open('', '_blank', 'width=400,height=500');
+                    printWindow.document.write(`
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <title>Registration QR Code</title>
+                        <style>
+                          body { font-family: Arial, sans-serif; text-align: center; padding: 30px; margin: 0; }
+                          h2 { margin-bottom: 5px; color: #333; }
+                          .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+                          img { width: 250px; height: 250px; border: 2px solid #ddd; border-radius: 8px; }
+                          .url { font-family: monospace; font-size: 13px; color: #6366f1; margin-top: 15px; word-break: break-all; }
+                          .footer { margin-top: 20px; color: #999; font-size: 12px; }
+                          @media print {
+                            body { padding: 20px; }
+                            .no-print { display: none; }
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <h2><img src="${wisLogo}" style="height:28px;vertical-align:middle;margin-right:6px;" />Scan to Register</h2>
+                        <p class="subtitle">Wesleyan International Society — Sunyani</p>
+                        <img src="${qrUrl}" alt="Registration QR Code" onload="setTimeout(()=>window.print(), 500)" />
+                        <p class="url">${window.location.origin}/register-member</p>
+                        <p class="footer">Scan this code with your phone camera to register as a member</p>
+                      </body>
+                      </html>
+                    `);
+                    printWindow.document.close();
+                  }}
+                >
+                  🖨️ Print QR Code
+                </button>
+              </div>
+            </details>
           </div>
 
           <div className="modal-footer form-footer">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { LoadingSpinner } from '../components';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/pages.css';
 
 const Home = () => {
@@ -79,7 +80,7 @@ const Home = () => {
       color: '#f59e0b'
     },
     {
-      icon: '⛪',
+      icon: '📋',
       title: 'Manage Services',
       description: 'Organize church events',
       path: '/services',
@@ -117,7 +118,7 @@ const Home = () => {
 
           <div className="stat-card">
             <div className="stat-icon" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-              ⛪
+              <img src={wisLogo} alt="WIS" style={{width: '22px', height: '22px', borderRadius: '4px'}} />
             </div>
             <div className="stat-content">
               <h3>{stats.totalServices}</h3>

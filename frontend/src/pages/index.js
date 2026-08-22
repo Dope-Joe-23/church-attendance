@@ -7,3 +7,4 @@ export { default as Scanner } from './Scanner';
 export { default as Reports } from './Reports';
 export { default as CareDashboard } from './CareDashboard';
 export { default as PublicCheckIn } from './PublicCheckIn';
+export { default as PublicRegister } from './PublicRegister';

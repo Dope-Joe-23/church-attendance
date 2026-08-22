@@ -51,7 +51,6 @@ const Navigation = ({ isAuthenticated, onLogout }) => {
         <div className="navbar-logo">
           <div className="logo-wrapper">
             <img className="brand-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
-            <span className="logo-icon">⛪</span>
             <h1 className="logo-text">WIS Sunyani</h1>
           </div>
         </div>

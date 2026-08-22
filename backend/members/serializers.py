@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismMetric, MemberAbsenteeismAlert, InvitationCode
 
@@ -55,9 +56,14 @@ class MemberSerializer(serializers.ModelSerializer):
         return value.strip()
     
     def validate_email(self, value):
-        """Validate email and check if already exists (for non-visitors)"""
+        """Validate email - must be a Gmail address and check uniqueness"""
         if value:
             value = value.lower().strip()
+            # Must be a Gmail address
+            if not value.endswith('@gmail.com'):
+                raise serializers.ValidationError(
+                    "Only Gmail addresses are accepted. Please use a @gmail.com address."
+                )
             # Check if email is already used (for non-visitor members)
             existing = Member.objects.filter(email=value, is_visitor=False).exclude(
                 pk=self.instance.pk if self.instance else None
@@ -67,9 +73,17 @@ class MemberSerializer(serializers.ModelSerializer):
         return value
     
     def validate_phone(self, value):
-        """Clean phone number"""
+        """Validate phone number - must be exactly 10 digits"""
         if value:
-            return value.strip()
+            value = value.strip()
+            # Remove any non-digit characters for validation
+            digits_only = re.sub(r'\D', '', value)
+            if len(digits_only) != 10:
+                raise serializers.ValidationError(
+                    "Phone number must be exactly 10 digits. "
+                    f"You entered {len(digits_only)} digit(s)."
+                )
+            return digits_only
         return value
     
     def validate(self, data):
@@ -123,6 +137,29 @@ class MemberDetailSerializer(serializers.ModelSerializer):
         elif obj.qr_code_image:
             return obj.qr_code_image.url
         return None
+    
+    def validate_phone(self, value):
+        """Validate phone number - must be exactly 10 digits"""
+        if value:
+            value = value.strip()
+            digits_only = re.sub(r'\D', '', value)
+            if len(digits_only) != 10:
+                raise serializers.ValidationError(
+                    "Phone number must be exactly 10 digits. "
+                    f"You entered {len(digits_only)} digit(s)."
+                )
+            return digits_only
+        return value
+    
+    def validate_email(self, value):
+        """Validate email - must be a Gmail address"""
+        if value:
+            value = value.lower().strip()
+            if not value.endswith('@gmail.com'):
+                raise serializers.ValidationError(
+                    "Only Gmail addresses are accepted. Please use a @gmail.com address."
+                )
+        return value
     
     def get_alerts(self, obj):
         alerts = obj.alerts.filter(is_resolved=False)

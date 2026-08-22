@@ -44,7 +44,7 @@ const Welcome = () => {
       color: '#f3c316',
     },
     {
-      icon: '⛪',
+      icon: '📋',
       title: 'Service Planning',
       description: 'Streamline Sunday services, mid-week meetings, and special events with ease',
       color: '#130847',
@@ -56,7 +56,7 @@ const Welcome = () => {
       {/* Hero Section */}
       <section className="welcome-hero">
         <div className="hero-content">
-          <div className="hero-badge">⛪ Wesleyan International Society — Sunyani</div>
+          <div className="hero-badge"><img src={wisLogo} alt="WIS" style={{height: '18px', verticalAlign: 'middle', marginRight: '6px', borderRadius: '3px'}} /> Wesleyan International Society — Sunyani</div>
           <h1 className="hero-title">
             <span className="brand-highlight">WIS Sunyani</span> Attendance
           </h1>
@@ -87,7 +87,6 @@ const Welcome = () => {
                 <div className="app-preview">
                   <div className="preview-header">
                     <img className="preview-logo" src={wisLogo} alt="Wesleyan International Society logo" />
-                    <span className="preview-icon">⛪</span>
                     <span className="preview-title">WIS Sunyani</span>
                   </div>
                   <div className="preview-content">

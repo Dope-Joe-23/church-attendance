@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import register_user, login_user
 from attendance.checkin_service import PublicCheckinView
+from members.views import PublicMemberRegistrationView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,4 +33,5 @@ urlpatterns = [
     path('api/services/', include('services.urls')),
     path('api/attendance/', include('attendance.urls')),
     path('api/public/checkin/', PublicCheckinView.as_view(), name='public_checkin'),
+    path('api/public/register/', PublicMemberRegistrationView.as_view(), name='public_member_registration'),
 ]

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicCheckinApi } from '../services/api';
+import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/checkin.css';
 
 const formatDate = (date) => {
@@ -131,7 +132,7 @@ const PublicCheckIn = () => {
     <div className="public-checkin-page">
       <div className="checkin-card">
         <div className="checkin-card-header">
-          <span className="church-badge">⛪ {info?.church_name || 'Church'}</span>
+          <span className="church-badge"><img src={wisLogo} alt="WIS" style={{height: '18px', verticalAlign: 'middle', marginRight: '6px', borderRadius: '3px'}} /> {info?.church_name || 'Church'}</span>
           <h1>Self Check-In</h1>
           <p>Scan &amp; check in — no account needed</p>
         </div>

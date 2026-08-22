@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric, InvitationCode
 from .serializers import (
     MemberSerializer, MemberDetailSerializer, MemberAlertSerializer, 
@@ -834,3 +835,123 @@ class MemberAbsenteeismMetricViewSet(viewsets.ReadOnlyModelViewSet):
                 'success': False,
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PublicMemberRegistrationView(APIView):
+    """
+    Public endpoint for church members to register themselves.
+    No authentication required.
+    
+    POST /api/public/register/
+    
+    Required fields:
+    - full_name: Member's full name
+    - phone: 10-digit phone number
+    
+    Optional fields:
+    - email: Gmail address
+    - date_of_birth: YYYY-MM-DD
+    - sex: male/female
+    - place_of_residence: Location
+    - profession: Job/profession
+    - department: Department choice
+    - class_name: Class choice
+    - committee: Committee choice
+    - marital_status: single/married
+    - baptised: boolean
+    - confirmed: boolean
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        import re
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        data = request.data.copy()
+        
+        # Required fields
+        full_name = data.get('full_name', '').strip()
+        phone = data.get('phone', '').strip()
+        
+        if not full_name:
+            return Response(
+                {'error': 'Full name is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not phone:
+            return Response(
+                {'error': 'Phone number is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate phone: must be exactly 10 digits
+        digits_only = re.sub(r'\D', '', phone)
+        if len(digits_only) != 10:
+            return Response(
+                {'error': f'Phone number must be exactly 10 digits. You entered {len(digits_only)} digit(s).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        data['phone'] = digits_only
+        
+        # Validate email if provided: must be Gmail
+        email = data.get('email', '').strip().lower() if data.get('email') else ''
+        if email:
+            if not email.endswith('@gmail.com'):
+                return Response(
+                    {'error': 'Only Gmail addresses are accepted. Please use a @gmail.com address.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # Check for duplicate email
+            if Member.objects.filter(email=email, is_visitor=False).exists():
+                return Response(
+                    {'error': 'A member with this email already exists in our system.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            data['email'] = email
+        else:
+            data['email'] = ''
+        
+        # Set is_visitor to False for self-registrations
+        data['is_visitor'] = False
+        
+        # Validate and clean optional fields
+        allowed_departments = [c[0] for c in Member.DEPARTMENT_CHOICES]
+        allowed_classes = [c[0] for c in Member.CLASS_CHOICES]
+        allowed_committees = [c[0] for c in Member.COMMITTEE_CHOICES]
+        allowed_sex = [c[0] for c in Member.SEX_CHOICES]
+        allowed_marital = [c[0] for c in Member.MARITAL_STATUS]
+        
+        if data.get('department') and data['department'] not in allowed_departments:
+            data['department'] = ''
+        if data.get('class_name') and data['class_name'] not in allowed_classes:
+            data['class_name'] = ''
+        if data.get('committee') and data['committee'] not in allowed_committees:
+            data['committee'] = ''
+        if data.get('sex') and data['sex'] not in allowed_sex:
+            data['sex'] = ''
+        if data.get('marital_status') and data['marital_status'] not in allowed_marital:
+            data['marital_status'] = ''
+        
+        try:
+            member = Member.objects.create(**data)
+            logger.info(f"Public registration: new member {member.member_id} - {member.full_name}")
+            
+            return Response({
+                'success': True,
+                'message': f'Welcome, {member.full_name}! Your member ID is {member.member_id}.',
+                'member': {
+                    'id': member.id,
+                    'member_id': member.member_id,
+                    'full_name': member.full_name,
+                    'qr_code_data': member.qr_code_data,
+                }
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logger.error(f"Public registration error: {str(e)}", exc_info=True)
+            return Response(
+                {'error': f'Registration failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

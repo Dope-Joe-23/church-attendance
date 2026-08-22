@@ -85,7 +85,6 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
       <div className="top-navbar">
         <div className="navbar-logo">
           <img className="navbar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
-          <span className="navbar-logo-icon">⛪</span>
           <span className="navbar-page-name">{getPageName()}</span>
         </div>
         <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
@@ -101,7 +100,6 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
         {/* Logo Section */}
         <div className="sidebar-logo">
           <img className="sidebar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
-          <span className="logo-icon">⛪</span>
           <div className="sidebar-brand-text">
             <h1 className="logo-text">WIS Sunyani</h1>
             <p>Attendance System</p>
