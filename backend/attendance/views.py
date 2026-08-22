@@ -2,8 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+import csv
 import logging
 from .models import Attendance
 from .serializers import AttendanceSerializer, AttendanceCheckInSerializer
@@ -94,7 +96,23 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to view attendance.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            attendances = Attendance.objects.filter(service=service).select_related('member', 'service', 'service__parent_service')
+            # Use defer to exclude qr_code_data (large base64 blobs) which
+            # can cause UTF-8 decode errors on Python 3.14
+            attendances = Attendance.objects.filter(service=service)\
+                .select_related('service', 'service__parent_service')\
+                .only(
+                    'id', 'check_in_time', 'status', 'is_auto_marked', 'notes', 'created_at',
+                    'member__id', 'member__member_id', 'member__full_name',
+                    'member__sex', 'member__department', 'member__class_name',
+                    'member__phone', 'member__email', 'member__date_of_birth',
+                    'member__place_of_residence', 'member__profession',
+                    'member__committee', 'member__marital_status',
+                    'member__is_visitor', 'member__baptised', 'member__confirmed',
+                    'member__attendance_status', 'member__engagement_score',
+                    'member__last_attendance_date', 'member__consecutive_absences',
+                    'service__id', 'service__name', 'service__date', 'service__start_time',
+                    'service__is_recurring', 'service__parent_service',
+                )
             serializer = AttendanceSerializer(attendances, many=True)
             
             # Calculate statistics
@@ -308,3 +326,68 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Service with ID {service_id} not found'
             }, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        """
+        Export attendance report as CSV.
+        Usage: /attendance/export_csv/?service_id=1
+        """
+        service_id = request.query_params.get('service_id')
+        if not service_id:
+            return Response(
+                {'error': 'service_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            service = Service.objects.get(id=service_id)
+        except Service.DoesNotExist:
+            return Response(
+                {'error': f'Service with ID {service_id} not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Class & department display name mapping
+        CLASS_LABELS = dict(Member.CLASS_CHOICES)
+        DEPT_LABELS = dict(Member.DEPARTMENT_CHOICES)
+
+        attendances = Attendance.objects.filter(service=service)\
+            .select_related('member')\
+            .only(
+                'check_in_time', 'status', 'notes',
+                'member__member_id', 'member__full_name', 'member__sex',
+                'member__department', 'member__class_name', 'member__phone',
+                'member__email',
+            )\
+            .order_by('member__full_name')
+
+        response = HttpResponse(content_type='text/csv')
+        safe_name = service.name.replace(' ', '_')[:30]
+        date_str = str(service.date) if service.date else 'no-date'
+        response['Content-Disposition'] = (
+            f'attachment; filename="attendance_{safe_name}_{date_str}.csv"'
+        )
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Member ID', 'Full Name', 'Sex', 'Department', 'Class',
+            'Phone', 'Email', 'Status', 'Check-in Time', 'Notes',
+        ])
+
+        for att in attendances:
+            m = att.member
+            writer.writerow([
+                m.member_id,
+                m.full_name,
+                (m.sex or '').capitalize(),
+                DEPT_LABELS.get(m.department, m.department or ''),
+                CLASS_LABELS.get(m.class_name, m.class_name or ''),
+                m.phone or '',
+                m.email or '',
+                att.status.capitalize(),
+                att.check_in_time.strftime('%Y-%m-%d %H:%M') if att.check_in_time else '',
+                att.notes or '',
+            ])
+
+        return response

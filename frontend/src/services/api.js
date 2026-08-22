@@ -204,6 +204,14 @@ export const attendanceApi = {
     });
     return response.data;
   },
+
+  exportCsv: async (serviceId) => {
+    const response = await apiClient.get('/attendance/export_csv/', {
+      params: { service_id: serviceId },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 // Public (no-account) self check-in API calls

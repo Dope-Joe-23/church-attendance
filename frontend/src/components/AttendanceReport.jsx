@@ -32,6 +32,7 @@ const AttendanceReport = ({ service }) => {
   const [markingAbsent, setMarkingAbsent] = useState(false);
   const [unmarking, setUnmarking] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   useEffect(() => {
     if (service) {
@@ -116,6 +117,28 @@ const AttendanceReport = ({ service }) => {
       setSuccessMessage(`Error: ${errorMsg}`);
     } finally {
       setMarkingAbsent(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    setExportingCsv(true);
+    try {
+      const blob = await attendanceApi.exportCsv(service.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = service.name.replace(/\s+/g, '_');
+      const dateStr = service.date || 'no-date';
+      a.download = `attendance_${safeName}_${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export CSV. Please try again.');
+      console.error('CSV export error:', err);
+    } finally {
+      setExportingCsv(false);
     }
   };
 
@@ -238,6 +261,14 @@ const AttendanceReport = ({ service }) => {
 
           {/* Action Buttons */}
           <div className="attendance-actions">
+            <button
+              onClick={handleExportCsv}
+              disabled={exportingCsv}
+              className="btn btn-primary"
+              title="Download attendance report as CSV"
+            >
+              {exportingCsv ? 'Exporting...' : '📥 Export CSV'}
+            </button>
             <button
               onClick={handleMarkAbsent}
               disabled={markingAbsent}
