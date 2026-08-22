@@ -96,8 +96,44 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'error': f'"{service.name}" is a recurring service template. Please select a specific session/date to view attendance.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Use defer to exclude qr_code_data (large base64 blobs) which
-            # can cause UTF-8 decode errors on Python 3.14
+            # --- Statistics via aggregation queries (no .only() on these paths) ---
+            # These use fresh querysets to avoid touching qr_code_data, which
+            # can cause UTF-8 decode errors on Python 3.14 / psycopg3.
+            from django.db.models import Count
+            base_att = Attendance.objects.filter(service=service)
+            
+            status_counts = dict(
+                base_att.values_list('status').annotate(c=Count('id')).values_list('status', 'c')
+            )
+            total_present = status_counts.get('present', 0)
+            total_absent = status_counts.get('absent', 0)
+            total_late = status_counts.get('late', 0)
+            
+            # Sex-based statistics for present members
+            sex_counts = dict(
+                base_att.filter(status='present')
+                .values_list('member__sex').annotate(c=Count('id'))
+                .values_list('member__sex', 'c')
+            )
+            male_present = sex_counts.get('male', 0)
+            female_present = sex_counts.get('female', 0)
+            
+            # Attendance by class (single GROUP BY query)
+            class_agg = (
+                base_att.filter(member__class_name__isnull=False)
+                .values('member__class_name', 'status')
+                .annotate(c=Count('id'))
+            )
+            class_stats = {}
+            for row in class_agg:
+                cname = row['member__class_name']
+                if cname not in class_stats:
+                    class_stats[cname] = {'present': 0, 'absent': 0, 'total': 0}
+                class_stats[cname][row['status']] = row['c']
+                class_stats[cname]['total'] += row['c']
+            class_stats = dict(sorted(class_stats.items()))
+            
+            # --- Serializer data (with .only() to exclude qr_code_data) ---
             attendances = Attendance.objects.filter(service=service)\
                 .select_related('service', 'service__parent_service')\
                 .only(
@@ -114,50 +150,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     'service__is_recurring', 'service__parent_service',
                 )
             serializer = AttendanceSerializer(attendances, many=True)
-            
-            # Calculate statistics
-            total_present = attendances.filter(status='present').count()
-            total_absent = attendances.filter(status='absent').count()
-            total_late = attendances.filter(status='late').count()
-            
-            # Calculate sex-based statistics for present members
-            male_present = attendances.filter(
-                status='present',
-                member__sex='male'
-            ).count()
-            female_present = attendances.filter(
-                status='present',
-                member__sex='female'
-            ).count()
-            
-            # Get attendance by class
-            from django.db.models import Q, Count
-            class_stats = {}
-            
-            # Get all unique classes from members who have attendance records
-            classes = Member.objects.filter(
-                attendances__service=service
-            ).values('class_name').distinct()
-            
-            for class_obj in classes:
-                class_name = class_obj['class_name']
-                if class_name:
-                    class_present = attendances.filter(
-                        member__class_name=class_name,
-                        status='present'
-                    ).count()
-                    class_absent = attendances.filter(
-                        member__class_name=class_name,
-                        status='absent'
-                    ).count()
-                    class_stats[class_name] = {
-                        'present': class_present,
-                        'absent': class_absent,
-                        'total': class_present + class_absent
-                    }
-            
-            # Sort class stats by name
-            class_stats = dict(sorted(class_stats.items()))
             
             return Response({
                 'service': {
@@ -178,6 +170,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Service with ID {service_id} not found'
             }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error in by_service for service_id={service_id}: {e}", exc_info=True)
+            return Response({
+                'error': 'An internal error occurred while loading attendance data.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
     def mark_absent(self, request):

@@ -6,8 +6,29 @@ from members.serializers import MemberSerializer
 from services.serializers import ServiceSerializer
 
 
+class MemberLightSerializer(serializers.ModelSerializer):
+    """Lightweight member serializer that excludes qr_code_data.
+    qr_code_data contains large base64 blobs that can cause
+    UTF-8 decode errors on Python 3.14 / psycopg3.
+    """
+    class Meta:
+        model = Member
+        fields = [
+            'id', 'member_id', 'full_name', 'date_of_birth', 'sex',
+            'phone', 'email', 'place_of_residence', 'profession',
+            'department', 'class_name', 'committee', 'marital_status',
+            'is_visitor', 'baptised', 'confirmed',
+            'consecutive_absences', 'last_attendance_date',
+            'attendance_status', 'engagement_score',
+            'last_contact_date', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'member_id', 'created_at', 'updated_at',
+                           'consecutive_absences', 'last_attendance_date',
+                           'attendance_status', 'engagement_score', 'last_contact_date']
+
+
 class AttendanceSerializer(serializers.ModelSerializer):
-    member_details = MemberSerializer(source='member', read_only=True)
+    member_details = MemberLightSerializer(source='member', read_only=True)
     service_details = ServiceSerializer(source='service', read_only=True)
     
     class Meta:
