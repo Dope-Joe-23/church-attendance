@@ -79,6 +79,7 @@ class Member(models.Model):
     
     # Class choices (formerly Group)
     CLASS_CHOICES = [
+        ('no_class', 'No Class'),
         ('airport', 'Airport'),
         ('abesim', 'Abesim'),
         ('old_abesim', 'Old Abesim'),

@@ -14,6 +14,7 @@ const DEPARTMENT_CHOICES = [
 ];
 
 const CLASS_CHOICES = [
+  { value: 'no_class', label: 'No Class' },
   { value: 'airport', label: 'Airport' },
   { value: 'abesim', label: 'Abesim' },
   { value: 'old_abesim', label: 'Old Abesim' },
