@@ -109,7 +109,18 @@
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
+}
+
+.register-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.register-row-checkboxes {
+  grid-template-columns: auto auto;
+  gap: 1rem;
 }
 
 .register-field {
@@ -271,10 +282,14 @@
 .register-success {
   text-align: center;
   padding: 1rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .success-header {
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
 }
 
 .success-checkmark {
@@ -286,8 +301,9 @@
   background: linear-gradient(135deg, #fef9e7, #fdf2ca);
   border: 2px solid #f3c316;
   border-radius: 12px;
-  padding: 0.85rem;
-  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .member-id-display .label {
@@ -369,7 +385,7 @@
 
 .success-qr-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
   justify-content: center;
 }
 
@@ -410,12 +426,12 @@
 .success-note {
   color: #6b7280;
   font-size: 0.8rem;
-  margin-bottom: 1rem;
   line-height: 1.4;
+  margin: 0;
 }
 
 .register-another-btn {
-  padding: 0.6rem 1.5rem;
+  padding: 0.55rem 1.5rem;
   font-size: 0.85rem;
 }
 
@@ -433,19 +449,24 @@
   }
 
   .register-card-header {
-    padding: 1rem 1rem 0.75rem;
+    padding: 0.85rem 1rem 0.65rem;
   }
 
   .register-card-header h1 {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
 
   .register-card-body {
-    padding: 1rem;
+    padding: 0.85rem;
   }
 
   .register-form {
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .register-row {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
   }
 
   .member-id-value {
@@ -454,9 +475,14 @@
 
   .success-qr-actions {
     flex-direction: column;
+    width: 100%;
   }
 
   .download-qr-btn {
+    width: 100%;
+  }
+
+  .register-another-btn {
     width: 100%;
   }
 }

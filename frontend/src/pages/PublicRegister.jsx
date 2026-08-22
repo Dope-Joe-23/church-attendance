@@ -246,64 +246,33 @@ const PublicRegister = () => {
             <p>You have been successfully registered</p>
           </div>
           <div className="register-card-body register-success">
-            {/* Member ID Card */}
             <div className="member-id-display">
               <span className="label">Your Member ID</span>
               <span className="member-id-value">{memberId}</span>
             </div>
 
-            {/* Styled Membership Card */}
-            <div className="success-qr-card">
-              <div className="success-qr-header">
-                <span className="qr-icon">🪪</span>
-                <div>
-                  <h3>Your Membership Card</h3>
-                  <p>Show this at church for check-in</p>
-                </div>
-              </div>
-
-              <div className="success-card-display">
-                {loadingCard ? (
-                  <div className="card-loading">
-                    <p>Generating your membership card...</p>
-                  </div>
-                ) : cardDataUri ? (
-                  <img
-                    src={cardDataUri}
-                    alt={`${memberName}'s Membership Card`}
-                    className="success-membership-card"
-                  />
-                ) : (
-                  <div className="card-loading">
-                    <p>Card unavailable. You can still check in with your Member ID.</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="success-qr-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary download-qr-btn"
-                  onClick={downloadCard}
-                  disabled={!cardDataUri}
-                >
-                  ⬇️ Download Card
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary download-qr-btn"
-                  onClick={printCard}
-                  disabled={!cardDataUri}
-                >
-                  🖨️ Print Card
-                </button>
-              </div>
-            </div>
-
             <p className="success-note">
-              📌 <strong>Save your Member ID:</strong> {memberId}<br/>
-              You'll need it for check-in at church services.
+              📌 Save your Member ID for check-in at church services.
             </p>
+
+            <div className="success-qr-actions">
+              <button
+                type="button"
+                className="btn btn-primary download-qr-btn"
+                onClick={downloadCard}
+                disabled={!cardDataUri}
+              >
+                ⬇️ Download Card
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary download-qr-btn"
+                onClick={printCard}
+                disabled={!cardDataUri}
+              >
+                🖨️ Print Card
+              </button>
+            </div>
 
             <button
               className="btn btn-primary register-another-btn"
@@ -335,41 +304,41 @@ const PublicRegister = () => {
               <div className="form-error">{result.message}</div>
             )}
 
-            {/* Full Name - Required */}
-            <div className="register-field">
-              <label htmlFor="reg-full-name">Full Name *</label>
-              <input
-                id="reg-full-name"
-                type="text"
-                value={formData.full_name}
-                onChange={handleChange('full_name')}
-                className={`input-field ${fieldErrors.full_name ? 'input-error' : ''}`}
-                placeholder="Enter your full name"
-                autoFocus
-              />
-              {fieldErrors.full_name && (
-                <span className="field-error">{fieldErrors.full_name}</span>
-              )}
+            {/* Row 1: Full Name | Phone */}
+            <div className="register-row">
+              <div className="register-field">
+                <label htmlFor="reg-full-name">Full Name *</label>
+                <input
+                  id="reg-full-name"
+                  type="text"
+                  value={formData.full_name}
+                  onChange={handleChange('full_name')}
+                  className={`input-field ${fieldErrors.full_name ? 'input-error' : ''}`}
+                  placeholder="Enter your full name"
+                  autoFocus
+                />
+                {fieldErrors.full_name && (
+                  <span className="field-error">{fieldErrors.full_name}</span>
+                )}
+              </div>
+              <div className="register-field">
+                <label htmlFor="reg-phone">Phone Number *</label>
+                <input
+                  id="reg-phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  className={`input-field ${fieldErrors.phone ? 'input-error' : ''}`}
+                  placeholder="10-digit phone number"
+                  maxLength={12}
+                />
+                {fieldErrors.phone && (
+                  <span className="field-error">{fieldErrors.phone}</span>
+                )}
+              </div>
             </div>
 
-            {/* Phone - Required */}
-            <div className="register-field">
-              <label htmlFor="reg-phone">Phone Number *</label>
-              <input
-                id="reg-phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handlePhoneChange}
-                className={`input-field ${fieldErrors.phone ? 'input-error' : ''}`}
-                placeholder="10-digit phone number"
-                maxLength={12}
-              />
-              {fieldErrors.phone && (
-                <span className="field-error">{fieldErrors.phone}</span>
-              )}
-            </div>
-
-            {/* Email - Optional, Gmail only */}
+            {/* Row 2: Email */}
             <div className="register-field">
               <label htmlFor="reg-email">Email Address (Gmail only)</label>
               <div className="email-input-wrapper">
@@ -388,149 +357,149 @@ const PublicRegister = () => {
               )}
             </div>
 
-            {/* Date of Birth */}
-            <div className="register-field">
-              <label htmlFor="reg-dob">Date of Birth</label>
-              <input
-                id="reg-dob"
-                type="date"
-                value={formData.date_of_birth}
-                onChange={handleChange('date_of_birth')}
-                className="input-field"
-              />
-            </div>
-
-            {/* Sex */}
-            <div className="register-field">
-              <label htmlFor="reg-sex">Sex</label>
-              <select
-                id="reg-sex"
-                value={formData.sex}
-                onChange={handleChange('sex')}
-                className="input-field"
-              >
-                <option value="">Select Sex</option>
-                {SEX_CHOICES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Place of Residence */}
-            <div className="register-field">
-              <label htmlFor="reg-residence">Place of Residence</label>
-              <input
-                id="reg-residence"
-                type="text"
-                value={formData.place_of_residence}
-                onChange={handleChange('place_of_residence')}
-                className="input-field"
-                placeholder="Where do you live?"
-              />
-            </div>
-
-            {/* Profession */}
-            <div className="register-field">
-              <label htmlFor="reg-profession">Profession</label>
-              <input
-                id="reg-profession"
-                type="text"
-                value={formData.profession}
-                onChange={handleChange('profession')}
-                className="input-field"
-                placeholder="What do you do?"
-              />
-            </div>
-
-            {/* Department */}
-            <div className="register-field">
-              <label htmlFor="reg-dept">Department</label>
-              <select
-                id="reg-dept"
-                value={formData.department}
-                onChange={handleChange('department')}
-                className="input-field"
-              >
-                <option value="">Select Department</option>
-                {DEPARTMENT_CHOICES.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Class */}
-            <div className="register-field">
-              <label htmlFor="reg-class">Class</label>
-              <select
-                id="reg-class"
-                value={formData.class_name}
-                onChange={handleChange('class_name')}
-                className="input-field"
-              >
-                <option value="">Select Class</option>
-                {CLASS_CHOICES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Committee */}
-            <div className="register-field">
-              <label htmlFor="reg-committee">Committee</label>
-              <select
-                id="reg-committee"
-                value={formData.committee}
-                onChange={handleChange('committee')}
-                className="input-field"
-              >
-                <option value="">Select Committee</option>
-                {COMMITTEE_CHOICES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Marital Status */}
-            <div className="register-field">
-              <label htmlFor="reg-marital">Marital Status</label>
-              <select
-                id="reg-marital"
-                value={formData.marital_status}
-                onChange={handleChange('marital_status')}
-                className="input-field"
-              >
-                <option value="">Select Status</option>
-                {MARITAL_STATUS_CHOICES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Baptised */}
-            <div className="register-field register-checkbox">
-              <label>
+            {/* Row 3: DOB | Sex */}
+            <div className="register-row">
+              <div className="register-field">
+                <label htmlFor="reg-dob">Date of Birth</label>
                 <input
-                  type="checkbox"
-                  checked={formData.baptised}
-                  onChange={handleChange('baptised')}
+                  id="reg-dob"
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={handleChange('date_of_birth')}
+                  className="input-field"
                 />
-                Baptised
-              </label>
+              </div>
+              <div className="register-field">
+                <label htmlFor="reg-sex">Sex</label>
+                <select
+                  id="reg-sex"
+                  value={formData.sex}
+                  onChange={handleChange('sex')}
+                  className="input-field"
+                >
+                  <option value="">Select Sex</option>
+                  {SEX_CHOICES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Confirmed (only if baptised) */}
-            {formData.baptised && (
+            {/* Row 4: Residence | Profession */}
+            <div className="register-row">
+              <div className="register-field">
+                <label htmlFor="reg-residence">Place of Residence</label>
+                <input
+                  id="reg-residence"
+                  type="text"
+                  value={formData.place_of_residence}
+                  onChange={handleChange('place_of_residence')}
+                  className="input-field"
+                  placeholder="Where do you live?"
+                />
+              </div>
+              <div className="register-field">
+                <label htmlFor="reg-profession">Profession</label>
+                <input
+                  id="reg-profession"
+                  type="text"
+                  value={formData.profession}
+                  onChange={handleChange('profession')}
+                  className="input-field"
+                  placeholder="What do you do?"
+                />
+              </div>
+            </div>
+
+            {/* Row 5: Department | Class */}
+            <div className="register-row">
+              <div className="register-field">
+                <label htmlFor="reg-dept">Department</label>
+                <select
+                  id="reg-dept"
+                  value={formData.department}
+                  onChange={handleChange('department')}
+                  className="input-field"
+                >
+                  <option value="">Select Department</option>
+                  {DEPARTMENT_CHOICES.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="register-field">
+                <label htmlFor="reg-class">Class</label>
+                <select
+                  id="reg-class"
+                  value={formData.class_name}
+                  onChange={handleChange('class_name')}
+                  className="input-field"
+                >
+                  <option value="">Select Class</option>
+                  {CLASS_CHOICES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Row 6: Committee | Marital Status */}
+            <div className="register-row">
+              <div className="register-field">
+                <label htmlFor="reg-committee">Committee</label>
+                <select
+                  id="reg-committee"
+                  value={formData.committee}
+                  onChange={handleChange('committee')}
+                  className="input-field"
+                >
+                  <option value="">Select Committee</option>
+                  {COMMITTEE_CHOICES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="register-field">
+                <label htmlFor="reg-marital">Marital Status</label>
+                <select
+                  id="reg-marital"
+                  value={formData.marital_status}
+                  onChange={handleChange('marital_status')}
+                  className="input-field"
+                >
+                  <option value="">Select Status</option>
+                  {MARITAL_STATUS_CHOICES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Row 7: Checkboxes side by side */}
+            <div className="register-row register-row-checkboxes">
               <div className="register-field register-checkbox">
                 <label>
                   <input
                     type="checkbox"
-                    checked={formData.confirmed}
-                    onChange={handleChange('confirmed')}
+                    checked={formData.baptised}
+                    onChange={handleChange('baptised')}
                   />
-                  Confirmed
+                  Baptised
                 </label>
               </div>
-            )}
+              {formData.baptised && (
+                <div className="register-field register-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.confirmed}
+                      onChange={handleChange('confirmed')}
+                    />
+                    Confirmed
+                  </label>
+                </div>
+              )}
+            </div>
 
             <button
               type="submit"
