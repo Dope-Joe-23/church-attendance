@@ -271,6 +271,23 @@ class PublicCheckinView(APIView):
                     'error': resolve_error.data.get('error', 'Unable to find member.')
                 }
 
+        # Optional name search: return matching members for the live-search UI
+        search_query = (request.query_params.get('search') or '').strip()
+        search_results = []
+        if search_query and len(search_query) >= 2:
+            members_qs = Member.objects.filter(
+                full_name__icontains=search_query,
+                is_visitor=False,
+            ).order_by('full_name')[:15]
+            search_results = [
+                {
+                    'id': m.id,
+                    'full_name': m.full_name,
+                    'member_id': m.member_id,
+                }
+                for m in members_qs
+            ]
+
         return Response({
             'valid': True,
             'service': {
@@ -291,6 +308,7 @@ class PublicCheckinView(APIView):
             ),
             'attendance_taken': attendance_taken,
             'member_match': member_match,
+            'search_results': search_results,
         })
 
     def post(self, request):

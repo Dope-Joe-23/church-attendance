@@ -217,10 +217,11 @@ export const attendanceApi = {
 // Public (no-account) self check-in API calls
 // Used by members scanning a printed QR code — no login required.
 export const publicCheckinApi = {
-  getInfo: async (token, memberId) => {
-    const response = await apiClient.get('/public/checkin/', {
-      params: memberId ? { token, member_id: memberId } : { token },
-    });
+  getInfo: async (token, memberId, searchQuery) => {
+    const params = { token };
+    if (memberId) params.member_id = memberId;
+    if (searchQuery) params.search = searchQuery;
+    const response = await apiClient.get('/public/checkin/', { params });
     return response.data;
   },
 
