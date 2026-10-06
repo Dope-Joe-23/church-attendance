@@ -3,6 +3,7 @@ import { memberApi } from '../services/api';
 import apiClient from '../services/apiClient';
 import { useMemberStore } from '../context/store';
 import { MembersTable, MemberFormModal, LoadingSpinner, AbsenceAlertBadge, AbsenceAlertModal } from '../components';
+import { exportMembersToExcel } from '../utils/excelExport';
 import '../styles/pages.css';
 
 const Members = () => {
@@ -16,6 +17,7 @@ const Members = () => {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterCommittee, setFilterCommittee] = useState('all');
   const [showAbsenceAlert, setShowAbsenceAlert] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     date_of_birth: '',
@@ -240,6 +242,24 @@ const Members = () => {
     return Array.from(committees).sort();
   };
 
+  const handleExportExcel = async () => {
+    if (filteredMembers.length === 0) {
+      alert('No members to export');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      await exportMembersToExcel(filteredMembers, 'church_members');
+      console.log('Export successful!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export members. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="members-page">
       <div style={{ marginBottom: '1.5rem', marginTop: '0.5rem' }}>
@@ -340,6 +360,15 @@ const Members = () => {
             ))}
           </select>
         </div>
+
+        <button 
+          className="btn btn-success export-btn" 
+          onClick={handleExportExcel}
+          disabled={isExporting || filteredMembers.length === 0}
+          title={filteredMembers.length === 0 ? "No members to export" : "Export filtered members to Excel"}
+        >
+          {isExporting ? '⏳ Exporting...' : '📥 Export to Excel'}
+        </button>
       </div>
 
       <MemberFormModal
