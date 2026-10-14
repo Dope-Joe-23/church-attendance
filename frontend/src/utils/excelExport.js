@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import apiClient from '../services/apiClient';
+import { attendanceApi } from '../services/api';
 
 /**
  * Export members data with attendance totals to Excel
@@ -8,40 +8,25 @@ import apiClient from '../services/apiClient';
  */
 export const exportMembersToExcel = async (members, filename = 'members_export.xlsx') => {
   try {
-    // Prepare member rows with attendance data
-    const memberRows = await Promise.all(
-      members.map(async (member) => {
-        let totalAttendance = 0;
-        
-        try {
-          // Fetch attendance count for this member
-          const response = await apiClient.get(`/attendance/?member=${member.id}`);
-          const attendanceData = response.data.results || response.data;
-          totalAttendance = Array.isArray(attendanceData) ? attendanceData.length : 0;
-        } catch (error) {
-          console.warn(`Could not fetch attendance for member ${member.id}:`, error);
-        }
-        
-        return {
-          'Member ID': member.member_id || '',
-          'Full Name': member.full_name || '',
-          'Phone': member.phone || '',
-          'Email': member.email || '',
-          'Sex': member.sex ? (member.sex === 'male' ? 'Male' : 'Female') : '',
-          'Date of Birth': member.date_of_birth || '',
-          'Department': member.department || '',
-          'Class': member.class_name || '',
-          'Committee': member.committee || '',
-          'Marital Status': member.marital_status || '',
-          'Profession': member.profession || '',
-          'Residence': member.place_of_residence || '',
-          'Baptised': member.baptised ? 'Yes' : 'No',
-          'Confirmed': member.confirmed ? 'Yes' : 'No',
-          'Type': member.is_visitor ? 'Visitor' : 'Member',
-          'Total Attendance': totalAttendance,
-        };
-      })
-    );
+    const attendanceCounts = await attendanceApi.getCountsByMember();
+    const memberRows = members.map((member) => ({
+      'Member ID': member.member_id || '',
+      'Full Name': member.full_name || '',
+      'Phone': member.phone || '',
+      'Email': member.email || '',
+      'Sex': member.sex ? (member.sex === 'male' ? 'Male' : 'Female') : '',
+      'Date of Birth': member.date_of_birth || '',
+      'Department': member.department || '',
+      'Class': member.class_name || '',
+      'Committee': member.committee || '',
+      'Marital Status': member.marital_status || '',
+      'Profession': member.profession || '',
+      'Residence': member.place_of_residence || '',
+      'Baptised': member.baptised ? 'Yes' : 'No',
+      'Confirmed': member.confirmed ? 'Yes' : 'No',
+      'Type': member.is_visitor ? 'Visitor' : 'Member',
+      'Total Attendance': attendanceCounts[member.id] || 0,
+    }));
 
     // Create workbook and worksheet
     const worksheet = XLSX.utils.json_to_sheet(memberRows);

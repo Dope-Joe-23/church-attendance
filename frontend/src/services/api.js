@@ -157,6 +157,11 @@ export const attendanceApi = {
     return response.data;
   },
 
+  getCountsByMember: async () => {
+    const response = await apiClient.get('/attendance/counts_by_member/');
+    return response.data;
+  },
+
   getAttendanceById: async (id) => {
     const response = await apiClient.get(`/attendance/${id}/`);
     return response.data;

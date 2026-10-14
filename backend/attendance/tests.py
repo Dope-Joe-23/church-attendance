@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 
 from members.models import Member
 from services.models import Service
+from attendance.models import Attendance
 
 
 def make_service(**overrides):
@@ -66,6 +67,22 @@ class PublicCheckInInfoTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['member_match']['full_name'], 'Test Member')
         self.assertEqual(resp.data['member_match']['member_id'], 'WIS-2026-0001')
+
+    def test_attendance_counts_by_member_returns_grouped_counts(self):
+        member = Member.objects.create(full_name='Attending Member')
+        other_member = Member.objects.create(full_name='Other Member')
+        second_service = make_service(date=self.service.date + timedelta(days=7))
+        Attendance.objects.create(member=member, service=self.service, status='present')
+        Attendance.objects.create(member=member, service=second_service, status='absent')
+        Attendance.objects.create(member=other_member, service=self.service, status='present')
+
+        resp = self.client.get('/api/attendance/counts_by_member/')
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {
+            str(member.id): 2,
+            str(other_member.id): 1,
+        })
 
     def test_get_info_with_member_id_no_match(self):
         resp = self.client.get(f'/api/public/checkin/?token={self.token}&member_id=9999')

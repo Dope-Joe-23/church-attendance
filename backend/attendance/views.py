@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.http import HttpResponse
+from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 import csv
@@ -38,6 +39,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'member', 'service']
     ordering = ['-created_at']
     
+    @action(detail=False, methods=['get'])
+    def counts_by_member(self, request):
+        """Return attendance record counts grouped by member ID."""
+        counts = Attendance.objects.values('member_id').annotate(count=Count('id'))
+        return Response({str(item['member_id']): item['count'] for item in counts})
+
     @action(detail=False, methods=['post'])
     def checkin(self, request):
         """
