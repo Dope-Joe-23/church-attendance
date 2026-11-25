@@ -7,6 +7,9 @@ from rest_framework.test import APITestCase
 from members.models import Member
 from services.models import Service
 from attendance.models import Attendance
+from django.contrib.auth.models import User
+from tenants.models import Tenant, TenantMembership
+from tenants.context import tenant_context
 
 
 def make_service(**overrides):
@@ -76,6 +79,13 @@ class PublicCheckInInfoTests(APITestCase):
         Attendance.objects.create(member=member, service=second_service, status='absent')
         Attendance.objects.create(member=other_member, service=self.service, status='present')
 
+        user = User.objects.create_user(username='attendance-reader')
+        TenantMembership.objects.create(
+            tenant=Tenant.objects.get(slug='default'),
+            user=user,
+            role=TenantMembership.ROLE_ADMIN,
+        )
+        self.client.force_authenticate(user=user)
         resp = self.client.get('/api/attendance/counts_by_member/')
 
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -118,6 +128,26 @@ class PublicCheckInSubmitTests(APITestCase):
         self.member.refresh_from_db()
         self.assertEqual(self.member.consecutive_absences, 0)
         self.assertEqual(self.member.last_attendance_date, timezone.now().date())
+
+    def test_qr_tenant_parameter_scopes_public_checkin(self):
+        tenant = Tenant.objects.create(name='QR Church', slug='qr-church')
+        with tenant_context(tenant):
+            member = Member.objects.create(
+                member_id='QR-1001',
+                full_name='QR Member',
+                is_visitor=False,
+            )
+            service = make_service()
+            token = service.get_or_create_checkin_token()
+
+        response = self.client.post(
+            f'/api/public/checkin/?tenant={tenant.slug}',
+            {'token': token, 'member_id': member.member_id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data['success'])
 
     def test_checkin_duplicate_not_created_twice(self):
         self.client.post(

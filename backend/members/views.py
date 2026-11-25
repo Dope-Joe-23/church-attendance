@@ -1,16 +1,30 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Member, MemberAlert, ContactLog, MemberAbsenteeismAlert, MemberAbsenteeismMetric, InvitationCode
+from rest_framework.parsers import FormParser, MultiPartParser
+from django.db import transaction
+from django.http import HttpResponse
+from .models import (
+    ContactLog,
+    InvitationCode,
+    Member,
+    MemberAbsenteeismAlert,
+    MemberAbsenteeismMetric,
+    MemberAlert,
+)
 from .serializers import (
     MemberSerializer, MemberListSerializer, MemberDetailSerializer, MemberAlertSerializer, 
     ContactLogSerializer, MemberAbsenteeismAlertSerializer, MemberAbsenteeismMetricSerializer,
-    InvitationCodeSerializer
+    InvitationCodeSerializer, MemberImportSerializer
 )
+from .import_export import MEMBER_CSV_FIELDS, parse_member_csv
 from .email_service import send_qr_code_email
 from django.utils import timezone
+from tenants.permissions import TenantRolePermission
+from tenants.models import TenantMembership
+import csv
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +44,18 @@ class InvitationCodeViewSet(viewsets.ModelViewSet):
     
     queryset = InvitationCode.objects.all()
     serializer_class = InvitationCodeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [TenantRolePermission]
+    tenant_admin_only = True
+
+    def can_assign_administrator_role(self):
+        if self.request.user.is_superuser:
+            return True
+        return TenantMembership.objects.filter(
+            tenant=self.request.tenant,
+            user=self.request.user,
+            role=TenantMembership.ROLE_OWNER,
+            is_active=True,
+        ).exists()
     
     def get_queryset(self):
         """Only authenticated users can see invitation codes, ordered by creation date"""
@@ -51,6 +76,14 @@ class InvitationCodeViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+        if (
+            serializer.validated_data.get('role') == TenantMembership.ROLE_ADMIN
+            and not self.can_assign_administrator_role()
+        ):
+            return Response(
+                {'detail': 'Only a tenant owner can invite an administrator.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         self.perform_create(serializer)
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -74,7 +107,16 @@ class InvitationCodeViewSet(viewsets.ModelViewSet):
         count = request.data.get('count', 1)
         emails = request.data.get('emails', [])
         expires_at_str = request.data.get('expires_at')
-        
+        role = request.data.get('role', TenantMembership.ROLE_MANAGER)
+
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            return Response(
+                {'error': 'count must be an integer between 1 and 100'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if not expires_at_str:
             return Response(
                 {'error': 'expires_at is required'},
@@ -85,6 +127,20 @@ class InvitationCodeViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'count must be between 1 and 100'},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not isinstance(role, str) or role not in dict(InvitationCode.ROLE_CHOICES):
+            return Response(
+                {'error': 'Invalid tenant role'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if (
+            role == TenantMembership.ROLE_ADMIN
+            and not self.can_assign_administrator_role()
+        ):
+            return Response(
+                {'detail': 'Only a tenant owner can invite an administrator.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
         
         # Parse expiry time
@@ -107,7 +163,8 @@ class InvitationCodeViewSet(viewsets.ModelViewSet):
                 code=InvitationCode.generate_code(),
                 email=email,
                 created_by=request.user,
-                expires_at=expires_at
+                expires_at=expires_at,
+                role=role,
             )
             codes.append(invitation)
         
@@ -196,8 +253,98 @@ class MemberViewSet(viewsets.ModelViewSet):
     - POST /members/{id}/send_qr_email/ - Send QR code via email
     """
     
-    queryset = Member.objects.all()
+    queryset = Member.all_tenants.none()
     serializer_class = MemberListSerializer
+    permission_classes = [TenantRolePermission]
+
+    def get_queryset(self):
+        return Member.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.tenant)
+
+    @action(detail=False, methods=['get'], url_path='export-csv')
+    def export_csv(self, request):
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="members.csv"'
+        writer = csv.writer(response)
+        writer.writerow(MEMBER_CSV_FIELDS)
+        rows = Member.objects.order_by('id').values_list(*MEMBER_CSV_FIELDS)
+        for row in rows.iterator():
+            writer.writerow(row)
+        return response
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='import-preview',
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def import_preview(self, request):
+        upload = request.FILES.get('file')
+        if upload is None:
+            return Response(
+                {'detail': 'Choose a CSV file in the file field.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        result = parse_member_csv(upload)
+        return Response({
+            'row_count': result['row_count'],
+            'valid_count': len(result['valid_rows']),
+            'invalid_rows': result['invalid_rows'],
+        })
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path='import-csv',
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def import_csv(self, request):
+        upload = request.FILES.get('file')
+        if upload is None:
+            return Response(
+                {'detail': 'Choose a CSV file in the file field.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        result = parse_member_csv(upload)
+        if result['invalid_rows']:
+            return Response(
+                {
+                    'detail': 'No members were imported because the CSV contains invalid rows.',
+                    'row_count': result['row_count'],
+                    'valid_count': len(result['valid_rows']),
+                    'invalid_rows': result['invalid_rows'],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not result['valid_rows']:
+            return Response(
+                {'detail': 'The CSV contains no member rows.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        created = []
+        with transaction.atomic():
+            for row in result['valid_rows']:
+                serializer = MemberImportSerializer(data=row)
+                serializer.is_valid(raise_exception=True)
+                created.append(serializer.save(tenant=request.tenant))
+
+        return Response(
+            {
+                'imported_count': len(created),
+                'members': [
+                    {
+                        'id': member.pk,
+                        'member_id': member.member_id,
+                        'full_name': member.full_name,
+                    }
+                    for member in created
+                ],
+            },
+            status=status.HTTP_201_CREATED,
+        )
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -525,6 +672,7 @@ class MemberViewSet(viewsets.ModelViewSet):
 
 
 class MemberAlertViewSet(viewsets.ModelViewSet):
+    permission_classes = [TenantRolePermission]
     """
     ViewSet for Member Alerts
     
@@ -535,8 +683,11 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
     - PUT /alerts/{id}/ - Update alert
     """
     
-    queryset = MemberAlert.objects.all()
+    queryset = MemberAlert.all_tenants.none()
     serializer_class = MemberAlertSerializer
+
+    def get_queryset(self):
+        return MemberAlert.objects.all()
     
     @action(detail=False, methods=['get'])
     def unresolved(self, request):
@@ -698,6 +849,7 @@ class MemberAlertViewSet(viewsets.ModelViewSet):
 
 
 class ContactLogViewSet(viewsets.ModelViewSet):
+    permission_classes = [TenantRolePermission]
     """
     ViewSet for Contact Logs
     
@@ -707,8 +859,11 @@ class ContactLogViewSet(viewsets.ModelViewSet):
     - GET /contact-logs/{id}/ - Get contact log details
     """
     
-    queryset = ContactLog.objects.all()
+    queryset = ContactLog.all_tenants.none()
     serializer_class = ContactLogSerializer
+
+    def get_queryset(self):
+        return ContactLog.objects.all()
     
     @action(detail=False, methods=['get'])
     def by_member(self, request):
@@ -733,6 +888,7 @@ class ContactLogViewSet(viewsets.ModelViewSet):
 
 
 class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
+    permission_classes = [TenantRolePermission]
     """
     ViewSet for Member Absenteeism Alerts (NEW SYSTEM)
     
@@ -749,8 +905,11 @@ class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
     - POST /absenteeism-alerts/{id}/resolve/ - Resolve an alert
     """
     
-    queryset = MemberAbsenteeismAlert.objects.all()
+    queryset = MemberAbsenteeismAlert.all_tenants.none()
     serializer_class = MemberAbsenteeismAlertSerializer
+
+    def get_queryset(self):
+        return MemberAbsenteeismAlert.objects.all()
     
     @action(detail=False, methods=['get'])
     def unresolved(self, request):
@@ -805,6 +964,7 @@ class MemberAbsenteeismAlertViewSet(viewsets.ModelViewSet):
 
 
 class MemberAbsenteeismMetricViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [TenantRolePermission]
     """
     ViewSet for Member Absenteeism Metrics (READ-ONLY)
     
@@ -816,8 +976,11 @@ class MemberAbsenteeismMetricViewSet(viewsets.ReadOnlyModelViewSet):
     - GET /absenteeism-metrics/by_member/ - Get metric for a specific member
     """
     
-    queryset = MemberAbsenteeismMetric.objects.all()
+    queryset = MemberAbsenteeismMetric.all_tenants.none()
     serializer_class = MemberAbsenteeismMetricSerializer
+
+    def get_queryset(self):
+        return MemberAbsenteeismMetric.objects.all()
     
     def list(self, request, *args, **kwargs):
         """Override list to handle empty results gracefully"""

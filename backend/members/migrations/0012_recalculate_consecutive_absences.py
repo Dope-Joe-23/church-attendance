@@ -45,11 +45,11 @@ def recalculate_consecutive_absences(apps, schema_editor):
     
     # Print summary
     if members_updated:
-        print(f"\n✅ Updated {len(members_updated)} members:")
+        print(f"\nUpdated {len(members_updated)} members:")
         for update in members_updated:
-            print(f"  {update['member']}: {update['old']} → {update['new']}")
+            print(f"  {update['member']}: {update['old']} -> {update['new']}")
     else:
-        print("\n✅ All members already have correct consecutive_absences counts")
+        print("\nAll members already have correct consecutive_absences counts")
 
 
 def reverse_recalculate(apps, schema_editor):
@@ -59,13 +59,14 @@ def reverse_recalculate(apps, schema_editor):
     """
     Member = apps.get_model('members', 'Member')
     Member.objects.all().update(consecutive_absences=0)
-    print("⚠️ Reset all members' consecutive_absences to 0")
+    print("Reset all members' consecutive_absences to 0")
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('members', '0011_add_sex_field'),
+        ('attendance', '0003_attendance_marked_by'),
     ]
 
     operations = [

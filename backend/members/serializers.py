@@ -158,6 +158,44 @@ class MemberListSerializer(serializers.ModelSerializer):
         elif obj.qr_code_image:
             return obj.qr_code_image.url
         return None
+
+
+class MemberImportSerializer(MemberSerializer):
+    class Meta:
+        model = Member
+        fields = [
+            'member_id',
+            'full_name',
+            'date_of_birth',
+            'sex',
+            'phone',
+            'email',
+            'place_of_residence',
+            'profession',
+            'department',
+            'class_name',
+            'committee',
+            'marital_status',
+            'is_visitor',
+            'baptised',
+            'confirmed',
+        ]
+        read_only_fields = []
+        extra_kwargs = {
+            'member_id': {'required': False, 'allow_blank': True},
+            'is_visitor': {'required': False},
+            'baptised': {'required': False},
+            'confirmed': {'required': False},
+        }
+
+    def validate_member_id(self, value):
+        if value and Member.objects.filter(member_id=value).exclude(
+            pk=self.instance.pk if self.instance else None
+        ).exists():
+            raise serializers.ValidationError(
+                'This member ID is already in use in this tenant.'
+            )
+        return value
     
     def validate_full_name(self, value):
         """Validate that full_name is not empty"""
@@ -447,6 +485,7 @@ class InvitationCodeSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'email',
+            'role',
             'created_by',
             'created_by_username',
             'created_at',

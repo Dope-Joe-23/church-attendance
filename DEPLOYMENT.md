@@ -9,9 +9,162 @@ This guide covers deploying the Church Attendance System to production.
 - Ubuntu 20.04 or similar Linux server
 - PostgreSQL database
 - Nginx web server
-- Node.js for frontend build
+- Node.js for the existing Vite frontend and the separate Next.js app
 
 > **Python dependencies** such as `gunicorn`, `whitenoise`, `psycopg2-binary` and `dj-database-url` are installed via `pip install -r requirements.txt` (see section 3).
+
+## Tenant-aware SaaS deployment (Ubuntu, PostgreSQL, Nginx)
+
+Use this deployment path for the multi-tenant product. The older Backend and
+Frontend sections below describe the original single-frontend setup; do not
+combine their Nginx sites with the configuration here.
+
+### DNS, TLS, and application origins
+
+1. Create an `A`/`AAAA` record for the base domain and a wildcard record
+   (`*.example.com`) pointing at the server. Restrict public ingress to SSH,
+   HTTP, and HTTPS; bind PostgreSQL, Gunicorn, and Next.js to local interfaces.
+2. Issue a certificate covering both `example.com` and `*.example.com`.
+   Public-CA wildcard certificates require DNS-01 validation. Use your DNS
+   provider's Certbot plugin with renewal credentials restricted to the
+   required zone. Manual DNS challenges require manual renewal and are not an
+   unattended production setup.
+3. Copy `deploy/nginx/church-attendance.conf.example` to
+   `/etc/nginx/sites-available/church-attendance`, replace `example.com` and
+   the app paths, and enable it only after the certificate files exist. Run
+   `sudo nginx -t` before reloading Nginx.
+
+The example routes `/api/` and `/admin/` to Gunicorn, `/static/` to collected
+Django assets, and all other paths (including `/checkin/<token>`) to Next.js.
+The app listens only on `127.0.0.1:3000`; Gunicorn uses a Unix socket. The
+Nginx `Host` header is passed through so tenant subdomains and registered
+custom domains can be resolved by Django. Self-check-in QR URLs include the
+tenant slug for the shared base-host setup. Offline attempts are not queued or
+reported as successful; the member must retry after connectivity returns.
+
+Create the production environment file at the repository root because Django
+loads `PROJECT_ROOT/.env` (not `backend/.env`):
+
+```bash
+cd /srv/church-attendance
+cp backend/.env.example .env
+chmod 600 .env
+```
+
+Use values appropriate for the real deployment; do not copy example
+credentials:
+
+```env
+DEBUG=False
+SECRET_KEY=<generated-secret>
+ALLOWED_HOSTS=example.com,.example.com
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=church_db
+DB_USER=church_user
+DB_PASSWORD=<database-secret>
+DB_HOST=127.0.0.1
+DB_PORT=5432
+TENANT_BASE_DOMAIN=example.com
+TENANT_DEFAULT_SLUG=default
+TENANT_ALLOW_DEFAULT_CONTEXT=False
+FRONTEND_URL=https://example.com
+PUBLIC_APP_URL=https://example.com
+VITE_API_URL=/api/
+NEXT_PUBLIC_API_URL=/api
+CORS_ALLOWED_ORIGINS=https://example.com
+CSRF_TRUSTED_ORIGINS=https://example.com,https://*.example.com
+TRUST_PROXY_SSL_HEADER=True
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_HSTS_SECONDS=0
+```
+
+`NEXT_PUBLIC_API_URL` is embedded in the Next.js build; set it before building.
+Only enable `TRUST_PROXY_SSL_HEADER` when Nginx is the trusted ingress and the
+application ports/socket are not directly reachable from untrusted networks.
+After confirming HTTPS and renewal, set HSTS deliberately; enable
+`SECURE_HSTS_INCLUDE_SUBDOMAINS` or preload only after every covered host is
+permanently HTTPS. Add every custom domain to Django `ALLOWED_HOSTS`, register
+it on the corresponding tenant, and provision its own certificate; custom
+domain certificate provisioning is not automated by this repository.
+
+### Start the applications
+
+```bash
+cd /srv/church-attendance/backend
+python3 -m venv venv
+venv/bin/pip install -r requirements-prod.txt
+venv/bin/python manage.py check
+venv/bin/python manage.py migrate
+venv/bin/python manage.py collectstatic --noinput
+
+cd /srv/church-attendance/web
+npm ci
+npm run typecheck
+npm run build
+```
+
+Run Gunicorn and Next.js under separate systemd services with an unprivileged
+application user. Configure Gunicorn's socket at
+`/run/church-attendance/gunicorn.sock` (create the runtime directory with
+systemd `RuntimeDirectory=church-attendance`) and Next.js on
+`127.0.0.1:3000`. Set the repository root as the working directory or otherwise
+make the root `.env` available to Django. Start/reload Nginx only after both
+services and their health checks succeed.
+
+Before launch, configure external Stripe keys/prices, email delivery, DNS,
+certificate renewal, backup storage, alert delivery, and restore testing.
+These are deployment-specific integrations and are not provisioned by this
+repository.
+
+### Health checks, backups, and recovery
+
+The unauthenticated `GET /api/health/` endpoint checks database connectivity
+and returns HTTP 503 if the database is unavailable. Use it for an external
+uptime probe:
+
+```bash
+curl --fail --show-error https://example.com/api/health/
+```
+
+Monitor the health endpoint, Gunicorn/Next.js systemd units, Nginx error logs,
+PostgreSQL availability and disk space, Celery/Redis queue health, and
+certificate renewal. Send alerts to an operator-managed destination; no
+monitoring provider or alert credentials are configured here.
+
+Make encrypted, off-host PostgreSQL backups. Keep encryption credentials
+separate from the server and database credentials. For example, create a
+restricted local custom-format dump before sending it to an approved encrypted
+offsite target:
+
+```bash
+sudo install -d -o postgres -g postgres -m 700 /var/backups/church-attendance
+sudo -u postgres pg_dump --format=custom --no-owner \
+  --file="/var/backups/church-attendance/church_$(date +%Y%m%d_%H%M%S).dump" \
+  church_db
+```
+
+Set and document retention in the offsite backup system. Test restores
+regularly using a disposable database, never the live database:
+
+```bash
+sudo -u postgres createdb church_restore_check
+sudo -u postgres pg_restore --exit-on-error --clean --if-exists \
+  --dbname=church_restore_check /path/to/verified-backup.dump
+```
+
+Verify the restored schema and representative tenant counts, then remove only
+the named test database after the restore check. Back up local uploaded media
+separately; a database dump does not contain those file bytes. If Cloudinary
+is configured, confirm its retention/recovery policy independently.
+
+Take and verify a backup before applying production migrations. Deploy code,
+run reviewed migrations, collect static files, restart services, and verify
+`/api/health/` and a tenant-scoped sign-in/check-in. Prefer a forward fix over
+blindly reversing a migration after tenant data has been written. Keep the
+previous application release available for code rollback, but restore a
+database only under an explicit recovery procedure.
 
 
 ## Backend Deployment

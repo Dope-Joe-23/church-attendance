@@ -6,11 +6,15 @@ from threading import Thread
 
 from celery import shared_task
 from django.db import close_old_connections
+from django.db import transaction
+
+from tenants.context import reset_current_tenant, set_current_tenant
+from tenants.models import Tenant
 
 logger = logging.getLogger(__name__)
 
 
-def schedule_member_absenteeism_update(member_id):
+def schedule_member_absenteeism_update(member_id, tenant_id):
     """
     Start a best-effort background update without blocking check-in responses.
 
@@ -18,18 +22,25 @@ def schedule_member_absenteeism_update(member_id):
     what hurts scanner speed. This local background thread keeps the door check-in
     path fast while still updating the derived alert data shortly after.
     """
-    thread = Thread(
-        target=_update_member_absenteeism_alerts,
-        args=(member_id,),
-        daemon=True,
-    )
-    thread.start()
+    def start_update():
+        thread = Thread(
+            target=_update_member_absenteeism_alerts,
+            args=(member_id, tenant_id),
+            daemon=True,
+        )
+        thread.start()
+
+    transaction.on_commit(start_update)
 
 
-def _update_member_absenteeism_alerts(member_id):
+def _update_member_absenteeism_alerts(member_id, tenant_id):
+    tenant_token = None
+    from members.models import Member
+
     try:
         close_old_connections()
-        from members.models import Member
+        tenant = Tenant._base_manager.get(pk=tenant_id)
+        tenant_token = set_current_tenant(tenant)
         from members.utils import update_absenteeism_alerts
 
         member = Member.objects.get(pk=member_id)
@@ -39,6 +50,8 @@ def _update_member_absenteeism_alerts(member_id):
     except Exception:
         logger.exception("Error updating absenteeism alerts for member %s", member_id)
     finally:
+        if tenant_token is not None:
+            reset_current_tenant(tenant_token)
         close_old_connections()
 
 
@@ -51,8 +64,12 @@ def update_member_absenteeism_alerts_async(self, member_id):
         from members.models import Member
         from members.utils import update_absenteeism_alerts
 
-        member = Member.objects.get(pk=member_id)
-        result = update_absenteeism_alerts(member)
+        member = Member.all_tenants.select_related('tenant').get(pk=member_id)
+        tenant_token = set_current_tenant(member.tenant)
+        try:
+            result = update_absenteeism_alerts(member)
+        finally:
+            reset_current_tenant(tenant_token)
         metric = result.get("metric") or {}
 
         return {

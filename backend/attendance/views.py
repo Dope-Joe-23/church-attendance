@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from tenants.permissions import TenantRolePermission
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.http import HttpResponse
@@ -32,12 +33,27 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     - GET /attendance/by-service/{service_id}/ - Get attendance for a service
     """
     
-    queryset = Attendance.objects.all().select_related('member', 'service', 'service__parent_service').order_by('-created_at')
+    queryset = Attendance.all_tenants.none().select_related(
+        'member',
+        'service',
+        'service__parent_service',
+    ).order_by('-created_at')
     serializer_class = AttendanceSerializer
+    permission_classes = [TenantRolePermission]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['member', 'service', 'status']
     ordering_fields = ['created_at', 'member', 'service']
     ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Attendance.objects.all().select_related(
+            'member',
+            'service',
+            'service__parent_service',
+        ).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.tenant)
     
     @action(detail=False, methods=['get'])
     def counts_by_member(self, request):
@@ -113,7 +129,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 # Statistics
                 cursor.execute(
                     "SELECT status, COUNT(*) FROM attendance_attendance "
-                    "WHERE service_id = %s GROUP BY status", [service.id]
+                    "WHERE service_id = %s AND tenant_id = %s GROUP BY status",
+                    [service.id, service.tenant_id],
                 )
                 status_counts = dict(cursor.fetchall())
                 total_present = status_counts.get('present', 0)
@@ -124,8 +141,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 cursor.execute(
                     "SELECT m.sex, COUNT(*) FROM attendance_attendance a "
                     "JOIN members_member m ON a.member_id = m.id "
-                    "WHERE a.service_id = %s AND a.status = 'present' "
-                    "GROUP BY m.sex", [service.id]
+                    "WHERE a.service_id = %s AND a.tenant_id = %s "
+                    "AND m.tenant_id = %s AND a.status = 'present' "
+                    "GROUP BY m.sex",
+                    [service.id, service.tenant_id, service.tenant_id],
                 )
                 sex_counts = dict(cursor.fetchall())
                 male_present = sex_counts.get('male', 0)
@@ -136,8 +155,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     "SELECT m.class_name, a.status, COUNT(*) "
                     "FROM attendance_attendance a "
                     "JOIN members_member m ON a.member_id = m.id "
-                    "WHERE a.service_id = %s AND m.class_name IS NOT NULL AND m.class_name != '' "
-                    "GROUP BY m.class_name, a.status", [service.id]
+                    "WHERE a.service_id = %s AND a.tenant_id = %s "
+                    "AND m.tenant_id = %s AND m.class_name IS NOT NULL AND m.class_name != '' "
+                    "GROUP BY m.class_name, a.status",
+                    [service.id, service.tenant_id, service.tenant_id],
                 )
                 class_stats = {}
                 for cname, status, count in cursor.fetchall():
@@ -159,8 +180,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                     "m.last_attendance_date, m.consecutive_absences "
                     "FROM attendance_attendance a "
                     "JOIN members_member m ON a.member_id = m.id "
-                    "WHERE a.service_id = %s "
-                    "ORDER BY a.created_at DESC", [service.id]
+                    "WHERE a.service_id = %s AND a.tenant_id = %s "
+                    "AND m.tenant_id = %s "
+                    "ORDER BY a.created_at DESC",
+                    [service.id, service.tenant_id, service.tenant_id],
                 )
                 columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
@@ -284,6 +307,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 for member_id in members_to_mark_ids:
                     new_attendances.append(
                         Attendance(
+                            tenant_id=request.tenant.pk,
                             member_id=member_id,
                             service=service,
                             status='absent',

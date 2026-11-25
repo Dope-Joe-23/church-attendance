@@ -1,8 +1,11 @@
 from django.db import models
 import secrets
 
+from tenants.context import tenant_for_data_access
+from tenants.models import TenantOwnedModel
 
-class Service(models.Model):
+
+class Service(TenantOwnedModel):
     """Model to store church services/meetings"""
     
     RECURRENCE_CHOICES = [
@@ -50,6 +53,20 @@ class Service(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.tenant_id:
+            self.tenant_id = tenant_for_data_access().pk
+        if self.parent_service_id:
+            parent_tenant_id = type(self).all_tenants.values_list(
+                'tenant_id',
+                flat=True,
+            ).get(pk=self.parent_service_id)
+            if self.tenant_id and self.tenant_id != parent_tenant_id:
+                from django.core.exceptions import ValidationError
+
+                raise ValidationError('Parent and child services must belong to the same tenant.')
+        super().save(*args, **kwargs)
     
     def get_or_create_checkin_token(self):
         """Lazily generate and return a unique check-in token."""
@@ -69,4 +86,3 @@ class Service(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.date} at {self.start_time}"
-

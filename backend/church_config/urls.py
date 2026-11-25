@@ -19,13 +19,20 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import register_user, login_user
+from .views import health_check, register_user, login_user
 from attendance.checkin_service import PublicCheckinView
 from members.views import PublicMemberRegistrationView
+from tenants.views import (
+    TenantMembershipDetailView,
+    TenantMembershipListView,
+    TenantSignupView,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/health/', health_check, name='health-check'),
     path('api/auth/register/', register_user, name='register'),
+    path('api/auth/signup/', TenantSignupView.as_view(), name='tenant_signup'),
     path('api/auth/login/', login_user, name='login'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -34,4 +41,11 @@ urlpatterns = [
     path('api/attendance/', include('attendance.urls')),
     path('api/public/checkin/', PublicCheckinView.as_view(), name='public_checkin'),
     path('api/public/register/', PublicMemberRegistrationView.as_view(), name='public_member_registration'),
+    path('api/tenant/memberships/', TenantMembershipListView.as_view(), name='tenant-memberships'),
+    path(
+        'api/tenant/memberships/<int:pk>/',
+        TenantMembershipDetailView.as_view(),
+        name='tenant-membership-detail',
+    ),
+    path('api/billing/', include('tenants.urls')),
 ]

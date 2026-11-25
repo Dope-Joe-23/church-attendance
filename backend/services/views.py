@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from tenants.permissions import TenantAdminPermission, TenantRolePermission
 from datetime import date, timedelta
 from .models import Service
 from .serializers import ServiceSerializer, ServiceDetailSerializer
@@ -28,8 +28,12 @@ class ServiceViewSet(viewsets.ModelViewSet):
     - POST /services/{id}/add-instance/ - Add single session outside recurrence pattern
     """
     
-    queryset = Service.objects.all()
+    queryset = Service.all_tenants.none()
     serializer_class = ServiceSerializer
+    permission_classes = [TenantRolePermission]
+
+    def get_queryset(self):
+        return Service.objects.all()
     
     def get_permissions(self):
         """
@@ -37,7 +41,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         restricted to authenticated admin users only.
         """
         if self.action in ('checkin_qr', 'rotate_checkin_token'):
-            return [IsAuthenticated()]
+            return [TenantAdminPermission()]
         return super().get_permissions()
     
     def get_serializer_class(self):
@@ -54,7 +58,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         - Recurring services are created as templates (parents)
         - Sessions are generated on-demand when requested via API
         """
-        service = serializer.save()
+        service = serializer.save(tenant=self.request.tenant)
         # Sessions will be generated lazily when needed, not upfront
     
     def perform_destroy(self, instance):

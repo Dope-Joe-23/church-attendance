@@ -7,7 +7,28 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db import DatabaseError, connection, transaction
+import logging
 from members.models import InvitationCode
+from tenants.models import TenantMembership
+
+logger = logging.getLogger(__name__)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+            cursor.fetchone()
+    except DatabaseError:
+        logger.exception('Health check failed to connect to the database.')
+        return Response(
+            {'status': 'unavailable', 'database': 'unavailable'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return Response({'status': 'ok', 'database': 'ok'})
 
 
 @api_view(['POST'])
@@ -107,18 +128,29 @@ def register_user(request):
         )
 
     try:
-        # Create the user
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            is_active=True
-        )
+        tenant = getattr(request, 'tenant', None)
+        if tenant is None:
+            return Response(
+                {'error': 'Tenant context is required to register an account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Mark invitation code as used
-        code_obj.mark_used(user)
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True
+            )
+
+            code_obj.mark_used(user)
+            TenantMembership.objects.create(
+                tenant=tenant,
+                user=user,
+                role=code_obj.role,
+            )
 
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)

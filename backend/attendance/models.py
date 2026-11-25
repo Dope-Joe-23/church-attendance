@@ -1,9 +1,12 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from members.models import Member
 from services.models import Service
+from tenants.context import tenant_for_data_access
+from tenants.models import TenantOwnedModel
 
 
-class Attendance(models.Model):
+class Attendance(TenantOwnedModel):
     """Model to store attendance records"""
     
     STATUS_CHOICES = [
@@ -32,6 +35,16 @@ class Attendance(models.Model):
     class Meta:
         ordering = ['-created_at']
         unique_together = ['member', 'service']
+
+    def save(self, *args, **kwargs):
+        if not self.tenant_id:
+            self.tenant = tenant_for_data_access()
+        if (
+            self.member.tenant_id != self.tenant_id
+            or self.service.tenant_id != self.tenant_id
+        ):
+            raise ValidationError('Attendance, member, and service must belong to the same tenant.')
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.member.full_name} - {self.service.name} ({self.status})"

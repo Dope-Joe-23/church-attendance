@@ -185,6 +185,52 @@ npm run dev
 
 The frontend will be available at `http://localhost:5173`
 
+### Tenant routing
+
+The backend resolves a tenant for each request, in this order:
+
+- A configured custom domain.
+- A tenant subdomain such as `churchslug.yourdomain.com` or `churchslug.localhost`.
+- The `X-Tenant-Slug` header for API clients using the base host.
+- The `tenant` query parameter for the unauthenticated `/api/public/checkin/`
+  endpoint only; generated service QR codes use this to select their tenant on
+  a shared base host.
+- The configured default tenant for the base host.
+
+Set `TENANT_BASE_DOMAIN` to the production base domain (for example, `yourdomain.com`). `TENANT_DEFAULT_SLUG` selects the tenant used on the base host and defaults to `default`. The data migration creates that default tenant and assigns existing members, services, attendance records, invitations, and existing accounts to it.
+
+`X-Tenant-Slug` selects a tenant; it is not an authorization credential. Business APIs also require an active membership in the selected tenant. Owners and administrators can manage invitations and business data, managers can read and write business data, and viewers have read-only access. Existing accounts are backfilled as administrators in the default tenant (existing Django superusers are owners). New accounts created with a tenant invitation receive a manager membership.
+
+An authenticated Django superuser can temporarily select a tenant with `?impersonate_tenant=<slug>`. Other users receive HTTP 403 for that parameter. Unknown tenant subdomains or header slugs receive HTTP 404. In production, keep `DEBUG=False` and `TENANT_ALLOW_DEFAULT_CONTEXT=False`; background jobs and management commands must establish an explicit tenant context when operating on tenant-owned data.
+
+Tenant owners and administrators can list workspace memberships at
+`GET /api/tenant/memberships/` and update a member's role or active state with
+`PATCH /api/tenant/memberships/{id}/`. Only owners can grant owner/admin roles
+or change existing privileged memberships; the API prevents self-deactivation
+and removal of the last active owner.
+
+For a self-managed multi-tenant Ubuntu deployment, use the tenant-aware
+[deployment guide](./DEPLOYMENT.md) and the Nginx example under
+[`deploy/nginx/`](./deploy/nginx/). The guide covers wildcard DNS/TLS, the
+separate Next.js app, Django proxy security settings, and the remaining
+external launch requirements.
+
+`GET /api/health/` is an unauthenticated liveness/readiness check that returns
+HTTP 503 when the database cannot be reached.
+
+### Tenant signup and billing
+
+- `POST /api/auth/signup/` creates a trial tenant, its owner account, and tenant membership in one transaction. Trial duration is controlled by `TENANT_TRIAL_DAYS` (default 14); new workspaces start on the configurable `starter` plan.
+- `POST /api/auth/register/` remains the invited-user flow. Tenant invitations are private to the selected tenant; owners can issue `admin` invitations, while owners and administrators can invite `manager` or `viewer` users.
+- `GET /api/billing/overview/`, `POST /api/billing/checkout-session/`, and `POST /api/billing/portal-session/` require an owner or administrator.
+- `POST /api/billing/webhook/` verifies Stripe signatures and deduplicates event IDs. Configure Stripe to send subscription, checkout, and invoice events to this URL.
+
+Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_GROWTH`, and `STRIPE_PRICE_PRO` as deployment environment variables. `PUBLIC_APP_URL` must be the canonical HTTPS web-app origin in production. Checkout remains disabled until both the secret key and selected plan's Stripe price ID are configured; no credentials or amounts are stored in source.
+
+### Member CSV
+
+Tenant members can use `GET /api/members/export-csv/`, `POST /api/members/import-preview/`, and `POST /api/members/import-csv/`. Upload a multipart `file` field. Preview performs validation without writing data; import rejects the whole file if any row is invalid. Files are limited to 5 MB and 1,000 data rows. The supported CSV headers are `member_id`, `full_name`, `date_of_birth`, `sex`, `phone`, `email`, `place_of_residence`, `profession`, `department`, `class_name`, `committee`, `marital_status`, `is_visitor`, `baptised`, and `confirmed`.
+
 ## API Endpoints
 
 ### Members

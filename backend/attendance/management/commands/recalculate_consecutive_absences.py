@@ -1,12 +1,18 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from members.models import Member
 from attendance.models import Attendance
+from tenants.context import tenant_context
+from tenants.models import Tenant
 
 
 class Command(BaseCommand):
     help = 'Recalculate consecutive absences for all members based on attendance records'
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            '--tenant-slug',
+            help='Limit recalculation to one tenant; defaults to all tenants.',
+        )
         parser.add_argument(
             '--member-id',
             type=int,
@@ -15,29 +21,49 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         member_id = options.get('member_id')
-        
+        tenant_slug = options.get('tenant_slug')
+
         if member_id:
-            # Recalculate for specific member
             try:
-                member = Member.objects.get(id=member_id)
+                member = Member.all_tenants.select_related('tenant').get(id=member_id)
+            except Member.DoesNotExist:
+                raise CommandError(f'Member with ID {member_id} was not found.')
+            if tenant_slug and member.tenant.slug != tenant_slug:
+                raise CommandError(
+                    f'Member with ID {member_id} does not belong to tenant {tenant_slug}.'
+                )
+            with tenant_context(member.tenant):
                 self.recalculate_member(member)
                 self.stdout.write(
-                    self.style.SUCCESS(f'✓ Recalculated consecutive absences for {member.full_name}')
-                )
-            except Member.DoesNotExist:
-                self.stdout.write(
-                    self.style.ERROR(f'✗ Member with ID {member_id} not found')
+                    self.style.SUCCESS(
+                        f'Recalculated consecutive absences for {member.full_name}'
+                    )
                 )
         else:
-            # Recalculate for all members
-            members = Member.objects.all()
-            self.stdout.write(f'Recalculating consecutive absences for {members.count()} members...')
-            
-            for member in members:
-                self.recalculate_member(member)
-            
+            if tenant_slug:
+                tenants = Tenant._base_manager.filter(slug=tenant_slug)
+                if not tenants.exists():
+                    raise CommandError(f"Tenant '{tenant_slug}' was not found.")
+            else:
+                tenants = Tenant._base_manager.all()
+
+            total = 0
+            for tenant in tenants.iterator():
+                with tenant_context(tenant):
+                    members = Member.objects.all()
+                    count = members.count()
+                    self.stdout.write(
+                        f'Recalculating consecutive absences for {count} members '
+                        f'in {tenant.slug}...'
+                    )
+                    for member in members:
+                        self.recalculate_member(member)
+                    total += count
+
             self.stdout.write(
-                self.style.SUCCESS(f'✓ Successfully recalculated consecutive absences for {members.count()} members')
+                self.style.SUCCESS(
+                    f'Successfully recalculated consecutive absences for {total} members'
+                )
             )
 
     def recalculate_member(self, member):

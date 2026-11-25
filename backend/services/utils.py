@@ -9,6 +9,7 @@ Lazy-Loading Pattern:
 - Parent service changes apply to future (not-yet-created) sessions
 """
 from datetime import datetime, timedelta, date
+from urllib.parse import urlencode
 from django.db.models import Q
 from .models import Service
 from attendance.models import Attendance
@@ -354,7 +355,10 @@ def build_checkin_qr(service):
     from django.conf import settings
 
     token = service.get_or_create_checkin_token()
-    checkin_url = f"{settings.FRONTEND_URL.rstrip('/')}/checkin/{token}"
+    checkin_url = (
+        f"{settings.FRONTEND_URL.rstrip('/')}/checkin/{token}"
+        f"?{urlencode({'tenant': service.tenant.slug})}"
+    )
 
     qr = qrcode.QRCode(
         version=1,
@@ -370,4 +374,3 @@ def build_checkin_qr(service):
     img.save(buf, format='PNG')
 
     return checkin_url, base64.b64encode(buf.getvalue()).decode('utf-8')
-

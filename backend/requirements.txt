@@ -16,3 +16,4 @@ cloudinary==1.36.0
 django-cloudinary-storage==0.3.0
 twilio==8.10.0
 supabase==2.4.0
+stripe>=12,<14

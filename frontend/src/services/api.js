@@ -224,6 +224,8 @@ export const attendanceApi = {
 export const publicCheckinApi = {
   getInfo: async (token, memberId, searchQuery) => {
     const params = { token };
+    const tenant = new URLSearchParams(window.location.search).get('tenant');
+    if (tenant) params.tenant = tenant;
     if (memberId) params.member_id = memberId;
     if (searchQuery) params.search = searchQuery;
     const response = await apiClient.get('/public/checkin/', { params });
@@ -231,9 +233,12 @@ export const publicCheckinApi = {
   },
 
   checkIn: async (token, memberId) => {
+    const tenant = new URLSearchParams(window.location.search).get('tenant');
     const response = await apiClient.post('/public/checkin/', {
       token,
       member_id: memberId,
+    }, {
+      params: tenant ? { tenant } : undefined,
     });
     return response.data;
   },

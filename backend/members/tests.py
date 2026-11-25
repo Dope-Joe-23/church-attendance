@@ -1,8 +1,10 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from .models import Member
 import base64
 from rest_framework.test import APIRequestFactory
 from .views import MemberViewSet
+from tenants.models import Tenant, TenantMembership
 
 
 class QRCodeDataTests(TestCase):
@@ -21,9 +23,15 @@ class QRCodeDataTests(TestCase):
         # use API client so URL routing matches actual endpoints
         from rest_framework.test import APIClient
         client = APIClient()
+        user = User.objects.create_user(username='member-api-user')
+        TenantMembership.objects.create(
+            tenant=Tenant.objects.get(slug='default'),
+            user=user,
+            role=TenantMembership.ROLE_ADMIN,
+        )
+        client.force_authenticate(user=user)
         response = client.get(f'/api/members/{m.pk}/qr_code/')
         # The view is registered as a custom action on the router, 
         # so it's included via the simple router
         self.assertEqual(response.status_code, 200, msg=response.content if response.status_code != 200 else '')
         self.assertIn('qr_code_base64', response.data)
-

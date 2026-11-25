@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core.files import File
 from members.models import Member
 from django.conf import settings
+from tenants.context import tenant_context
+from tenants.models import Tenant
 import os
 import logging
 
@@ -17,36 +19,57 @@ class Command(BaseCommand):
         # ensure Cloudinary storage is active
         storage_backend = settings.DEFAULT_FILE_STORAGE
         if 'cloudinary' not in storage_backend:
-            self.stdout.write(self.style.WARNING(
+            raise CommandError(
                 f"Default storage is '{storage_backend}', not a cloudinary backend."
-                " Set CLOUDINARY_* env vars and restart before running."))
-            return
+                " Set CLOUDINARY_* env vars and restart before running."
+            )
 
-        members = Member.objects.exclude(qr_code_image='')
         count = 0
-        for m in members:
-            try:
-                field = m.qr_code_image
-                # only process files that have a local filesystem path
-                if not hasattr(field, 'path'):
-                    continue
-                local_path = field.path
-                if not os.path.exists(local_path):
-                    self.stdout.write(self.style.ERROR(f"Local file missing: {local_path}"))
-                    continue
-                self.stdout.write(f"Uploading {local_path} for member {m.member_id}...")
-                with open(local_path, 'rb') as f:
-                    # saving with same name will cause cloudinary to upload
-                    field.save(os.path.basename(local_path), File(f), save=True)
-                # remove local copy if desired
-                try:
-                    os.remove(local_path)
-                    self.stdout.write(self.style.SUCCESS(f"Removed local file {local_path}"))
-                except Exception:
-                    # not critical
-                    pass
-                count += 1
-            except Exception as e:
-                logger.exception(f"Error processing member {m.id}")
-                self.stdout.write(self.style.ERROR(f"Failed for member {m.id}: {e}"))
-        self.stdout.write(self.style.SUCCESS(f"Finished uploading {count} QR images."))
+        failed = 0
+        for tenant in Tenant._base_manager.all().iterator():
+            with tenant_context(tenant):
+                members = Member.objects.exclude(qr_code_image='')
+                for member in members.iterator(chunk_size=50):
+                    try:
+                        field = member.qr_code_image
+                        try:
+                            local_path = field.path
+                        except (AttributeError, NotImplementedError):
+                            continue
+                        if not os.path.isfile(local_path):
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"Local file missing for {member.member_id} "
+                                    f"({tenant.slug}): {local_path}"
+                                )
+                            )
+                            failed += 1
+                            continue
+
+                        self.stdout.write(
+                            f"Uploading {local_path} for {member.member_id} ({tenant.slug})..."
+                        )
+                        with open(local_path, 'rb') as source:
+                            field.save(
+                                os.path.basename(local_path),
+                                File(source),
+                                save=True,
+                            )
+                        os.remove(local_path)
+                        count += 1
+                    except Exception as error:
+                        logger.exception(
+                            "Error processing member %s in tenant %s",
+                            member.pk,
+                            tenant.slug,
+                        )
+                        self.stderr.write(
+                            self.style.ERROR(
+                                f"Failed for {member.member_id} ({tenant.slug}): {error}"
+                            )
+                        )
+                        failed += 1
+
+        self.stdout.write(f"Uploaded {count} QR images.")
+        if failed:
+            raise CommandError(f"QR migration failed for {failed} member(s).")

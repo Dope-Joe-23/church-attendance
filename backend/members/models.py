@@ -10,10 +10,23 @@ import secrets
 from datetime import timedelta
 from django.utils import timezone
 
+from tenants.models import MemberTenantManager, Tenant, TenantMembership, TenantOwnedModel
 
-class InvitationCode(models.Model):
+
+class InvitationCode(TenantOwnedModel):
     """Model for managing user registration invitations"""
+
+    ROLE_CHOICES = [
+        choice for choice in TenantMembership.ROLE_CHOICES
+        if choice[0] != TenantMembership.ROLE_OWNER
+    ]
     
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.PROTECT,
+        related_name='invitation_codes',
+        blank=True,
+    )
     code = models.CharField(max_length=32, unique=True, db_index=True)
     email = models.EmailField(blank=True, null=True, help_text="If set, code can only be used with this email")
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='invitation_codes_created')
@@ -22,6 +35,11 @@ class InvitationCode(models.Model):
     used = models.BooleanField(default=False)
     used_by = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_with_code')
     used_at = models.DateTimeField(null=True, blank=True)
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default=TenantMembership.ROLE_MANAGER,
+    )
     
     class Meta:
         ordering = ['-created_at']
@@ -35,7 +53,13 @@ class InvitationCode(models.Model):
         return secrets.token_urlsafe(24)
     
     @classmethod
-    def create_invitation(cls, created_by, email=None, days_valid=7):
+    def create_invitation(
+        cls,
+        created_by,
+        email=None,
+        days_valid=7,
+        role=TenantMembership.ROLE_MANAGER,
+    ):
         """Create a new invitation code"""
         code = cls.generate_code()
         expires_at = timezone.now() + timedelta(days=days_valid)
@@ -43,7 +67,8 @@ class InvitationCode(models.Model):
             code=code,
             email=email,
             created_by=created_by,
-            expires_at=expires_at
+            expires_at=expires_at,
+            role=role,
         )
     
     def is_valid(self):
@@ -62,7 +87,7 @@ class InvitationCode(models.Model):
         self.save()
 
 
-class Member(models.Model):
+class Member(TenantOwnedModel):
     """Model to store church member information"""
     
     # Department choices
@@ -133,7 +158,7 @@ class Member(models.Model):
     ]
     
     id = models.AutoField(primary_key=True)
-    member_id = models.CharField(max_length=50, unique=True)
+    member_id = models.CharField(max_length=50)
     full_name = models.CharField(max_length=255)
     date_of_birth = models.DateField(blank=True, null=True)
     sex = models.CharField(max_length=10, choices=SEX_CHOICES, blank=True, null=True)
@@ -165,6 +190,12 @@ class Member(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tenant', 'member_id'],
+                name='unique_member_id_per_tenant',
+            ),
+        ]
     
     def __str__(self):
         return f"{self.full_name} ({self.member_id})"
@@ -245,6 +276,8 @@ class MemberAlert(models.Model):
     ]
     
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='alerts')
+    objects = MemberTenantManager()
+    all_tenants = models.Manager()
     alert_level = models.CharField(max_length=20, choices=ALERT_LEVEL_CHOICES)
     reason = models.TextField()  # "2 consecutive absences", "4 out of 5 services missed", etc.
     is_resolved = models.BooleanField(default=False)
@@ -272,6 +305,8 @@ class ContactLog(models.Model):
     ]
     
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='contact_logs')
+    objects = MemberTenantManager()
+    all_tenants = models.Manager()
     contact_method = models.CharField(max_length=20, choices=CONTACT_METHOD_CHOICES)
     message_sent = models.TextField()
     contacted_by = models.CharField(max_length=255, blank=True, null=True)  # Name of person who made contact
@@ -296,6 +331,8 @@ class MemberAbsenteeismMetric(models.Model):
     """
     
     member = models.OneToOneField(Member, on_delete=models.CASCADE, related_name='absenteeism_metric')
+    objects = MemberTenantManager()
+    all_tenants = models.Manager()
     
     # Metrics based on last 10 services
     total_services = models.IntegerField(default=0)  # Total services in last 10 (0-10)
@@ -341,6 +378,8 @@ class MemberAbsenteeismAlert(models.Model):
     ]
     
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='absenteeism_alerts')
+    objects = MemberTenantManager()
+    all_tenants = models.Manager()
     alert_level = models.CharField(max_length=20, choices=ALERT_LEVEL_CHOICES)
     
     # Snapshot of metrics when alert was created

@@ -35,6 +35,38 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
+SECURE_PROXY_SSL_HEADER = (
+    ('HTTP_X_FORWARDED_PROTO', 'https')
+    if os.getenv('TRUST_PROXY_SSL_HEADER', 'False').lower() in ('1', 'true', 'yes')
+    else None
+)
+SECURE_SSL_REDIRECT = os.getenv(
+    'SECURE_SSL_REDIRECT',
+    'False' if DEBUG else 'True',
+).lower() in ('1', 'true', 'yes')
+SESSION_COOKIE_SECURE = os.getenv(
+    'SESSION_COOKIE_SECURE',
+    'False' if DEBUG else 'True',
+).lower() in ('1', 'true', 'yes')
+CSRF_COOKIE_SECURE = os.getenv(
+    'CSRF_COOKIE_SECURE',
+    'False' if DEBUG else 'True',
+).lower() in ('1', 'true', 'yes')
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv(
+    'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+    'False',
+).lower() in ('1', 'true', 'yes')
+SECURE_HSTS_PRELOAD = os.getenv(
+    'SECURE_HSTS_PRELOAD',
+    'False',
+).lower() in ('1', 'true', 'yes')
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').replace('\n', ',').split(',')
+    if origin.strip()
+]
+
 
 # Application definition
 
@@ -58,6 +90,7 @@ INSTALLED_APPS = [
     'members',
     'services',
     'attendance',
+    'tenants',
 ]
 
 MIDDLEWARE = [
@@ -68,9 +101,26 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'tenants.middleware.tenant_resolution_middleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+TENANT_BASE_DOMAIN = os.getenv('TENANT_BASE_DOMAIN', '')
+TENANT_DEFAULT_SLUG = os.getenv('TENANT_DEFAULT_SLUG', 'default')
+TENANT_ALLOW_DEFAULT_CONTEXT = os.getenv(
+    'TENANT_ALLOW_DEFAULT_CONTEXT',
+    'True' if DEBUG else 'False',
+).lower() in ('1', 'true', 'yes')
+TENANT_TRIAL_DAYS = int(os.getenv('TENANT_TRIAL_DAYS', '14'))
+PUBLIC_APP_URL = os.getenv('PUBLIC_APP_URL', 'http://localhost:3000').rstrip('/')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_PRICE_IDS = {
+    'starter': os.getenv('STRIPE_PRICE_STARTER', ''),
+    'growth': os.getenv('STRIPE_PRICE_GROWTH', ''),
+    'pro': os.getenv('STRIPE_PRICE_PRO', ''),
+}
 
 ROOT_URLCONF = 'church_config.urls'
 
@@ -215,6 +265,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'tenant_signup': os.getenv('TENANT_SIGNUP_RATE', '10/hour'),
+    },
 }
 
 # CORS Configuration
@@ -231,7 +284,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')  # Allow all in debug mode
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # Additional CORS settings for preflight requests
 CORS_ALLOW_METHODS = [
@@ -252,6 +305,7 @@ CORS_ALLOW_HEADERS = [
     'origin',
     'user-agent',
     'x-csrftoken',
+    'x-tenant-slug',
     'x-requested-with',
 ]
 
@@ -314,6 +368,7 @@ CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 # Public check-in throttle rates
 # These are per-IP rate limits for the unauthenticated self check-in endpoints
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'tenant_signup': os.getenv('TENANT_SIGNUP_RATE', '10/hour'),
     # Generous defaults: members often check in from shared church Wi-Fi
     'public_checkin': os.getenv('PUBLIC_CHECKIN_RATE', '120/min'),
     'public_checkin_info': os.getenv('PUBLIC_CHECKIN_INFO_RATE', '240/min'),

@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import Service
+from tenants.models import Tenant, TenantMembership
 
 
 class ServiceCheckinQRTests(APITestCase):
@@ -11,6 +12,11 @@ class ServiceCheckinQRTests(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(username='admin', password='testpass123')
+        TenantMembership.objects.create(
+            tenant=Tenant.objects.get(slug='default'),
+            user=self.user,
+            role=TenantMembership.ROLE_ADMIN,
+        )
         self.client.force_authenticate(user=self.user)
         self.service = Service.objects.create(
             name='Midweek Service',
@@ -43,6 +49,7 @@ class ServiceCheckinQRTests(APITestCase):
         resp = self.client.get(f'/api/services/{self.service.id}/checkin_qr/')
         self.service.refresh_from_db()
         self.assertIn(self.service.checkin_token, resp.data['checkin_url'])
+        self.assertIn('tenant=default', resp.data['checkin_url'])
 
     def test_rotate_checkin_token_invalidates_old_qr(self):
         first = self.client.get(f'/api/services/{self.service.id}/checkin_qr/').data

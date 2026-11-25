@@ -170,7 +170,7 @@ def perform_checkin(member, service):
 
         # Update heavier absenteeism metrics and alerts off the request path
         # so QR check-in responses stay fast at the door.
-        schedule_member_absenteeism_update(member.id)
+        schedule_member_absenteeism_update(member.id, member.tenant_id)
 
         return True, status.HTTP_201_CREATED, {
             'success': True,
