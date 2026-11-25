@@ -247,7 +247,7 @@ const ChurchWebsiteAdmin = () => {
       <div className="website-editor-state">
         <h1>Website editor unavailable</h1>
         <p>{errorMessage || 'Website settings could not be loaded.'}</p>
-        <p>Only users with church website administrator access can edit content.</p>
+        <p>Sign in with a church account to edit or publish website content.</p>
       </div>
     );
   }

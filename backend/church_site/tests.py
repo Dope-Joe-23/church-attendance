@@ -65,12 +65,41 @@ class ChurchSiteContentApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(public_response.data['content']['hero_title'], 'Published welcome')
 
-    def test_viewer_cannot_edit_the_church_website(self):
-        response = self.client_for(self.viewer).get(
-            '/api/site/editor/',
-        )
+    def test_authenticated_non_staff_user_can_edit_and_publish_website(self):
+        client = self.client_for(self.viewer)
+        draft = default_site_content()
+        draft['hero_title'] = 'Updated by an app administrator'
 
-        self.assertEqual(response.status_code, 403)
+        editor_response = client.get('/api/site/editor/')
+        save_response = client.put(
+            '/api/site/editor/',
+            draft,
+            format='json',
+        )
+        publish_response = client.post(
+            '/api/site/editor/publish/',
+            {},
+            format='json',
+        )
+        public_response = self.client_for().get('/api/site/public/')
+
+        self.assertEqual(editor_response.status_code, 200)
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(publish_response.status_code, 200)
+        self.assertEqual(public_response.data['content']['hero_title'], draft['hero_title'])
+
+    def test_anonymous_users_cannot_edit_or_publish_website(self):
+        client = self.client_for()
+        draft = default_site_content()
+
+        responses = [
+            client.get('/api/site/editor/'),
+            client.put('/api/site/editor/', draft, format='json'),
+            client.post('/api/site/editor/publish/', {}, format='json'),
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, 401)
 
     def test_invalid_theme_color_is_rejected(self):
         draft = default_site_content()
