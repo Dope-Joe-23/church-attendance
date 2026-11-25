@@ -6,11 +6,9 @@ import {
   Home,
   Welcome,
   Login,
-  Members,
-  Services,
-  Scanner,
-  Reports,
   CareDashboard,
+  ChurchManagement,
+  ChurchWebsiteAdmin,
   PublicCheckIn,
   PublicRegister,
 } from './pages';
@@ -103,20 +101,28 @@ function AppContent() {
               element={<ProtectedRoute element={<Home />} />}
             />
             <Route
+              path="/website"
+              element={<ProtectedRoute element={<ChurchWebsiteAdmin />} />}
+            />
+            <Route
+              path="/management/*"
+              element={<ProtectedRoute element={<ChurchManagement />} />}
+            />
+            <Route
               path="/members"
-              element={<ProtectedRoute element={<Members />} />}
+              element={<Navigate to="/management/members" replace />}
             />
             <Route
               path="/services"
-              element={<ProtectedRoute element={<Services />} />}
+              element={<Navigate to="/management/services" replace />}
             />
             <Route
               path="/scanner"
-              element={<ProtectedRoute element={<Scanner />} />}
+              element={<Navigate to="/management/attendance" replace />}
             />
             <Route
               path="/reports"
-              element={<ProtectedRoute element={<Reports />} />}
+              element={<Navigate to="/management/reports" replace />}
             />
             <Route
               path="/care"

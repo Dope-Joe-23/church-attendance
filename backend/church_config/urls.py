@@ -34,4 +34,5 @@ urlpatterns = [
     path('api/attendance/', include('attendance.urls')),
     path('api/public/checkin/', PublicCheckinView.as_view(), name='public_checkin'),
     path('api/public/register/', PublicMemberRegistrationView.as_view(), name='public_member_registration'),
+    path('api/site/', include('church_site.urls')),
 ]

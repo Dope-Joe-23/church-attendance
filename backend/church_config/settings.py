@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'members',
     'services',
     'attendance',
+    'church_site',
 ]
 
 MIDDLEWARE = [

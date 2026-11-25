@@ -1,0 +1,455 @@
+.website-editor {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  color: #242236;
+}
+
+.website-editor-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.website-editor-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #5e4d97;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.website-editor-header h1 {
+  margin: 0;
+  color: #221d3c;
+  font-size: clamp(1.8rem, 4vw, 2.65rem);
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.website-editor-header > div:first-child > p:last-child {
+  margin: 0.6rem 0 0;
+  color: #777386;
+  font-size: 0.9rem;
+}
+
+.website-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.website-editor-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.website-editor-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.website-editor-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.website-editor-button.primary {
+  background: #24106a;
+  color: white;
+  box-shadow: 0 6px 16px rgba(36, 16, 106, 0.18);
+}
+
+.website-editor-button.primary:hover:not(:disabled) {
+  background: #180a4c;
+  box-shadow: 0 9px 22px rgba(36, 16, 106, 0.25);
+}
+
+.website-editor-button.secondary {
+  border-color: #e4e0ea;
+  background: white;
+  color: #403b52;
+}
+
+.website-editor-button.secondary:hover:not(:disabled) {
+  border-color: #c9c1d9;
+  background: #faf9fc;
+}
+
+.website-editor-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem 1rem;
+  min-height: 45px;
+  margin-bottom: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #ebe8f0;
+  border-radius: 11px;
+  background: #fff;
+  color: #777386;
+  font-size: 0.76rem;
+}
+
+.website-editor-status > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 750;
+}
+
+.website-editor-status .saved {
+  color: #188154;
+}
+
+.website-editor-status .unsaved {
+  color: #a36311;
+}
+
+.website-editor-message {
+  color: #188154;
+}
+
+.website-editor-error {
+  color: #b42332;
+}
+
+.website-editor-layout {
+  display: grid;
+  grid-template-columns: 235px minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.website-editor-sections {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.65rem;
+  border: 1px solid #ebe8f0;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 8px 26px rgba(37, 26, 83, 0.04);
+}
+
+.website-editor-sections > button {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #686476;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-align: left;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.website-editor-sections > button:hover {
+  background: #f7f5fa;
+  color: #24106a;
+}
+
+.website-editor-sections > button.active {
+  background: #f0edf8;
+  color: #24106a;
+}
+
+.website-editor-sections > button.active svg {
+  color: #7662b0;
+}
+
+.website-editor-tip {
+  margin: 0.65rem 0 0;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: #faf6e5;
+}
+
+.website-editor-tip strong {
+  color: #614d09;
+  font-size: 0.77rem;
+}
+
+.website-editor-tip p {
+  margin: 0.25rem 0 0;
+  color: #74683f;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.website-editor-panel {
+  min-height: 440px;
+  padding: clamp(1rem, 3vw, 1.7rem);
+  border: 1px solid #ebe8f0;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 8px 26px rgba(37, 26, 83, 0.04);
+}
+
+.website-editor-panel-heading {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0edf3;
+}
+
+.website-editor-panel-heading h2 {
+  margin: 0;
+  color: #29253d;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.website-editor-panel-heading p {
+  margin: 0.4rem 0 0;
+  color: #777386;
+  font-size: 0.82rem;
+}
+
+.website-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+.website-editor-field {
+  display: grid;
+  align-content: start;
+  gap: 0.42rem;
+  min-width: 0;
+  color: #403b52;
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.website-editor-field > span b {
+  color: #b42332;
+}
+
+.website-editor-field input,
+.website-editor-field textarea {
+  width: 100%;
+  min-height: 43px;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid #ddd9e5;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #29253d;
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 450;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.website-editor-field textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.website-editor-field input:focus,
+.website-editor-field textarea:focus {
+  border-color: #7864b8;
+  box-shadow: 0 0 0 3px rgba(120, 100, 184, 0.13);
+}
+
+.website-editor-field input[type='color'] {
+  width: 76px;
+  min-height: 44px;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.website-editor-field small {
+  color: #888496;
+  font-size: 0.7rem;
+  font-weight: 450;
+  line-height: 1.45;
+}
+
+.website-editor-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.website-editor-list-heading h3 {
+  margin: 0;
+  color: #29253d;
+  font-size: 0.95rem;
+}
+
+.website-editor-item {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 1.1rem;
+  border: 1px solid #e8e4ed;
+  border-radius: 12px;
+}
+
+.website-editor-item legend {
+  padding: 0 0.4rem;
+  color: #5e4d97;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.website-editor-item .website-editor-field:last-of-type {
+  grid-column: 1 / -1;
+}
+
+.website-editor-remove {
+  justify-self: start;
+  padding: 0.55rem 0;
+  border: 0;
+  background: transparent;
+  color: #a12e3d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+}
+
+.website-editor-remove:hover {
+  text-decoration: underline;
+}
+
+.website-editor-empty {
+  padding: 1.2rem;
+  border: 1px dashed #ded9e9;
+  border-radius: 10px;
+  color: #777386;
+  font-size: 0.82rem;
+}
+
+.website-editor-state {
+  display: grid;
+  min-height: 65vh;
+  place-content: center;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  color: #686476;
+  text-align: center;
+}
+
+.website-editor-state h1 {
+  margin: 0;
+  color: #29253d;
+  font-size: 1.6rem;
+}
+
+.website-editor-state p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .website-editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .website-editor-actions {
+    justify-content: flex-start;
+  }
+
+  .website-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .website-editor-sections {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    padding: 0.35rem;
+  }
+
+  .website-editor-sections > button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .website-editor-tip {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .website-editor {
+    padding: 1rem 0.8rem 2rem;
+  }
+
+  .website-editor-header {
+    gap: 1rem;
+  }
+
+  .website-editor-header > div:first-child > p:last-child {
+    max-width: 32ch;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .website-editor-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .website-editor-actions .primary {
+    grid-column: 1 / -1;
+  }
+
+  .website-editor-status {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .website-editor-sections > button {
+    gap: 0.4rem;
+    font-size: 0.74rem;
+  }
+
+  .website-editor-sections > button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .website-editor-fields,
+  .website-editor-item {
+    grid-template-columns: 1fr;
+  }
+
+  .website-editor-item .website-editor-field:last-of-type {
+    grid-column: auto;
+  }
+
+  .website-editor-panel {
+    padding: 1rem;
+  }
+}

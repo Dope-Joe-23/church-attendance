@@ -6,5 +6,7 @@ export { default as Services } from './Services';
 export { default as Scanner } from './Scanner';
 export { default as Reports } from './Reports';
 export { default as CareDashboard } from './CareDashboard';
+export { default as ChurchManagement } from './ChurchManagement';
+export { default as ChurchWebsiteAdmin } from './ChurchWebsiteAdmin';
 export { default as PublicCheckIn } from './PublicCheckIn';
 export { default as PublicRegister } from './PublicRegister';

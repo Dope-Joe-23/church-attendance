@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import authService from '../services/authService';
-import { MdDashboard, MdPeople, MdEvent, MdQrCode2, MdAssessment, MdFavoriteBorder, MdMenu, MdClose, MdLogout } from 'react-icons/md';
+import { MdDashboard, MdBusiness, MdPublic, MdQrCode2, MdFavoriteBorder, MdMenu, MdClose, MdLogout } from 'react-icons/md';
 import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/sidebar.css';
 
@@ -16,10 +16,12 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
     const pageNames = {
       '/dashboard': 'Dashboard',
       '/': 'Dashboard',
-      '/scanner': 'Attendance',
-      '/members': 'Members',
-      '/services': 'Services',
-      '/reports': 'Reports',
+      '/management': 'Church Management',
+      '/management/services': 'Services',
+      '/management/attendance': 'Attendance',
+      '/management/members': 'Members',
+      '/management/reports': 'Reports',
+      '/website': 'Church Website',
       '/care': 'Care',
       '/invitations': 'Invitations',
     };
@@ -27,7 +29,9 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
   };
 
   const isActive = (path) => {
-    return location.pathname === path || (path === '/dashboard' && location.pathname === '/');
+    return location.pathname === path ||
+      (path === '/dashboard' && location.pathname === '/') ||
+      (path === '/management' && location.pathname.startsWith('/management'));
   };
 
   const toggleMobileSidebar = () => {
@@ -65,10 +69,8 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
 
   const navItems = [
     { path: '/dashboard', icon: MdDashboard, label: 'Dashboard', authenticated: true },
-    { path: '/scanner', icon: MdQrCode2, label: 'Attendance', authenticated: true },
-    { path: '/members', icon: MdPeople, label: 'Members', authenticated: true },
-    { path: '/services', icon: MdEvent, label: 'Services', authenticated: true },
-    { path: '/reports', icon: MdAssessment, label: 'Reports', authenticated: true },
+    { path: '/website', icon: MdPublic, label: 'Church Website', authenticated: true },
+    { path: '/management', icon: MdBusiness, label: 'Church Management', authenticated: true },
     { path: '/invitations', icon: MdQrCode2, label: 'Invitations', authenticated: true },
     {
       path: '/care',

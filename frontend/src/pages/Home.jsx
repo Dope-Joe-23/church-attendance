@@ -62,28 +62,28 @@ const Home = () => {
       icon: '📱',
       title: 'Check-in Scanner',
       description: 'Start scanning QR codes',
-      path: '/scanner',
+      path: '/management/attendance',
       color: '#0ea5e9'
     },
     {
       icon: '👥',
       title: 'Manage Members',
       description: 'View all church members',
-      path: '/members',
+      path: '/management/members',
       color: '#8b5cf6'
     },
     {
       icon: '📊',
       title: 'View Reports',
       description: 'Check attendance analytics',
-      path: '/reports',
+      path: '/management/reports',
       color: '#f59e0b'
     },
     {
       icon: '📋',
       title: 'Manage Services',
       description: 'Organize church events',
-      path: '/services',
+      path: '/management/services',
       color: '#10b981'
     }
   ];
@@ -177,7 +177,7 @@ const Home = () => {
           <div className="dashboard-section">
             <div className="section-header">
               <h2>Upcoming Services</h2>
-              <a href="/services" className="view-all-link">View all →</a>
+              <a href="/management/services" className="view-all-link">View all →</a>
             </div>
             <div className="services-list">
               {recentServices.length > 0 ? (
