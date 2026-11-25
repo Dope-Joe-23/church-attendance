@@ -6,6 +6,8 @@ const SessionsModal = ({
   isOpen,
   service,
   sessions,
+  totalSessions,
+  onLoadMoreSessions,
   onSelectSession,
   onClose,
   isLoading,
@@ -131,64 +133,80 @@ const SessionsModal = ({
               <span>Loading sessions...</span>
             </div>
           ) : sessions && sessions.length > 0 ? (
-            <table className="sessions-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Location</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <tr key={session.id} className="session-row">
-                    <td className="session-date-cell">
-                      <strong>{formatDate(session.date)}</strong>
-                    </td>
-                    <td className="session-time-cell">
-                      {formatTime(session.start_time)} — {formatTime(session.end_time)}
-                    </td>
-                    <td className="session-location-cell">
-                      {session.location || '—'}
-                    </td>
-                    <td className="session-action-cell">
-                      <button
-                        className="session-icon-action session-icon-action-primary"
-                        onClick={() => onSelectSession(session)}
-                        disabled={deletingSessionId === session.id}
-                        title={mode === 'report' ? 'View report' : 'Take attendance'}
-                        aria-label={mode === 'report' ? 'View report' : 'Take attendance'}
-                      >
-                        {mode === 'report' ? <FaChartBar /> : <FaClipboardCheck />}
-                      </button>
-                      {onCheckinQR && (
-                        <button
-                          className="session-icon-action session-icon-action-info"
-                          onClick={() => onCheckinQR(session)}
-                          disabled={deletingSessionId === session.id}
-                          title="Self check-in QR code for this session"
-                          aria-label="Self check-in QR code"
-                        >
-                          <FaQrcode />
-                        </button>
-                      )}
-                      {onDeleteSession && (
-                        <button
-                          className="session-icon-action session-icon-action-danger"
-                          onClick={() => handleDeleteSession(session.id, session.date)}
-                          disabled={deletingSessionId === session.id}
-                          title="Delete this session and all its attendance records"
-                          aria-label="Delete session"
-                        >
-                          {deletingSessionId === session.id ? <FaSpinner className="button-spinner" /> : <FaTrash />}
-                        </button>
-                      )}
-                    </td>
+            <>
+              <table className="sessions-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th className="session-time-heading">Time</th>
+                    <th>Location</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sessions.map((session) => (
+                    <tr key={session.id} className="session-row">
+                      <td className="session-date-cell">
+                        <strong>{formatDate(session.date)}</strong>
+                      </td>
+                      <td className="session-time-cell">
+                        {formatTime(session.start_time)} — {formatTime(session.end_time)}
+                      </td>
+                      <td className="session-location-cell">
+                        {session.location || '—'}
+                      </td>
+                      <td className="session-action-cell">
+                        <button
+                          className="session-icon-action session-icon-action-primary"
+                          onClick={() => onSelectSession(session)}
+                          disabled={deletingSessionId === session.id}
+                          title={mode === 'report' ? 'View report' : 'Take attendance'}
+                          aria-label={mode === 'report' ? 'View report' : 'Take attendance'}
+                        >
+                          {mode === 'report' ? <FaChartBar /> : <FaClipboardCheck />}
+                        </button>
+                        {onCheckinQR && (
+                          <button
+                            className="session-icon-action session-icon-action-info"
+                            onClick={() => onCheckinQR(session)}
+                            disabled={deletingSessionId === session.id}
+                            title="Self check-in QR code for this session"
+                            aria-label="Self check-in QR code"
+                          >
+                            <FaQrcode />
+                          </button>
+                        )}
+                        {onDeleteSession && (
+                          <button
+                            className="session-icon-action session-icon-action-danger"
+                            onClick={() => handleDeleteSession(session.id, session.date)}
+                            disabled={deletingSessionId === session.id}
+                            title="Delete this session and all its attendance records"
+                            aria-label="Delete session"
+                          >
+                            {deletingSessionId === session.id ? <FaSpinner className="button-spinner" /> : <FaTrash />}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {sessions.length < totalSessions && (
+                <div className="list-pagination" aria-live="polite">
+                  <p className="list-pagination-count">
+                    Showing {sessions.length} of {totalSessions} sessions
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary load-more-button"
+                    onClick={onLoadMoreSessions}
+                  >
+                    Load more sessions
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-sessions">
               <p>No sessions scheduled yet.</p>

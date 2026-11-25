@@ -21,12 +21,6 @@ const ChurchManagement = () => {
 
   return (
     <div className="church-management">
-      <header className="church-management-header">
-        <p className="church-management-eyebrow">Workspace</p>
-        <h1>Church Management</h1>
-        <p>Manage services, attendance, members, and reports in one place.</p>
-      </header>
-
       <nav className="church-management-tabs" aria-label="Church management sections">
         {sections.map(({ path, label, icon: Icon }) => (
           <button

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi, memberApi } from '../services/api';
-import { AttendanceScanner, LoadingSpinner, MembersTable, MemberFormModal } from '../components';
+import { AttendanceScanner, LoadingSpinner, MembersTable, MemberFormModal, PageHeading } from '../components';
+import { LIST_BATCH_SIZE, sortByMostRecent } from '../utils/listPagination';
+import { MdEvent, MdLocationOn, MdQrCode2, MdRepeat, MdSearch } from 'react-icons/md';
 import '../styles/pages.css';
 
 const formatServiceDate = (date) => {
@@ -26,10 +28,13 @@ const Scanner = () => {
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleServiceCount, setVisibleServiceCount] = useState(LIST_BATCH_SIZE);
+  const [visibleSessionCounts, setVisibleSessionCounts] = useState({});
   const [expandedService, setExpandedService] = useState(null);
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [memberSearch, setMemberSearch] = useState('');
+  const [visibleMemberCount, setVisibleMemberCount] = useState(LIST_BATCH_SIZE);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
@@ -81,9 +86,12 @@ const Scanner = () => {
         const childSessions = servicesList.filter(s => s.parent_service !== null);
         
         // Group sessions by parent service
-        const grouped = parentServices.map(parent => ({
+        const grouped = sortByMostRecent(parentServices).map(parent => ({
           ...parent,
-          sessions: childSessions.filter(session => session.parent_service === parent.id)
+          sessions: sortByMostRecent(
+            childSessions.filter(session => session.parent_service === parent.id),
+            'date'
+          )
         }));
         
         setGroupedServices(grouped);
@@ -103,6 +111,16 @@ const Scanner = () => {
       (session.location && session.location.toLowerCase().includes(searchQuery.toLowerCase()))
     )
   );
+  const visibleServices = filteredServices.slice(0, visibleServiceCount);
+  const getVisibleSessions = (service) => (
+    service.sessions.slice(0, visibleSessionCounts[service.id] || LIST_BATCH_SIZE)
+  );
+  const loadMoreSessions = (serviceId) => {
+    setVisibleSessionCounts((counts) => ({
+      ...counts,
+      [serviceId]: (counts[serviceId] || LIST_BATCH_SIZE) + LIST_BATCH_SIZE,
+    }));
+  };
 
   const handleServiceSelect = (service) => {
     setSelectedService(service);
@@ -242,6 +260,8 @@ const Scanner = () => {
       (member.member_id && member.member_id.toLowerCase().includes(query))
     );
   });
+  const recentMembers = sortByMostRecent(filteredMembers);
+  const visibleMembers = recentMembers.slice(0, visibleMemberCount);
 
   const selectedServiceTime = selectedService
     ? [formatServiceTime(selectedService.start_time), formatServiceTime(selectedService.end_time)]
@@ -251,6 +271,13 @@ const Scanner = () => {
 
   return (
     <div className="scanner-page">
+      <PageHeading
+        eyebrow="Attendance"
+        title="Check-in"
+        description="Choose a service or session, then record attendance."
+        icon={MdQrCode2}
+      />
+
       {loading ? (
         <LoadingSpinner message="Loading services..." />
       ) : (
@@ -262,12 +289,17 @@ const Scanner = () => {
               <p>Select a one-time service or expand a recurring service to choose a session.</p>
             </div>
 
-            <div className="search-box" style={{ marginBottom: '2rem' }}>
+            <div className="search-box search-box-with-icon" style={{ marginBottom: '2rem' }}>
+              <MdSearch className="search-icon" size={18} aria-hidden="true" />
               <input
                 type="text"
-                placeholder="🔍 Search services or locations..."
+                aria-label="Search services and locations"
+                placeholder="Search services or locations..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setVisibleServiceCount(LIST_BATCH_SIZE);
+                  setSearchQuery(e.target.value);
+                }}
                 className="search-input"
               />
             </div>
@@ -279,7 +311,7 @@ const Scanner = () => {
             ) : (
               <>
               <div className="mobile-service-cards">
-                {filteredServices.map((parentService) => (
+                {visibleServices.map((parentService) => (
                   <div key={parentService.id} className="mobile-service-card">
                     <button
                       type="button"
@@ -303,7 +335,7 @@ const Scanner = () => {
                     {parentService.is_recurring && expandedService === parentService.id && (
                       <div className="mobile-session-list">
                         {parentService.sessions.length > 0 ? (
-                          parentService.sessions.map((session) => (
+                          getVisibleSessions(parentService).map((session) => (
                             <button
                               key={session.id}
                               type="button"
@@ -316,6 +348,15 @@ const Scanner = () => {
                           ))
                         ) : (
                           <p className="mobile-empty-sessions">No sessions have been added yet.</p>
+                        )}
+                        {getVisibleSessions(parentService).length < parentService.sessions.length && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary load-more-button"
+                            onClick={() => loadMoreSessions(parentService.id)}
+                          >
+                            Load more sessions
+                          </button>
                         )}
                       </div>
                     )}
@@ -336,7 +377,7 @@ const Scanner = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredServices.map((parentService) => (
+                  {visibleServices.map((parentService) => (
                     <React.Fragment key={parentService.id}>
                       {/* Parent Service Row */}
                       <tr
@@ -381,7 +422,9 @@ const Scanner = () => {
                         <td>{parentService.end_time || '—'}</td>
                         <td>
                           <span className={`service-type ${parentService.is_recurring ? 'recurring' : 'onetime'}`}>
-                            {parentService.is_recurring ? '🔄 Recurring' : '📅 One-time'}
+                            {parentService.is_recurring
+                              ? <><MdRepeat aria-hidden="true" /> Recurring</>
+                              : <><MdEvent aria-hidden="true" /> One-time</>}
                           </span>
                         </td>
                         <td></td>
@@ -391,7 +434,7 @@ const Scanner = () => {
                       {expandedService === parentService.id &&
                         parentService.sessions &&
                         parentService.sessions.length > 0 &&
-                        parentService.sessions.map((session) => (
+                        getVisibleSessions(parentService).map((session) => (
                           <tr
                             key={session.id}
                             className="session-row"
@@ -407,15 +450,45 @@ const Scanner = () => {
                             <td>{session.start_time || '—'}</td>
                             <td>{session.end_time || '—'}</td>
                             <td>
-                              <span className="service-type session">📅 Session</span>
+                              <span className="service-type session"><MdEvent aria-hidden="true" /> Session</span>
                             </td>
                             <td></td>
                           </tr>
                         ))}
+                      {expandedService === parentService.id &&
+                        getVisibleSessions(parentService).length < parentService.sessions.length && (
+                          <tr className="session-load-more-row">
+                            <td colSpan={8}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary load-more-button"
+                                onClick={() => loadMoreSessions(parentService.id)}
+                              >
+                                Load more sessions
+                              </button>
+                            </td>
+                          </tr>
+                        )}
                     </React.Fragment>
                   ))}
                 </tbody>
               </table>
+              {filteredServices.length > 0 && (
+                <div className="list-pagination" aria-live="polite">
+                  <p className="list-pagination-count">
+                    Showing {visibleServices.length} of {filteredServices.length} services
+                  </p>
+                  {visibleServices.length < filteredServices.length && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary load-more-button"
+                      onClick={() => setVisibleServiceCount((count) => count + LIST_BATCH_SIZE)}
+                    >
+                      Load more services
+                    </button>
+                  )}
+                </div>
+              )}
               </>
             )}
           </div>
@@ -436,7 +509,7 @@ const Scanner = () => {
                       {selectedService.location && <span>{selectedService.location}</span>}
                     </div>
                     {selectedService.location && (
-                      <p className="modal-subtext">📍 {selectedService.location}</p>
+                      <p className="modal-subtext"><MdLocationOn aria-hidden="true" /> {selectedService.location}</p>
                     )}
                   </div>
                   <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
@@ -459,12 +532,17 @@ const Scanner = () => {
           </div>
 
           <div className="search-action-bar" style={{ marginBottom: '1.5rem' }}>
-            <div className="search-box">
+            <div className="search-box search-box-with-icon">
+              <MdSearch className="search-icon" size={18} aria-hidden="true" />
               <input
                 type="text"
-                placeholder="🔍 Search by name, email, phone or member ID..."
+                aria-label="Search members"
+                placeholder="Search by name, email, phone or member ID..."
                 value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
+                onChange={(e) => {
+                  setVisibleMemberCount(LIST_BATCH_SIZE);
+                  setMemberSearch(e.target.value);
+                }}
                 className="search-input"
               />
             </div>
@@ -481,11 +559,27 @@ const Scanner = () => {
               )}
               <div className="members-table-wrapper">
                 <MembersTable
-                  members={filteredMembers}
+                  members={visibleMembers}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
               </div>
+              {filteredMembers.length > 0 && (
+                <div className="list-pagination" aria-live="polite">
+                  <p className="list-pagination-count">
+                    Showing {visibleMembers.length} of {filteredMembers.length} members
+                  </p>
+                  {visibleMembers.length < filteredMembers.length && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary load-more-button"
+                      onClick={() => setVisibleMemberCount((count) => count + LIST_BATCH_SIZE)}
+                    >
+                      Load more members
+                    </button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

@@ -30,15 +30,16 @@
 }
 
 .church-management-tabs {
-  display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
   border-bottom: 1px solid var(--gray-200);
 }
 
 .church-management-tab {
   display: inline-flex;
-  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
@@ -122,21 +123,8 @@
     padding: 1rem 0.5rem 0;
   }
 
-  .church-management-header {
-    padding: 0 0.25rem;
-    margin-bottom: 1rem;
-  }
-
-  .church-management-header h1 {
-    font-size: 1.55rem;
-  }
-
-  .church-management-header > p:last-child {
-    font-size: 0.9rem;
-  }
-
   .church-management-tabs {
-    gap: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .church-management-tab {

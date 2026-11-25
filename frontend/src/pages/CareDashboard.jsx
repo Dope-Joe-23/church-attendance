@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MemberDetailsModal, LoadingSpinner } from '../components';
+import { MemberDetailsModal, LoadingSpinner, PageHeading } from '../components';
 import store from '../context/store';
 import apiClient from '../services/apiClient';
+import { MdFavoriteBorder, MdRefresh, MdSearch, MdVisibility } from 'react-icons/md';
 import '../styles/care-dashboard-new.css';
 
 const CareDashboard = () => {
@@ -300,20 +301,24 @@ const CareDashboard = () => {
 
   return (
     <div className="care-dashboard-new">
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <PageHeading
+        eyebrow="Pastoral care"
+        title="Care overview"
+        description="Identify attendance changes and follow up with members."
+        icon={MdFavoriteBorder}
+        actions={(
           <button
+            type="button"
             onClick={fetchAllData}
             disabled={loading}
-            className="btn btn-sm btn-info"
-            title="Refresh dashboard data"
-            style={{ height: 'fit-content', marginBottom: '1rem' }}
+            className="btn btn-secondary"
+            title="Refresh care data"
           >
-            {loading ? '⏳ Refreshing...' : '🔄 Refresh'}
+            <MdRefresh size={17} aria-hidden="true" />
+            Refresh
           </button>
-        </div>
-      </div>
+        )}
+      />
 
       {/* Statistics Cards */}
       <div className="stats-grid">
@@ -342,9 +347,11 @@ const CareDashboard = () => {
       {/* Controls */}
       <div className="dashboard-controls">
         <div className="search-section">
-          <div className="search-box">
+          <div className="search-box search-box-with-icon">
+            <MdSearch className="search-icon" size={18} aria-hidden="true" />
             <input
               type="text"
+              aria-label="Search members"
               placeholder="Search by name or member ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -382,13 +389,6 @@ const CareDashboard = () => {
           </select>
         </div>
 
-        <button 
-          className="refresh-button"
-          onClick={fetchAllData}
-          title="Refresh all data"
-        >
-          🔄 Refresh
-        </button>
       </div>
 
       {/* Members Table */}
@@ -465,11 +465,13 @@ const CareDashboard = () => {
                     
                     <td className="actions-cell">
                       <button
+                        type="button"
                         className="btn-view"
                         onClick={() => handleViewMember(member.id)}
                         title="View details"
+                        aria-label={`View details for ${member.full_name}`}
                       >
-                        👁️ View
+                        <MdVisibility aria-hidden="true" /> View
                       </button>
                       {alert && (
                         <button

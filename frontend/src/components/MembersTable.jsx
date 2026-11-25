@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import QRCodeModal from './QRCodeModal';
 import MemberDetailsModal from './MemberDetailsModal';
+import { MdDelete, MdEdit, MdQrCode2, MdVisibility } from 'react-icons/md';
 import '../styles/components.css';
 
 const MembersTable = ({ members, onEdit, onDelete }) => {
@@ -87,7 +88,7 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                 </td>
                 <td className="member-name-col" data-label="Full Name">{member.full_name}</td>
                 <td className="sex-col" data-label="Sex">
-                  {member.sex ? (member.sex === 'male' ? '👨 Male' : '👩 Female') : '—'}
+                  {member.sex ? (member.sex === 'male' ? 'Male' : 'Female') : '—'}
                 </td>
                 <td className="visitor-col" data-label="Visitor">
                   {member.is_visitor ? (
@@ -100,33 +101,41 @@ const MembersTable = ({ members, onEdit, onDelete }) => {
                   <div className="action-buttons">
                     {member.qr_code_image && (
                       <button
+                      type="button"
                         className="btn-icon qr-icon"
                         onClick={() => handleQRClick(member)}
                         title="View QR Code"
+                      aria-label={`View QR code for ${member.full_name}`}
                       >
-                        📱
+                      <MdQrCode2 aria-hidden="true" />
                       </button>
                     )}
                     <button
+                      type="button"
                       className="btn-icon details-icon"
                       onClick={() => handleViewDetails(member)}
                       title="View Participation & Details"
+                      aria-label={`View details for ${member.full_name}`}
                     >
-                      👁️
+                      <MdVisibility aria-hidden="true" />
                     </button>
                     <button
+                      type="button"
                       className="btn-icon edit-icon"
                       onClick={() => onEdit(member)}
                       title="Edit Member"
+                      aria-label={`Edit ${member.full_name}`}
                     >
-                      ✏️
+                      <MdEdit aria-hidden="true" />
                     </button>
                     <button
+                      type="button"
                       className="btn-icon delete-icon"
                       onClick={() => onDelete(member.id)}
                       title="Delete Member"
+                      aria-label={`Delete ${member.full_name}`}
                     >
-                      🗑️
+                      <MdDelete aria-hidden="true" />
                     </button>
                   </div>
                 </td>

@@ -2379,8 +2379,12 @@
     display: table-row;
   }
 
+  .session-time-heading,
+  .session-time-cell {
+    display: none;
+  }
+
   .session-date-cell,
-  .session-time-cell,
   .session-location-cell {
     padding: 0.6rem 0.4rem;
     font-size: 0.85rem;

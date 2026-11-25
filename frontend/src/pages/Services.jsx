@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { useServiceStore } from '../context/store';
-import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport, LoadingSpinner, ServiceCheckinQRModal } from '../components';
+import { ServicesTable, ServiceFormModal, SessionsModal, AttendanceScanner, AttendanceReport, LoadingSpinner, ServiceCheckinQRModal, PageHeading } from '../components';
+import { LIST_BATCH_SIZE, sortByMostRecent } from '../utils/listPagination';
+import { MdAdd, MdEvent, MdSearch } from 'react-icons/md';
 import '../styles/pages.css';
 
 const Services = () => {
@@ -16,12 +18,14 @@ const Services = () => {
   const [showCheckinQRModal, setShowCheckinQRModal] = useState(false);
   const [selectedServiceForQR, setSelectedServiceForQR] = useState(null);
   const [sessionsList, setSessionsList] = useState([]);
+  const [visibleSessionCount, setVisibleSessionCount] = useState(LIST_BATCH_SIZE);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [addDateError, setAddDateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleServiceCount, setVisibleServiceCount] = useState(LIST_BATCH_SIZE);
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -132,6 +136,7 @@ const Services = () => {
     // For recurring parent services, fetch all instances and show sessions modal
     if (service.is_recurring && !service.parent_service) {
       setSelectedServiceForSessions(service);
+      setVisibleSessionCount(LIST_BATCH_SIZE);
       setModalMode('attendance');
       setSessionsLoading(true);
       try {
@@ -139,7 +144,7 @@ const Services = () => {
         const instances = services.filter(
           (s) => s.parent_service === service.id
         );
-        setSessionsList(instances);
+        setSessionsList(sortByMostRecent(instances, 'date'));
       } catch (error) {
         console.error('Error fetching sessions:', error);
       } finally {
@@ -173,7 +178,7 @@ const Services = () => {
       // Get the newly created instance from the response
       if (response && response.instance) {
         // Add the new instance directly to the state
-        setSessionsList((prevSessions) => [...prevSessions, response.instance]);
+        setSessionsList((prevSessions) => sortByMostRecent([...prevSessions, response.instance], 'date'));
       }
     } catch (error) {
       console.error('Error adding service date:', error);
@@ -204,11 +209,12 @@ const Services = () => {
     // Recurring templates have no date — open the sessions list so the admin picks a session
     if (service.is_recurring && !service.parent_service) {
       setSelectedServiceForSessions(service);
+      setVisibleSessionCount(LIST_BATCH_SIZE);
       setModalMode('checkin_qr');
       setSessionsLoading(true);
       try {
         const instances = services.filter((s) => s.parent_service === service.id);
-        setSessionsList(instances);
+        setSessionsList(sortByMostRecent(instances, 'date'));
       } catch (error) {
         console.error('Error fetching sessions:', error);
       } finally {
@@ -232,6 +238,7 @@ const Services = () => {
     // For recurring parent services, show sessions modal with report mode
     if (service.is_recurring && !service.parent_service) {
       setSelectedServiceForSessions(service);
+      setVisibleSessionCount(LIST_BATCH_SIZE);
       setModalMode('report');
       setSessionsLoading(true);
       try {
@@ -239,7 +246,7 @@ const Services = () => {
         const instances = services.filter(
           (s) => s.parent_service === service.id
         );
-        setSessionsList(instances);
+        setSessionsList(sortByMostRecent(instances, 'date'));
       } catch (error) {
         console.error('Error fetching sessions:', error);
       } finally {
@@ -290,20 +297,35 @@ const Services = () => {
     );
   });
 
-  const parentServicesCount = services.filter((service) => !service.parent_service).length;
-  const sessionCount = services.filter((service) => service.parent_service).length;
+  const recentParentServices = sortByMostRecent(
+    filteredServices.filter((service) => !service.parent_service)
+  );
+  const visibleServices = recentParentServices.slice(0, visibleServiceCount);
+  const recentSessions = sortByMostRecent(sessionsList, 'date');
+  const visibleSessions = recentSessions.slice(0, visibleSessionCount);
 
   return (
     <div className="services-page">
+      <PageHeading
+        eyebrow="Planning"
+        title="Services"
+        description="Plan gatherings, manage recurring sessions, and prepare check-in."
+        icon={MdEvent}
+      />
 
       {/* Search and Action Bar */}
       <div className="search-action-bar">
-        <div className="search-box">
+        <div className="search-box search-box-with-icon">
+          <MdSearch className="search-icon" size={18} aria-hidden="true" />
           <input
             type="text"
+            aria-label="Search services"
             placeholder="Search by service name, location, or description..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setVisibleServiceCount(LIST_BATCH_SIZE);
+              setSearchQuery(e.target.value);
+            }}
             className="search-input"
           />
         </div>
@@ -325,7 +347,8 @@ const Services = () => {
             setShowFormModal(true);
           }}
         >
-          Add Service
+          <MdAdd size={18} aria-hidden="true" />
+          Add service
         </button>
       </div>
 
@@ -341,9 +364,12 @@ const Services = () => {
       />
 
       <SessionsModal
+        key={selectedServiceForSessions?.id || 'sessions-modal'}
         isOpen={showSessionsModal}
         service={selectedServiceForSessions}
-        sessions={sessionsList}
+        sessions={visibleSessions}
+        totalSessions={recentSessions.length}
+        onLoadMoreSessions={() => setVisibleSessionCount((count) => count + LIST_BATCH_SIZE)}
         onSelectSession={modalMode === 'report' ? handleSelectSessionForReport : handleSelectSession}
         onClose={() => {
           setShowSessionsModal(false);
@@ -446,13 +472,29 @@ const Services = () => {
             </div>
           )}
           <ServicesTable
-            services={filteredServices}
+            services={visibleServices}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onSelect={handleViewSessions}
             onReport={handleViewReport}
             onCheckinQR={handleViewCheckinQR}
           />
+          {recentParentServices.length > 0 && (
+            <div className="list-pagination" aria-live="polite">
+              <p className="list-pagination-count">
+                Showing {visibleServices.length} of {recentParentServices.length} services
+              </p>
+              {visibleServices.length < recentParentServices.length && (
+                <button
+                  type="button"
+                  className="btn btn-secondary load-more-button"
+                  onClick={() => setVisibleServiceCount((count) => count + LIST_BATCH_SIZE)}
+                >
+                  Load more services
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

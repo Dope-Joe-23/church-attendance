@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { serviceApi } from '../services/api';
 import { AttendanceReport, LoadingSpinner } from '../components';
+import { LIST_BATCH_SIZE, sortByMostRecent } from '../utils/listPagination';
+import { MdEvent, MdLocationOn, MdRepeat, MdSearch } from 'react-icons/md';
 import '../styles/pages.css';
 
 const Reports = () => {
@@ -10,6 +12,8 @@ const Reports = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleServiceCount, setVisibleServiceCount] = useState(LIST_BATCH_SIZE);
+  const [visibleSessionCounts, setVisibleSessionCounts] = useState({});
   const [expandedService, setExpandedService] = useState(null);
 
   useEffect(() => {
@@ -28,9 +32,12 @@ const Reports = () => {
         const childSessions = servicesList.filter(s => s.parent_service !== null);
         
         // Group sessions by parent service
-        const grouped = parentServices.map(parent => ({
+        const grouped = sortByMostRecent(parentServices).map(parent => ({
           ...parent,
-          sessions: childSessions.filter(session => session.parent_service === parent.id)
+          sessions: sortByMostRecent(
+            childSessions.filter(session => session.parent_service === parent.id),
+            'date'
+          )
         }));
         
         setGroupedServices(grouped);
@@ -52,6 +59,16 @@ const Reports = () => {
       (session.location && session.location.toLowerCase().includes(searchQuery.toLowerCase()))
     )
   );
+  const visibleServices = filteredServices.slice(0, visibleServiceCount);
+  const getVisibleSessions = (service) => (
+    service.sessions.slice(0, visibleSessionCounts[service.id] || LIST_BATCH_SIZE)
+  );
+  const loadMoreSessions = (serviceId) => {
+    setVisibleSessionCounts((counts) => ({
+      ...counts,
+      [serviceId]: (counts[serviceId] || LIST_BATCH_SIZE) + LIST_BATCH_SIZE,
+    }));
+  };
 
   const handleServiceSelect = (service) => {
     setSelectedService(service);
@@ -81,12 +98,17 @@ const Reports = () => {
               <p>Open a service or session to view detailed attendance records.</p>
             </div>
 
-            <div className="search-box" style={{ marginBottom: '2rem' }}>
+            <div className="search-box search-box-with-icon" style={{ marginBottom: '2rem' }}>
+              <MdSearch className="search-icon" size={18} aria-hidden="true" />
               <input
                 type="text"
-                placeholder="🔍 Search services or locations..."
+                aria-label="Search services and locations"
+                placeholder="Search services or locations..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setVisibleServiceCount(LIST_BATCH_SIZE);
+                  setSearchQuery(e.target.value);
+                }}
                 className="search-input"
               />
             </div>
@@ -98,7 +120,7 @@ const Reports = () => {
             ) : (
               <>
               <div className="mobile-service-cards">
-                {filteredServices.map((parentService) => (
+                {visibleServices.map((parentService) => (
                   <div key={parentService.id} className="mobile-service-card">
                     <button
                       type="button"
@@ -122,7 +144,7 @@ const Reports = () => {
                     {parentService.is_recurring && expandedService === parentService.id && (
                       <div className="mobile-session-list">
                         {parentService.sessions.length > 0 ? (
-                          parentService.sessions.map((session) => (
+                          getVisibleSessions(parentService).map((session) => (
                             <button
                               key={session.id}
                               type="button"
@@ -135,6 +157,15 @@ const Reports = () => {
                           ))
                         ) : (
                           <p className="mobile-empty-sessions">No sessions have been added yet.</p>
+                        )}
+                        {getVisibleSessions(parentService).length < parentService.sessions.length && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary load-more-button"
+                            onClick={() => loadMoreSessions(parentService.id)}
+                          >
+                            Load more sessions
+                          </button>
                         )}
                       </div>
                     )}
@@ -156,7 +187,7 @@ const Reports = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredServices.map((parentService) => (
+                  {visibleServices.map((parentService) => (
                     <React.Fragment key={parentService.id}>
                       {/* Parent Service Row */}
                       <tr
@@ -201,7 +232,9 @@ const Reports = () => {
                         <td>{parentService.end_time || '—'}</td>
                         <td>
                           <span className={`service-type ${parentService.is_recurring ? 'recurring' : 'onetime'}`}>
-                            {parentService.is_recurring ? '🔄 Recurring' : '📅 One-time'}
+                            {parentService.is_recurring
+                              ? <><MdRepeat aria-hidden="true" /> Recurring</>
+                              : <><MdEvent aria-hidden="true" /> One-time</>}
                           </span>
                         </td>
                         <td></td>
@@ -211,7 +244,7 @@ const Reports = () => {
                       {expandedService === parentService.id &&
                         parentService.sessions &&
                         parentService.sessions.length > 0 &&
-                        parentService.sessions.map((session) => (
+                        getVisibleSessions(parentService).map((session) => (
                           <tr
                             key={session.id}
                             className="session-row"
@@ -227,15 +260,45 @@ const Reports = () => {
                             <td>{session.start_time || '—'}</td>
                             <td>{session.end_time || '—'}</td>
                             <td>
-                              <span className="service-type session">📅 Session</span>
+                              <span className="service-type session"><MdEvent aria-hidden="true" /> Session</span>
                             </td>
                             <td></td>
                           </tr>
                         ))}
+                      {expandedService === parentService.id &&
+                        getVisibleSessions(parentService).length < parentService.sessions.length && (
+                          <tr className="session-load-more-row">
+                            <td colSpan={8}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary load-more-button"
+                                onClick={() => loadMoreSessions(parentService.id)}
+                              >
+                                Load more sessions
+                              </button>
+                            </td>
+                          </tr>
+                        )}
                     </React.Fragment>
                   ))}
                 </tbody>
               </table>
+              {filteredServices.length > 0 && (
+                <div className="list-pagination" aria-live="polite">
+                  <p className="list-pagination-count">
+                    Showing {visibleServices.length} of {filteredServices.length} services
+                  </p>
+                  {visibleServices.length < filteredServices.length && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary load-more-button"
+                      onClick={() => setVisibleServiceCount((count) => count + LIST_BATCH_SIZE)}
+                    >
+                      Load more services
+                    </button>
+                  )}
+                </div>
+              )}
               </>
             )}
           </div>
@@ -248,7 +311,7 @@ const Reports = () => {
                   <div className="modal-header-content">
                     <h2>{selectedService.name}</h2>
                     {selectedService.location && (
-                      <p className="modal-subtext">📍 {selectedService.location}</p>
+                      <p className="modal-subtext"><MdLocationOn aria-hidden="true" /> {selectedService.location}</p>
                     )}
                   </div>
                   <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>

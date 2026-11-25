@@ -1,4 +1,5 @@
 import React from 'react';
+import { MdAssessment, MdDelete, MdEdit, MdFactCheck, MdQrCode2 } from 'react-icons/md';
 import '../styles/components.css';
 
 const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport, onCheckinQR }) => {
@@ -121,44 +122,54 @@ const ServicesTable = ({ services, onEdit, onDelete, onSelect, onReport, onCheck
                   <div className="action-buttons">
                     {onSelect && (
                       <button
+                        type="button"
                         className="btn-icon attendance-icon"
                         onClick={() => onSelect(service)}
                         title="Take Attendance"
+                        aria-label={`Take attendance for ${service.name}`}
                       >
-                        📋
+                        <MdFactCheck aria-hidden="true" />
                       </button>
                     )}
                     {onReport && (
                       <button
+                        type="button"
                         className="btn-icon report-icon"
                         onClick={() => onReport(service)}
                         title="View Report"
+                        aria-label={`View report for ${service.name}`}
                       >
-                        📊
+                        <MdAssessment aria-hidden="true" />
                       </button>
                     )}
                     {onCheckinQR && (
                       <button
+                        type="button"
                         className="btn-icon checkin-qr-icon"
                         onClick={() => onCheckinQR(service)}
                         title="Self Check-in QR Code"
+                        aria-label={`Show check-in QR code for ${service.name}`}
                       >
-                        📲
+                        <MdQrCode2 aria-hidden="true" />
                       </button>
                     )}
                     <button
+                      type="button"
                       className="btn-icon edit-icon"
                       onClick={() => onEdit(service)}
                       title="Edit Service"
+                      aria-label={`Edit ${service.name}`}
                     >
-                      ✏️
+                      <MdEdit aria-hidden="true" />
                     </button>
                     <button
+                      type="button"
                       className="btn-icon delete-icon"
                       onClick={() => onDelete(service.id)}
                       title="Delete Service"
+                      aria-label={`Delete ${service.name}`}
                     >
-                      🗑️
+                      <MdDelete aria-hidden="true" />
                     </button>
                   </div>
                 </td>

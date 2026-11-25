@@ -1,17 +1,18 @@
 import React from 'react';
 import InvitationCodeManager from '../components/InvitationCodeManager';
+import { PageHeading } from '../components';
+import { MdVpnKey } from 'react-icons/md';
 import '../styles/pages.css';
 
 const InvitationCodesPage = () => {
   return (
     <div className="page-wrapper">
-      <div className="page-header invitation-page-header">
-        <div className="header-content">
-          <span className="page-kicker">Access control</span>
-          <h1>Invitations</h1>
-          <p>Create time-limited registration codes for approved users and track which codes are active or already used.</p>
-        </div>
-      </div>
+      <PageHeading
+        eyebrow="Access control"
+        title="Invitations"
+        description="Create time-limited registration codes for approved users and track their status."
+        icon={MdVpnKey}
+      />
       <InvitationCodeManager />
     </div>
   );

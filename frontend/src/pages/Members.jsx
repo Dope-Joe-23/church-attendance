@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { memberApi } from '../services/api';
 import apiClient from '../services/apiClient';
 import { useMemberStore } from '../context/store';
-import { MembersTable, MemberFormModal, LoadingSpinner, AbsenceAlertBadge, AbsenceAlertModal } from '../components';
+import { MembersTable, MemberFormModal, LoadingSpinner, AbsenceAlertBadge, AbsenceAlertModal, PageHeading } from '../components';
 import { exportMembersToExcel } from '../utils/excelExport';
+import { LIST_BATCH_SIZE, sortByMostRecent } from '../utils/listPagination';
+import { MdDownload, MdPersonAdd, MdPeople, MdSearch } from 'react-icons/md';
 import '../styles/pages.css';
 
 const Members = () => {
@@ -12,6 +14,7 @@ const Members = () => {
   const [formError, setFormError] = useState(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleMemberCount, setVisibleMemberCount] = useState(LIST_BATCH_SIZE);
   const [filterVisitorType, setFilterVisitorType] = useState('all'); // all, member, visitor
   const [filterClass, setFilterClass] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
@@ -218,6 +221,8 @@ const Members = () => {
 
     return true;
   });
+  const recentMembers = sortByMostRecent(filteredMembers);
+  const visibleMembers = recentMembers.slice(0, visibleMemberCount);
 
   // Debug logging
   React.useEffect(() => {
@@ -262,18 +267,30 @@ const Members = () => {
 
   return (
     <div className="members-page">
+      <PageHeading
+        eyebrow="People"
+        title="Members"
+        description="Find, organize, and care for your church community."
+        icon={MdPeople}
+      />
+
       <div style={{ marginBottom: '1.5rem', marginTop: '0.5rem' }}>
         <AbsenceAlertBadge onBadgeClick={() => setShowAbsenceAlert(true)} />
       </div>
 
       {/* Search and Action Bar */}
       <div className="search-action-bar">
-        <div className="search-box">
+        <div className="search-box search-box-with-icon">
+          <MdSearch className="search-icon" size={18} aria-hidden="true" />
           <input
             type="text"
-            placeholder="🔍 Search by name, email, phone or member ID..."
+            aria-label="Search members"
+            placeholder="Search by name, email, phone or member ID..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setVisibleMemberCount(LIST_BATCH_SIZE);
+              setSearchQuery(e.target.value);
+            }}
             className="search-input"
           />
         </div>
@@ -296,7 +313,8 @@ const Members = () => {
             setShowFormModal(true);
           }}
         >
-          Add Member
+          <MdPersonAdd size={18} aria-hidden="true" />
+          Add member
         </button>
       </div>
 
@@ -307,7 +325,10 @@ const Members = () => {
           <select
             id="filter-type"
             value={filterVisitorType}
-            onChange={(e) => setFilterVisitorType(e.target.value)}
+            onChange={(e) => {
+              setVisibleMemberCount(LIST_BATCH_SIZE);
+              setFilterVisitorType(e.target.value);
+            }}
             className="filter-select"
           >
             <option value="all">All Members</option>
@@ -321,7 +342,10 @@ const Members = () => {
           <select
             id="filter-class"
             value={filterClass}
-            onChange={(e) => setFilterClass(e.target.value)}
+            onChange={(e) => {
+              setVisibleMemberCount(LIST_BATCH_SIZE);
+              setFilterClass(e.target.value);
+            }}
             className="filter-select"
           >
             <option value="all">All Classes</option>
@@ -336,7 +360,10 @@ const Members = () => {
           <select
             id="filter-dept"
             value={filterDepartment}
-            onChange={(e) => setFilterDepartment(e.target.value)}
+            onChange={(e) => {
+              setVisibleMemberCount(LIST_BATCH_SIZE);
+              setFilterDepartment(e.target.value);
+            }}
             className="filter-select"
           >
             <option value="all">All Departments</option>
@@ -351,7 +378,10 @@ const Members = () => {
           <select
             id="filter-committee"
             value={filterCommittee}
-            onChange={(e) => setFilterCommittee(e.target.value)}
+            onChange={(e) => {
+              setVisibleMemberCount(LIST_BATCH_SIZE);
+              setFilterCommittee(e.target.value);
+            }}
             className="filter-select"
           >
             <option value="all">All Committees</option>
@@ -363,11 +393,12 @@ const Members = () => {
 
         <button 
           className="btn btn-success export-btn" 
+          type="button"
           onClick={handleExportExcel}
           disabled={isExporting || filteredMembers.length === 0}
           title={filteredMembers.length === 0 ? "No members to export" : "Export filtered members to Excel"}
         >
-          {isExporting ? '⏳ Exporting...' : '📥 Export to Excel'}
+          {isExporting ? 'Exporting…' : <><MdDownload size={18} aria-hidden="true" /> Export to Excel</>}
         </button>
       </div>
 
@@ -398,11 +429,27 @@ const Members = () => {
           )}
           <div className="members-table-wrapper">
             <MembersTable
-              members={filteredMembers}
+              members={visibleMembers}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
           </div>
+          {filteredMembers.length > 0 && (
+            <div className="list-pagination" aria-live="polite">
+              <p className="list-pagination-count">
+                Showing {visibleMembers.length} of {filteredMembers.length} members
+              </p>
+              {visibleMembers.length < filteredMembers.length && (
+                <button
+                  type="button"
+                  className="btn btn-secondary load-more-button"
+                  onClick={() => setVisibleMemberCount((count) => count + LIST_BATCH_SIZE)}
+                >
+                  Load more members
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
 

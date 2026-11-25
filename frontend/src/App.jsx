@@ -22,6 +22,7 @@ import './styles/sidebar.css';
 import './styles/invitation-manager.css';
 import './styles/checkin.css';
 import './styles/register.css';
+import './styles/admin-ui.css';
 
 function AppContent() {
   const location = useLocation();

@@ -1,8 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import authService from '../services/authService';
-import { MdDashboard, MdBusiness, MdPublic, MdQrCode2, MdFavoriteBorder, MdMenu, MdClose, MdLogout } from 'react-icons/md';
+import {
+  MdBusiness,
+  MdChevronLeft,
+  MdChevronRight,
+  MdDashboard,
+  MdFavoriteBorder,
+  MdLogout,
+  MdMenu,
+  MdClose,
+  MdPublic,
+  MdQrCode2,
+} from 'react-icons/md';
 import wisLogo from '../assets/wis_logo.jpg';
 import '../styles/sidebar.css';
 
@@ -11,6 +22,15 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isSidebarOpen]);
 
   const getPageName = () => {
     const pageNames = {
@@ -89,16 +109,34 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
           <img className="navbar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
           <span className="navbar-page-name">{getPageName()}</span>
         </div>
-        <button className="sidebar-toggle" onClick={toggleMobileSidebar}>
-          {isSidebarOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={toggleMobileSidebar}
+          aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isSidebarOpen}
+          aria-controls="app-sidebar"
+        >
+          {isSidebarOpen ? <MdClose size={24} aria-hidden="true" /> : <MdMenu size={24} aria-hidden="true" />}
         </button>
       </div>
 
       {/* Overlay for sidebar */}
-      {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleMobileSidebar}></div>}
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={toggleMobileSidebar}
+        />
+      )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+      <aside
+        id="app-sidebar"
+        className={`sidebar ${isSidebarOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+        aria-label="Main navigation"
+      >
         {/* Logo Section */}
         <div className="sidebar-logo">
           <img className="sidebar-logo-img" src={wisLogo} alt="Wesleyan International Society logo" />
@@ -106,11 +144,21 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
             <h1 className="logo-text">WIS Sunyani</h1>
             <p>Attendance System</p>
           </div>
+          <button
+            type="button"
+            className="sidebar-collapse-toggle"
+            onClick={onToggleCollapse}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <MdChevronRight size={19} /> : <MdChevronLeft size={19} />}
+          </button>
         </div>
 
         {/* Navigation Menu */}
         {isAuthenticated && (
-          <nav className="sidebar-nav">
+          <nav className="sidebar-nav" aria-label="Main menu">
+            <p className="sidebar-section-label">Workspace</p>
             <ul className="nav-list">
               {navItems
                 .filter((item) => item.authenticated)
@@ -119,9 +167,11 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
                   return (
                     <li key={item.path} className="nav-item">
                       <button
+                        type="button"
                         onClick={() => handleNavigation(item.path)}
                         className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
                         title={item.label}
+                        aria-current={isActive(item.path) ? 'page' : undefined}
                       >
                         <span className="nav-icon">
                           <IconComponent size={20} />
@@ -142,13 +192,13 @@ const Sidebar = ({ isAuthenticated, onLogout, isCollapsed, onToggleCollapse }) =
         {/* User Actions */}
         <div className="sidebar-footer">
           {isAuthenticated ? (
-            <button className="logout-btn" onClick={handleLogout} title="Logout">
+            <button type="button" className="logout-btn" onClick={handleLogout} title="Logout">
               <MdLogout size={18} />
               <span>Logout</span>
             </button>
           ) : (
             location.pathname !== '/login' && location.pathname !== '/register' && (
-              <button className="login-btn" onClick={() => navigate('/login')}>
+              <button type="button" className="login-btn" onClick={() => navigate('/login')}>
                 Login
               </button>
             )
